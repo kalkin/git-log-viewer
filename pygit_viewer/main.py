@@ -117,12 +117,16 @@ def fold_open(commit: Commit, index: int):
 
 def cli():
     commit = ROOT
-    while commit.parents:
-        HISTORY.append(commit)
-        COMMIT_MAP[commit.id] = commit
-        msg = format_commit(commit)
-        TEXTFIELD.text += msg + "\n"
-        commit = commit.parents[0]
+    try:
+        while commit.parents:
+            HISTORY.append(commit)
+            COMMIT_MAP[commit.id] = commit
+            msg = format_commit(commit)
+            TEXTFIELD.text += msg + "\n"
+            commit = commit.parents[0]
+    except KeyError:
+        pass
+
     result = APPLICATION.run()
     print('You said: %r' % result)
 
