@@ -115,7 +115,7 @@ def fold_open(commit: Commit, index: int):
     TEXTFIELD.text = "\n".join(lines)
 
 
-def run():
+def cli():
     commit = ROOT
     while commit.parents:
         HISTORY.append(commit)
@@ -128,4 +128,4 @@ def run():
 
 
 if __name__ == '__main__':
-    run()
+    cli()
