@@ -1,0 +1,8 @@
+*.egg-info
+*.egg
+*.eggs
+*.pyc
+.coverage
+.eggs/
+.DS_Store
+.mypy_cache/
