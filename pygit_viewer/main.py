@@ -121,15 +121,21 @@ def fold_close(commit: Commit, index: int):
 def fold_open(commit: Commit, index: int):
     start = commit
     lines = TEXTFIELD.text.splitlines()
+    level = "  "
+    for char in lines[index]:
+        if char != ' ':
+            break
+        level += " "
+
     COMMIT_MAP[commit.parents[1].id] = commit.parents[1]
-    msg = "  " + format_commit(commit.parents[1])
+    msg = level + format_commit(commit.parents[1])
     index += 1
     lines.insert(index, msg)
     HISTORY.insert(index, commit.parents[1])
     commit = commit.parents[1].parents[0]
     while commit.id not in COMMIT_MAP:
         last = commit
-        msg = "  " + format_commit(commit)
+        msg = level + format_commit(commit)
         lines.insert(index + 1, msg)
         HISTORY.insert(index + 1, commit)
         try:
