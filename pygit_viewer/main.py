@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 
 import babel.dates
+from line import Commit, CommitType, Repo, next_commit
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.document import Document
@@ -13,17 +14,10 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout.containers import Container, HSplit
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.widgets import TextArea
-# pylint: disable=no-name-in-module
-from pygit2 import Commit, Repository, discover_repository
 
-GIT_DIR = discover_repository(os.getcwd())
-REPO = Repository(GIT_DIR)
-ROOT = REPO.revparse_single("HEAD")
 HISTORY: list = []
-BRANCHES: dict = {}
 
 TEXTFIELD = TextArea(read_only=True, wrap_lines=False)
-COMMIT_MAP: dict = {}
 # Global key bindings.
 BINDINGS = KeyBindings()
 
@@ -38,7 +32,7 @@ APPLICATION = Application(
     full_screen=True)
 
 
-def commit_type(commit: Commit) -> str:
+def commit_type(line: Commit) -> str:
     ''' Helper method for displaying commit type.
 
         Currently there are three types of commits:
@@ -46,15 +40,15 @@ def commit_type(commit: Commit) -> str:
         - Normal commit (1 parent)
         - Merge commit (> 1 parent)
     '''
-    try:
-        if not commit.parents:
-            return "◎  "
-        elif len(commit.parents) == 1:
-            return "●  "
-        # TODO Add support for ocotopus branch display
-        return "●─╮"
-    except Exception:  # pylint: disable=broad-except
-        return "●  "
+    # TODO Add support for ocotopus branch display
+    _map = {
+        CommitType.INITIAL: "◎  ",
+        CommitType.SIMPLE: "●  ",
+        CommitType.TOP: "●  ",
+        CommitType.UNKNOWN: "●  ",
+        CommitType.MERGE: "●─╮"
+    }
+    return _map[line.commit_type()]
 
 
 def relative_date(commit: Commit) -> str:
@@ -71,13 +65,8 @@ def _(_):
     get_app().exit(result=False)
 
 
-def format_commit(commit: Commit) -> str:
-    hash_id = str(commit.id)[0:7] + " "
-    rel_date: str = relative_date(commit)
-    author: str = commit.committer.name + " <" + commit.committer.email + ">"
-    _type: str = commit_type(commit)
-    subject: str = commit.message.strip().splitlines()[0]
-    return " ".join([_type, hash_id, rel_date, author.split()[0], subject])
+def format_commit(line: Commit) -> str:
+    return " ".join([commit_type(line), str(line)])
 
 
 def current_row(textarea: TextArea) -> int:
@@ -85,91 +74,54 @@ def current_row(textarea: TextArea) -> int:
     return document.cursor_position_row
 
 
-def current_commit(pos: int) -> Commit:
+def current_line(pos: int) -> Commit:
     return HISTORY[pos]
 
 
 @BINDINGS.add('enter')
 def toggle_fold(_):
     row = current_row(TEXTFIELD)
-    commit = current_commit(row)
+    line: Commit = current_line(row)
     point = TEXTFIELD.buffer.cursor_position
-    if len(commit.parents) >= 2 and commit.parents[1].id in COMMIT_MAP:
-        fold_close(commit, row)
-    elif len(commit.parents) >= 2:
-        fold_open(commit, row)
+    if line.commit_type() == CommitType.MERGE:
+        if line.is_folded:
+            fold_open(line, row)
+        else:
+            fold_close(line, row)
 
     TEXTFIELD.buffer.cursor_position = point
 
 
-def fold_close(commit: Commit, index: int):
+def fold_close(line: Commit, index: int):
     lines = TEXTFIELD.text.splitlines()
-    last_id = BRANCHES[commit.id]
-    commit = commit.parents[1]
+    line.fold()
     index += 1
-    while True:
+    while line.child_log():
         del lines[index]
         del HISTORY[index]
-        if commit.id in COMMIT_MAP:
-            del COMMIT_MAP[commit.id]
-        if commit.id == last_id:
-            break
-        commit = commit.parents[0]
     TEXTFIELD.text = "\n".join(lines)
 
 
-def fold_open(commit: Commit, index: int):
-    start = commit
+def fold_open(start: Commit, index: int):
     lines = TEXTFIELD.text.splitlines()
-    level = "  "
-    for char in lines[index]:
-        if char != ' ':
-            break
-        level += " "
-
-    COMMIT_MAP[commit.parents[1].id] = commit.parents[1]
-    msg = level + format_commit(commit.parents[1])
-    index += 1
-    lines.insert(index, msg)
-    HISTORY.insert(index, commit.parents[1])
-    commit = commit.parents[1].parents[0]
-    while commit.id not in COMMIT_MAP:
-        last = commit
-        msg = level + format_commit(commit)
+    start.unfold()
+    for commit in start.child_log():
+        level = commit.level * '  '
+        HISTORY.insert(index, commit)
+        msg = level + format_commit(next_line)
         lines.insert(index + 1, msg)
-        HISTORY.insert(index + 1, commit)
-        try:
-            commit = commit.parents[0]
-        except Exception:  # pylint: disable=broad-except
-            break
+        HISTORY.insert(index + 1, next_line)
         index += 1
-    BRANCHES[start.id] = last.id
     TEXTFIELD.text = "\n".join(lines)
-
-
-def paint_subtree(commit: Commit, index: int):
-    lines = TEXTFIELD.text.splitlines()
-    while commit.id not in COMMIT_MAP:
-        msg = "  " + format_commit(commit)
-        lines.insert(index + 1, msg)
-        HISTORY.insert(index + 1, commit)
-        commit = commit.parents[0]
 
 
 def cli():
-    commit = ROOT
-    try:
-        while commit.parents:
-            HISTORY.append(commit)
-            COMMIT_MAP[commit.id] = commit
-            msg = format_commit(commit)
-            TEXTFIELD.text += msg + "\n"
-            commit = commit.parents[0]
-    except KeyError:
-        pass
-
-    result = APPLICATION.run()
-    print('You said: %r' % result)
+    repo = Repo(os.getcwd())
+    for commit in next_commit(repo):
+        msg = format_commit(commit)
+        HISTORY.append(commit)
+        TEXTFIELD.text += msg + "\n"
+    APPLICATION.run()
 
 
 if __name__ == '__main__':
