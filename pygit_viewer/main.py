@@ -20,6 +20,7 @@ GIT_DIR = discover_repository(os.getcwd())
 REPO = Repository(GIT_DIR)
 ROOT = REPO.revparse_single("HEAD")
 HISTORY = []
+BRANCHES = {}
 
 TEXTFIELD = TextArea(read_only=True, wrap_lines=False)
 COMMIT_MAP = {}
@@ -45,12 +46,15 @@ def commit_type(commit: Commit) -> str:
         - Normal commit (1 parent)
         - Merge commit (> 1 parent)
     '''
-    if not commit.parents:
-        return "◎  "
-    elif len(commit.parents) == 1:
+    try:
+        if not commit.parents:
+            return "◎  "
+        elif len(commit.parents) == 1:
+            return "●  "
+        # TODO Add support for ocotopus branch display
+        return "●─╮"
+    except Exception:  # pylint: disable=broad-except
         return "●  "
-    # TODO Add support for ocotopus branch display
-    return "●─╮"
 
 
 def relative_date(commit: Commit) -> str:
@@ -86,7 +90,7 @@ def current_commit(pos: int) -> Commit:
 
 
 @BINDINGS.add('enter')
-def open_fold(_):
+def toggle_fold(_):
     row = current_row(TEXTFIELD)
     commit = current_commit(row)
     point = TEXTFIELD.buffer.cursor_position
@@ -100,19 +104,50 @@ def open_fold(_):
 
 def fold_close(commit: Commit, index: int):
     lines = TEXTFIELD.text.splitlines()
-    del lines[index + 1]
-    del HISTORY[index + 1]
-    del COMMIT_MAP[commit.parents[1].id]
+    last_id = BRANCHES[commit.id]
+    commit = commit.parents[1]
+    index += 1
+    while True:
+        del lines[index]
+        del HISTORY[index]
+        if commit.id in COMMIT_MAP:
+            del COMMIT_MAP[commit.id]
+        if commit.id == last_id:
+            break
+        commit = commit.parents[0]
     TEXTFIELD.text = "\n".join(lines)
 
 
 def fold_open(commit: Commit, index: int):
-    msg = "  " + format_commit(commit.parents[1])
+    start = commit
     lines = TEXTFIELD.text.splitlines()
-    lines.insert(index + 1, msg)
-    HISTORY.insert(index + 1, commit.parents[1])
     COMMIT_MAP[commit.parents[1].id] = commit.parents[1]
+    msg = "  " + format_commit(commit.parents[1])
+    index += 1
+    lines.insert(index, msg)
+    HISTORY.insert(index, commit.parents[1])
+    commit = commit.parents[1].parents[0]
+    while commit.id not in COMMIT_MAP:
+        last = commit
+        msg = "  " + format_commit(commit)
+        lines.insert(index + 1, msg)
+        HISTORY.insert(index + 1, commit)
+        try:
+            commit = commit.parents[0]
+        except Exception:  # pylint: disable=broad-except
+            break
+        index += 1
+    BRANCHES[start.id] = last.id
     TEXTFIELD.text = "\n".join(lines)
+
+
+def paint_subtree(commit: Commit, index: int):
+    lines = TEXTFIELD.text.splitlines()
+    while commit.id not in COMMIT_MAP:
+        msg = "  " + format_commit(commit)
+        lines.insert(index + 1, msg)
+        HISTORY.insert(index + 1, commit)
+        commit = commit.parents[0]
 
 
 def cli():
