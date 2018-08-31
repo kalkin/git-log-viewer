@@ -25,7 +25,8 @@ setuptools.setup(
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+):",
+        # pylint: disable=line-too-long
+        "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+):",  # noqa: E501
         "Operating System :: POSIX",
         "Topic :: Software Development :: Version Control :: Git",
     ],
