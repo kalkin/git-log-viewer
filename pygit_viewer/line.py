@@ -1,8 +1,8 @@
 # pylint: disable=missing-docstring,fixme
 from datetime import datetime
+from enum import Enum
 from typing import Iterator
 
-from enum import Enum
 import babel.dates
 from pygit2 import Commit as GitCommit  # pylint: disable=no-name-in-module
 from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
@@ -16,7 +16,7 @@ class CommitType(Enum):
         - INITIAL The first commit in a repository
         - SIMPLE A commit with one parent
         - MERGE A commit with or more parents
-    '''
+    '''  # noqa: E501
     TOP = -2
     UNKNOWN = -1
     INITIAL = 0
@@ -102,9 +102,8 @@ class Foldable(Commit):
 
     def child_log(self) -> Iterator[Commit]:
         end = self._repo.merge_base(self._commit, self._commit.parents[1])
-        for commit in next_commit(self._repo, self._commit.parents[1].id, end,
-                                  self):
-            yield commit
+        for git_commit in self._repo.walker(self._commit.parents[1].id, end):
+            yield to_commit(self._repo.repo, git_commit, self)
 
     @property
     def is_folded(self):
@@ -137,7 +136,8 @@ class Octopus(Foldable):
 
 class Subtree(Foldable):
     def child_log(self) -> Iterator[Commit]:
-        for commit in next_commit(self._repo, self._commit.parents[1], None, self):
+        for commit in next_commit(self._repo, self._commit.parents[1], None,
+                                  self):
             yield commit
 
 
@@ -173,19 +173,29 @@ def to_commit(repo: GitRepo, git_commit: GitCommit, parent: Commit = None):
 
 
 class Repo:
+    ''' A wrapper around `pygit2.Repository`. '''
+
     def __init__(self, path):
         self._repo = GitRepo(discover_repository(path))
 
-    def walker(self, start=None, end=None):
-        import sys
-        print(start, file=sys.stderr)
+    def walker(self, start=None, end=None, parent=None):
         if not start:
             start = self._repo.head.target
-        result = self._repo.walk(start)
-        result.simplify_first_parent()
+        elif isinstance(start, str):
+            start = self._repo.revparse_single(start).id
+
+        if isinstance(end, str):
+            end = self._repo.revparse_single(end).id
+
+        print(start)
+        print(end)
+        walker = self._repo.walk(start)
+        walker.simplify_first_parent()
         if end:
-            result.hide(end)
-        return result
+            walker.hide(end)
+        for git_commit in walker:
+            print(git_commit)
+            yield to_commit(self._repo, git_commit, parent)
 
     def merge_base(self, a, b):
         return self._repo.merge_base(a.id, b.id)

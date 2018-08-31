@@ -117,11 +117,12 @@ def fold_open(start: Commit, index: int):
 
 def cli():
     repo = Repo(os.getcwd())
-    for commit in next_commit(repo):
+    for commit in repo.walker():
         msg = format_commit(commit)
+        print(msg)
         HISTORY.append(commit)
         TEXTFIELD.text += msg + "\n"
-    APPLICATION.run()
+    # APPLICATION.run()
 
 
 if __name__ == '__main__':
