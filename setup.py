@@ -8,6 +8,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="pygit-viewer",
     version="0.0.1",
+    python_requires='>=3.6',
     author="Bahtiar `kalkin` Gadimov",
     author_email="bahtiar@gadimov.de",
     description="A git log viewer with folding support",
