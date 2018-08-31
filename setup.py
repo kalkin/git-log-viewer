@@ -23,6 +23,7 @@ setuptools.setup(
     install_requires=[
         'pygit2', 'prompt_toolkit >= 2.0, <=3.0', 'Babel >= 2.5.1, <=3.0'
     ],
+    tests_require=['lettuce >= 0.2.23, <= 0.3.0'],
     classifiers=[
         "Programming Language :: Python :: 3",
         # pylint: disable=line-too-long
