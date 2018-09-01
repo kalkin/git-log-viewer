@@ -10,7 +10,7 @@ from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.document import Document
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.containers import HSplit
+from prompt_toolkit.layout.containers import Container, HSplit
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.widgets import TextArea
 # pylint: disable=no-name-in-module
@@ -19,15 +19,15 @@ from pygit2 import Commit, Repository, discover_repository
 GIT_DIR = discover_repository(os.getcwd())
 REPO = Repository(GIT_DIR)
 ROOT = REPO.revparse_single("HEAD")
-HISTORY = []
-BRANCHES = {}
+HISTORY: list = []
+BRANCHES: dict = {}
 
 TEXTFIELD = TextArea(read_only=True, wrap_lines=False)
-COMMIT_MAP = {}
+COMMIT_MAP: dict = {}
 # Global key bindings.
 BINDINGS = KeyBindings()
 
-ROOT_CONTAINER = HSplit([
+ROOT_CONTAINER: Container = HSplit([
     TEXTFIELD,
 ])
 
