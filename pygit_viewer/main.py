@@ -4,7 +4,6 @@
 
 import os
 
-from pygit_viewer import Commit, Foldable, LastCommit, Repo, InitialCommit
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.document import Document
@@ -12,6 +11,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout.containers import Container, HSplit
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.widgets import TextArea
+from pygit_viewer import Commit, Foldable, InitialCommit, LastCommit, Repo
 
 HISTORY: list = []
 

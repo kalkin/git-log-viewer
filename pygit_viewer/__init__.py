@@ -196,5 +196,5 @@ def to_commit(repo: Repo, git_commit: GitCommit, parent: Commit = None):
         return Subtree(repo, git_commit, level=level, parent=parent)
     elif parents_len == 2:
         return Merge(repo, git_commit, level=level, parent=parent)
-    elif parents_len > 2:
-        return Octopus(repo, git_commit, level=level, parent=parent)
+
+    return Octopus(repo, git_commit, level=level, parent=parent)
