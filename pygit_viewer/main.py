@@ -5,8 +5,9 @@
 import os
 from datetime import datetime
 
+
+from line import Commit, Foldable, LastCommit, Repo, InitialCommit
 import babel.dates
-from line import Commit, CommitType, Repo, next_commit
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.document import Document
@@ -33,22 +34,16 @@ APPLICATION = Application(
 
 
 def commit_type(line: Commit) -> str:
-    ''' Helper method for displaying commit type.
-
-        Currently there are three types of commits:
-        - Initial commit (no parents)
-        - Normal commit (1 parent)
-        - Merge commit (> 1 parent)
-    '''
+    ''' Helper method for displaying commit type.  '''
     # TODO Add support for ocotopus branch display
-    _map = {
-        CommitType.INITIAL: "◎  ",
-        CommitType.SIMPLE: "●  ",
-        CommitType.TOP: "●  ",
-        CommitType.UNKNOWN: "●  ",
-        CommitType.MERGE: "●─╮"
-    }
-    return _map[line.commit_type()]
+    if isinstance(line, Foldable):
+        return "●─╮"
+    elif isinstance(line, InitialCommit):
+        return "◉  "
+    elif isinstance(line, LastCommit):
+        return "✂  "
+
+    return "●  "
 
 
 def relative_date(commit: Commit) -> str:
@@ -83,7 +78,7 @@ def toggle_fold(_):
     row = current_row(TEXTFIELD)
     line: Commit = current_line(row)
     point = TEXTFIELD.buffer.cursor_position
-    if line.commit_type() == CommitType.MERGE:
+    if isinstance(line, Foldable):
         if line.is_folded:
             fold_open(line, row)
         else:
@@ -92,7 +87,7 @@ def toggle_fold(_):
     TEXTFIELD.buffer.cursor_position = point
 
 
-def fold_close(line: Commit, index: int):
+def fold_close(line: Foldable, index: int):
     lines = TEXTFIELD.text.splitlines()
     line.fold()
     index += 1
@@ -102,15 +97,15 @@ def fold_close(line: Commit, index: int):
     TEXTFIELD.text = "\n".join(lines)
 
 
-def fold_open(start: Commit, index: int):
+def fold_open(start: Foldable, index: int):
     lines = TEXTFIELD.text.splitlines()
     start.unfold()
     for commit in start.child_log():
         level = commit.level * '  '
         HISTORY.insert(index, commit)
-        msg = level + format_commit(next_line)
+        msg = level + format_commit(commit)
         lines.insert(index + 1, msg)
-        HISTORY.insert(index + 1, next_line)
+        HISTORY.insert(index + 1, commit)
         index += 1
     TEXTFIELD.text = "\n".join(lines)
 
@@ -119,10 +114,9 @@ def cli():
     repo = Repo(os.getcwd())
     for commit in repo.walker():
         msg = format_commit(commit)
-        print(msg)
         HISTORY.append(commit)
         TEXTFIELD.text += msg + "\n"
-    # APPLICATION.run()
+    APPLICATION.run()
 
 
 if __name__ == '__main__':

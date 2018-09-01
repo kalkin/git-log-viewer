@@ -1,27 +1,11 @@
 # pylint: disable=missing-docstring,fixme
 from datetime import datetime
-from enum import Enum
-from typing import Iterator
+from typing import Iterator, Optional
 
 import babel.dates
-from pygit2 import Commit as GitCommit  # pylint: disable=no-name-in-module
+from pygit2 import Commit as GitCommit, Oid  # pylint: disable=no-name-in-module
 from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
 from pygit2 import discover_repository  # pylint: disable=no-name-in-module
-
-
-class CommitType(Enum):
-    ''' Encodes the commit type.
-
-        - UNKNOWN This is a commit which is the last one in a shallow repository
-        - INITIAL The first commit in a repository
-        - SIMPLE A commit with one parent
-        - MERGE A commit with or more parents
-    '''  # noqa: E501
-    TOP = -2
-    UNKNOWN = -1
-    INITIAL = 0
-    SIMPLE = 1
-    MERGE = 2
 
 
 class Commit:
@@ -31,25 +15,12 @@ class Commit:
         self._commit = commit
         self._level = level
         self._parent = parent
+        self._oid = commit.id
 
     def commiter_name(self) -> str:
         ''' Returns commiter name with mail as string. '''
         commit = self._commit
         return commit.committer.name + " <" + commit.committer.email + ">"
-
-    def commit_type(self) -> CommitType:
-        ''' Returns the commit type. '''
-        if not self._parent:
-            return CommitType.TOP
-        try:
-            if not self._commit.parents:
-                return CommitType.INITIAL
-            elif len(self._commit.parents) == 1:
-                return CommitType.SIMPLE
-                # TODO Add support for ocotopus branch display
-            return CommitType.MERGE
-        except Exception:  # pylint: disable=broad-except
-            return CommitType.UNKNOWN  # Happens in shallow repositories
 
     def commiter_date(self):
         ''' Returns relative commiter date '''
@@ -57,6 +28,10 @@ class Commit:
         timestamp: int = self._commit.committer.time
         delta = datetime.now() - datetime.fromtimestamp(timestamp)
         return babel.dates.format_timedelta(delta, format='short').strip('.')
+
+    @property
+    def oid(self) -> Oid:
+        return self._oid
 
     @property
     def level(self):
@@ -85,9 +60,62 @@ class Commit:
         return self._parent is not None
 
 
+class Repo:
+    ''' A wrapper around `pygit2.Repository`. '''
+
+    def __init__(self, path):
+        self._repo = GitRepo(discover_repository(path))
+
+    def get(self, sth) -> Commit:
+        try:
+            git_commit = self._repo[sth]
+        except ValueError:
+            git_commit = self._repo.revparse_single(sth)
+        return to_commit(self, git_commit)
+
+    def merge_base(self, oid1: GitCommit,
+                   oid2: GitCommit) -> Optional[GitCommit]:
+        oid: Oid = self._repo.merge_base(oid1.id, oid2.id)
+        if not oid:
+            return None
+        result = self._repo[oid]
+        return to_commit(self, result)
+
+    def walker(self, start=None, end=None, parent=None) -> Iterator[Commit]:
+        if not start:
+            start = self._repo.head.target
+        elif isinstance(start, str):
+            start = self._repo.revparse_single(start).id
+        elif isinstance(start, Commit):
+            start = start.oid
+        elif isinstance(start, GitCommit):
+            start = start.id
+
+        if isinstance(end, str):
+            end = self._repo.revparse_single(end).id
+        elif isinstance(end, Commit):
+            end = end.oid
+
+        walker = self._repo.walk(start)
+        walker.simplify_first_parent()
+        if end:
+            walker.hide(end)
+        first_git_commit = next(walker)
+        parent = to_commit(self, first_git_commit, parent)
+        yield parent
+        for git_commit in walker:
+            tmp = to_commit(self, git_commit, parent)
+            yield tmp
+            parent = tmp
+
+    def revparse_single(self, text: str):
+        git_commit = self._repo.revparse_single(text)
+        return to_commit(self, git_commit)
+
+
 class Foldable(Commit):
     def __init__(self,
-                 repo: GitRepo,
+                 repo: Repo,
                  commit: GitCommit,
                  parent=None,
                  level: int = 1) -> None:
@@ -101,9 +129,11 @@ class Foldable(Commit):
             yield to_commit(self._repo, commit, self)
 
     def child_log(self) -> Iterator[Commit]:
-        end = self._repo.merge_base(self._commit, self._commit.parents[1])
-        for git_commit in self._repo.walker(self._commit.parents[1].id, end):
-            yield to_commit(self._repo.repo, git_commit, self)
+        start = self._commit.parents[1]
+        end = self._repo.merge_base(self._commit.parents[0],
+                                    self._commit.parents[1])
+        for commit in self._repo.walker(start, end, self):
+            yield commit
 
     @property
     def is_folded(self):
@@ -117,13 +147,11 @@ class Foldable(Commit):
 
 
 class InitialCommit(Commit):
-    def __init__(self, commit: GitCommit, parent, level) -> None:
-        super().__init__(commit, level, parent)
+    pass
 
 
 class LastCommit(Commit):
-    def __init__(self, commit: GitCommit, parent, level) -> None:
-        super().__init__(commit, level, parent)
+    pass
 
 
 class Merge(Foldable):
@@ -136,8 +164,7 @@ class Octopus(Foldable):
 
 class Subtree(Foldable):
     def child_log(self) -> Iterator[Commit]:
-        for commit in next_commit(self._repo, self._commit.parents[1], None,
-                                  self):
+        for commit in self._repo.walker(self, None, self):
             yield commit
 
 
@@ -150,7 +177,7 @@ def _calculate_level(parent: Commit) -> int:
     return level
 
 
-def to_commit(repo: GitRepo, git_commit: GitCommit, parent: Commit = None):
+def to_commit(repo: Repo, git_commit: GitCommit, parent: Commit = None):
     level = 1
     if parent is not None:
         level = _calculate_level(parent)
@@ -170,41 +197,3 @@ def to_commit(repo: GitRepo, git_commit: GitCommit, parent: Commit = None):
         return Merge(repo, git_commit, level=level, parent=parent)
     elif parents_len > 2:
         return Octopus(repo, git_commit, level=level, parent=parent)
-
-
-class Repo:
-    ''' A wrapper around `pygit2.Repository`. '''
-
-    def __init__(self, path):
-        self._repo = GitRepo(discover_repository(path))
-
-    def walker(self, start=None, end=None, parent=None):
-        if not start:
-            start = self._repo.head.target
-        elif isinstance(start, str):
-            start = self._repo.revparse_single(start).id
-
-        if isinstance(end, str):
-            end = self._repo.revparse_single(end).id
-
-        print(start)
-        print(end)
-        walker = self._repo.walk(start)
-        walker.simplify_first_parent()
-        if end:
-            walker.hide(end)
-        for git_commit in walker:
-            print(git_commit)
-            yield to_commit(self._repo, git_commit, parent)
-
-    def merge_base(self, a, b):
-        return self._repo.merge_base(a.id, b.id)
-
-
-def next_commit(repo, start=None, end=None,
-                parent: Commit = None) -> Iterator[Commit]:
-    walker = repo.walker(start, end)
-    for commit in walker:
-        result = to_commit(repo, commit, parent)
-        yield result
-        parent = result
