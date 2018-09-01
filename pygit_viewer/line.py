@@ -11,9 +11,9 @@ from pygit2 import discover_repository  # pylint: disable=no-name-in-module
 class Commit:
     ''' Wrapper object around a pygit2.Commit object. '''
 
-    def __init__(self, commit: GitCommit, parent=None, level: int = 1) -> None:
+    def __init__(self, commit: GitCommit, parent=None, level: int = 0) -> None:
         self._commit = commit
-        self._level = level
+        self.level = level
         self._parent = parent
         self._oid = commit.id
 
@@ -32,11 +32,6 @@ class Commit:
     @property
     def oid(self) -> Oid:
         return self._oid
-
-    @property
-    def level(self):
-        ''' Returns the commit’s level. '''
-        return self._level
 
     def subject(self) -> str:
         ''' Returns the first line of the commit message. '''
@@ -133,6 +128,7 @@ class Foldable(Commit):
         end = self._repo.merge_base(self._commit.parents[0],
                                     self._commit.parents[1])
         for commit in self._repo.walker(start, end, self):
+            commit.level = self.level + 1
             yield commit
 
     @property
@@ -178,9 +174,7 @@ def _calculate_level(parent: Commit) -> int:
 
 
 def to_commit(repo: Repo, git_commit: GitCommit, parent: Commit = None):
-    level = 1
-    if parent is not None:
-        level = _calculate_level(parent)
+    level = 0
     try:
         if not git_commit.parents:
             return InitialCommit(git_commit, parent, level)

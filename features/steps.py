@@ -9,6 +9,7 @@ from pygit_viewer.line import Repo, Foldable, Commit
 def init_repo(scenario):
     world.repo = Repo(os.getcwd())
     world.commits = {}
+    world.passed_commits = []
 
 
 @after.each_scenario
@@ -36,16 +37,17 @@ def walker_over_commits(_, first, last):
     world.walker = world.repo.walker(start, end)
 
 
-@step('When I walk over commits')
+@step('I walk over commits')
 def walk_over_commits(_):
     world.result = 0
-    for _ in world.walker:
+    for commit in world.walker:
         # print(commit)
+        world.passed_commits.append(commit)
         world.result += 1
     assert world.result > 0
 
 
-@step(r'Then I should have iterated over (\d+) commits?')
+@step(r'I should have iterated over (\d+) commits?')
 def assert_number_of_commits(_, expected):
     assert world.result == int(expected), 'Expected: ' + str(
         expected) + ' / Got: ' + str(world.result)
@@ -79,7 +81,25 @@ def merge_base(_, a, b):
 
 
 @step(r'Then the result commit should be (\w+)')
-def compare_commit(self, sth):
+def compare_commit(_, sth):
     expected = world.repo.get(sth).oid
     actual = world.result.oid
     assert expected == actual, 'Got {}' % actual
+
+
+@step(r'I unfold commit')
+def unfold_commit(_):
+    world.commit.unfold()
+    world.walker = world.commit.child_log()
+
+
+@step(r'all commit levels should be (\d+)')
+def check_level(_, level):
+    for commit in world.passed_commits:
+        assert commit.level == int(
+            level), 'Expected ' + level + ' / Got ' + str(commit.level)
+
+
+@step('commit is not folded')
+def not_folded(_):
+    assert world.commit.is_folded is False

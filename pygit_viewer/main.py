@@ -5,7 +5,6 @@
 import os
 from datetime import datetime
 
-
 from line import Commit, Foldable, LastCommit, Repo, InitialCommit
 import babel.dates
 from prompt_toolkit.application import Application
@@ -90,8 +89,11 @@ def toggle_fold(_):
 def fold_close(line: Foldable, index: int):
     lines = TEXTFIELD.text.splitlines()
     line.fold()
+    level = line.level
     index += 1
-    while line.child_log():
+    for commit in HISTORY[index:]:
+        if commit.level <= level:
+            break
         del lines[index]
         del HISTORY[index]
     TEXTFIELD.text = "\n".join(lines)
@@ -100,12 +102,12 @@ def fold_close(line: Foldable, index: int):
 def fold_open(start: Foldable, index: int):
     lines = TEXTFIELD.text.splitlines()
     start.unfold()
+    index += 1
     for commit in start.child_log():
         level = commit.level * '  '
         HISTORY.insert(index, commit)
         msg = level + format_commit(commit)
-        lines.insert(index + 1, msg)
-        HISTORY.insert(index + 1, commit)
+        lines.insert(index, msg)
         index += 1
     TEXTFIELD.text = "\n".join(lines)
 
