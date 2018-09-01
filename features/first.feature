@@ -12,4 +12,4 @@ Feature: Repository Walker
     Given starting commit HEAD~3
       And last commit HEAD~10
      When I walk over commits
-     Then I should have iterated over 10 commits
+     Then I should have iterated over 7 commits
