@@ -5,7 +5,7 @@
 import os
 from datetime import datetime
 
-from line import Commit, Foldable, LastCommit, Repo, InitialCommit
+from pygit_viewer import Commit, Foldable, LastCommit, Repo, InitialCommit
 import babel.dates
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app

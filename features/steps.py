@@ -2,7 +2,7 @@
 import os
 
 from lettuce import after, before, step, world
-from pygit_viewer.line import Repo, Foldable, Commit
+from pygit_viewer import Repo, Foldable, Commit
 
 
 @before.each_scenario
