@@ -3,10 +3,8 @@
 # pylint: disable=missing-docstring,fixme
 
 import os
-from datetime import datetime
 
 from pygit_viewer import Commit, Foldable, LastCommit, Repo, InitialCommit
-import babel.dates
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.document import Document
@@ -43,15 +41,6 @@ def commit_type(line: Commit) -> str:
         return "✂  "
 
     return "●  "
-
-
-def relative_date(commit: Commit) -> str:
-    ''' Translates a unique timestamp to a relative and short date string '''
-    # pylint: disable=invalid-name
-    timestamp: int = commit.committer.time
-    t = timestamp
-    delta = datetime.now() - datetime.fromtimestamp(t)
-    return babel.dates.format_timedelta(delta, format='short').strip('.')
 
 
 @BINDINGS.add('c-c')
