@@ -70,7 +70,10 @@ class Repo:
 
     def merge_base(self, oid1: GitCommit,
                    oid2: GitCommit) -> Optional[GitCommit]:
-        oid: Oid = self._repo.merge_base(oid1.id, oid2.id)
+        try:
+            oid: Oid = self._repo.merge_base(oid1.id, oid2.id)
+        except:
+            return None
         if not oid:
             return None
         result = self._repo[oid]
