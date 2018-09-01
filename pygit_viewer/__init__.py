@@ -94,14 +94,18 @@ class Repo:
         elif isinstance(end, Commit):
             end = end.oid
 
-        walker = self._repo.walk(start)
-        walker.simplify_first_parent()
-        if end:
-            walker.hide(end)
-        first_git_commit = next(walker)
-        parent = to_commit(self, first_git_commit, parent)
+        git_commit = self._repo[start]
+        parent = to_commit(self, git_commit, parent)
         yield parent
-        for git_commit in walker:
+        while True:
+            try:
+                if not git_commit.parents:
+                    break
+            except KeyError:
+                break
+            git_commit = git_commit.parents[0]
+            if git_commit.id == end:
+                break
             tmp = to_commit(self, git_commit, parent)
             yield tmp
             parent = tmp
