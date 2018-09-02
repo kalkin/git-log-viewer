@@ -93,7 +93,7 @@ def fold_open(start: Foldable, index: int):
     start.unfold()
     index += 1
     for commit in start.child_log():
-        level = commit.level * '  '
+        level = commit.level * '│ '
         HISTORY.insert(index, commit)
         msg = level + format_commit(commit)
         lines.insert(index, msg)
