@@ -51,6 +51,10 @@ class Commit:
         return " ".join([hash_id, rel_date, author, self.subject()])
 
     @property
+    def parent(self):
+        return self._parent
+
+    @property
     def is_top(self) -> bool:
         return self._parent is not None
 
