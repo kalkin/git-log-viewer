@@ -72,7 +72,7 @@ class Repo:
                    oid2: GitCommit) -> Optional[GitCommit]:
         try:
             oid: Oid = self._repo.merge_base(oid1.id, oid2.id)
-        except:
+        except Exception:  # pylint: disable=broad-except
             return None
         if not oid:
             return None
@@ -165,12 +165,6 @@ class Octopus(Foldable):
     pass
 
 
-class Subtree(Foldable):
-    def child_log(self) -> Iterator[Commit]:
-        for commit in self._repo.walker(self, None, self):
-            yield commit
-
-
 def _calculate_level(parent: Commit) -> int:
     level = 1
     if parent is not None:
@@ -191,9 +185,6 @@ def to_commit(repo: Repo, git_commit: GitCommit, parent: Commit = None):
     parents_len = len(git_commit.parents)
     if parents_len == 1:
         return Commit(git_commit, parent, level)
-    elif parents_len == 2 and not repo.merge_base(git_commit.parents[0],
-                                                  git_commit.parents[1]):
-        return Subtree(repo, git_commit, level=level, parent=parent)
     elif parents_len == 2:
         return Merge(repo, git_commit, level=level, parent=parent)
 
