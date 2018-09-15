@@ -4,6 +4,13 @@
 
 An alternative to tig which supports folding the merges.
 
+## 2018-09-15
+
+Because we use prompt_toolkit@v2.0 this breaks all other applications depending
+on prompt_toolkit who have not migrated yet to v2.0. My biggest issue is
+pgcli(1). As of current date pgcli(1) is still
+[migrating](https://github.com/dbcli/pgcli/pull/930)
+
 ## 2018-08-25
 
 The current version uses prompt_toolkit’s `TextArea` widget to just dump the
