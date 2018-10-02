@@ -35,7 +35,10 @@ class Commit:
 
     def subject(self) -> str:
         ''' Returns the first line of the commit message. '''
-        return self._commit.message.strip().splitlines()[0]
+        try:
+            return self._commit.message.strip().splitlines()[0]
+        except IndexError:
+            return ""
 
     def short_id(self, max_len: int = 8) -> str:
         ''' Returns a shortend commit id. '''
