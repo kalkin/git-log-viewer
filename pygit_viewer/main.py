@@ -6,16 +6,84 @@ import os
 
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
+from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.document import Document
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.containers import Container, HSplit
+from prompt_toolkit.layout.containers import Container, HSplit, Window
+from prompt_toolkit.layout.controls import BufferControl
 from prompt_toolkit.layout.layout import Layout
-from prompt_toolkit.widgets import TextArea
+from prompt_toolkit.layout.margins import ScrollbarMargin
 from pygit_viewer import Commit, Foldable, InitialCommit, LastCommit, Repo
 
 HISTORY: list = []
 
-TEXTFIELD = TextArea(read_only=True, wrap_lines=False)
+
+class LogPager(object):
+    """
+    A simple input field.
+
+    This contains a ``prompt_toolkit`` :class:`~prompt_toolkit.buffer.Buffer`
+    object that hold the text data structure for the edited buffer, the
+    :class:`~prompt_toolkit.layout.BufferControl`, which applies a
+    :class:`~prompt_toolkit.lexers.Lexer` to the text and turns it into a
+    :class:`~prompt_toolkit.layout.UIControl`, and finally, this
+    :class:`~prompt_toolkit.layout.UIControl` is wrapped in a
+    :class:`~prompt_toolkit.layout.Window` object (just like any
+    :class:`~prompt_toolkit.layout.UIControl`), which is responsible for the
+    scrolling.
+
+    This widget does have some options, but it does not intend to cover every
+    single use case. For more configurations options, you can always build a
+    text area manually, using a :class:`~prompt_toolkit.buffer.Buffer`,
+    :class:`~prompt_toolkit.layout.BufferControl` and
+    :class:`~prompt_toolkit.layout.Window`.
+
+    :param text: The initial text.
+    :param width: Window width. (:class:`~prompt_toolkit.layout.Dimension` object.)
+    :param height: Window height. (:class:`~prompt_toolkit.layout.Dimension` object.)
+    :param style: A style string.
+    """
+
+    def __init__(self, text='', style=''):
+        assert isinstance(text, str)
+
+        self.buffer = Buffer(document=Document(text, 0), read_only=True)
+
+        self.control = BufferControl(
+            buffer=self.buffer, lexer=None, focusable=True)
+
+        right_margins = [ScrollbarMargin(display_arrows=True)]
+        style = 'class:text-area ' + style
+
+        self.window = Window(
+            dont_extend_height=False,
+            dont_extend_width=False,
+            content=self.control,
+            style=style,
+            wrap_lines=False,
+            right_margins=right_margins)
+
+    @property
+    def text(self):
+        return self.buffer.text
+
+    @text.setter
+    def text(self, value):
+        self.buffer.set_document(Document(value, 0), bypass_readonly=True)
+
+    @property
+    def document(self):
+        return self.buffer.document
+
+    @document.setter
+    def document(self, value):
+        self.buffer.document = value
+
+    def __pt_container__(self):
+        return self.window
+
+
+TEXTFIELD = LogPager()
 # Global key bindings.
 BINDINGS = KeyBindings()
 
@@ -62,7 +130,7 @@ def format_commit(line: Commit) -> str:
     return " ".join([commit_type(line), str(line)])
 
 
-def current_row(textarea: TextArea) -> int:
+def current_row(textarea: LogPager) -> int:
     document: Document = textarea.document
     return document.cursor_position_row
 
