@@ -86,6 +86,13 @@ def toggle_fold(_):
     TEXTFIELD.buffer.cursor_position = point
 
 
+@BINDINGS.add('enter')
+def open_diff(_):
+    row = current_row(TEXTFIELD)
+    line: Commit = current_line(row)
+    os.system('xterm -hold -e "COLOR=1 vcs-show %s|$PAGER"&' % line.oid)
+
+
 def fold_close(line: Foldable, index: int):
     lines = TEXTFIELD.text.splitlines()
     line.fold()
