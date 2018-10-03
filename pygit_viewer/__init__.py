@@ -95,9 +95,9 @@ class Repo:
             return False
         base = self.merge_base(child.raw_commit,
                                child.parent.raw_commit.parents[parent_child])
-        if base:
-            return True
-        return False
+        if not base:
+            return False
+        return base.oid == child.oid
 
     def walker(self, start=None, end=None, parent=None) -> Iterator[Commit]:
         if not start:
