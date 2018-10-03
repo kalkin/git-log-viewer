@@ -71,7 +71,8 @@ def current_line(pos: int) -> Commit:
     return HISTORY[pos]
 
 
-@BINDINGS.add('enter')
+@BINDINGS.add('left')
+@BINDINGS.add('right')
 def toggle_fold(_):
     row = current_row(TEXTFIELD)
     line: Commit = current_line(row)
