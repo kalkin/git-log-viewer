@@ -90,6 +90,15 @@ class Repo:
         result = self._repo[oid]
         return to_commit(self, result)
 
+    def is_connected(self, child: Commit, parent_child=1) -> bool:
+        if not isinstance(child.parent, Foldable):
+            return False
+        base = self.merge_base(child.raw_commit,
+                               child.parent.raw_commit.parents[parent_child])
+        if base:
+            return True
+        return False
+
     def walker(self, start=None, end=None, parent=None) -> Iterator[Commit]:
         if not start:
             start = self._repo.head.target

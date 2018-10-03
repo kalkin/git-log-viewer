@@ -29,6 +29,8 @@ APPLICATION = Application(
     mouse_support=True,
     full_screen=True)
 
+REPO = Repo(os.getcwd())
+
 
 def commit_type(line: Commit) -> str:
     ''' Helper method for displaying commit type.  '''
@@ -45,7 +47,8 @@ def commit_type(line: Commit) -> str:
         return "✂  "
 
     if isinstance(line.parent, Foldable) \
-        and line.oid != line.parent.raw_commit.parents[1].id:
+        and line.oid != line.parent.raw_commit.parents[1].id \
+        and REPO.is_connected(line, 1):
         return "●─╯"
     return "●  "
 
@@ -109,8 +112,7 @@ def fold_open(start: Foldable, index: int):
 
 
 def cli():
-    repo = Repo(os.getcwd())
-    for commit in repo.walker():
+    for commit in REPO.walker():
         msg = format_commit(commit)
         HISTORY.append(commit)
         TEXTFIELD.text += msg + "\n"
