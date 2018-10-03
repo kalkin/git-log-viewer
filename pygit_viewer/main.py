@@ -148,8 +148,7 @@ def show_diff(commit: Commit):
     open_in_pager(command)
 
 
-@BINDINGS.add('left')
-@BINDINGS.add('right')
+@BINDINGS.add('tab')
 def toggle_fold(_):
     row = current_row(TEXTFIELD)
     line: Commit = current_line(row)
