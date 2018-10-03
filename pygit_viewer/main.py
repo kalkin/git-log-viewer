@@ -71,6 +71,15 @@ def current_line(pos: int) -> Commit:
     return HISTORY[pos]
 
 
+def open_in_pager(command: str):
+    os.system('xterm -e "%s|LESS="-R" $PAGER"' % command)
+
+
+def show_diff(commit: Commit):
+    command = "COLOR=1 vcs-show %s" % commit.oid
+    open_in_pager(command)
+
+
 @BINDINGS.add('left')
 @BINDINGS.add('right')
 def toggle_fold(_):
@@ -89,8 +98,8 @@ def toggle_fold(_):
 @BINDINGS.add('enter')
 def open_diff(_):
     row = current_row(TEXTFIELD)
-    line: Commit = current_line(row)
-    os.system('xterm -e "COLOR=1 vcs-show %s|LESS="-R" $PAGER"' % line.oid)
+    commit: Commit = current_line(row)
+    show_diff(commit)
 
 
 def fold_close(line: Foldable, index: int):
