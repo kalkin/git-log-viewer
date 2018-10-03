@@ -30,6 +30,10 @@ class Commit:
         return babel.dates.format_timedelta(delta, format='short').strip('.')
 
     @property
+    def raw_commit(self) -> GitCommit:
+        return self._commit
+
+    @property
     def oid(self) -> Oid:
         return self._oid
 
@@ -134,13 +138,13 @@ class Foldable(Commit):
 
     def children(self) -> Iterator[Commit]:
         ''' Get all the parent commits without the first parent. '''
-        for commit in self._commit.parents[1:]:
+        for commit in self.raw_commit.parents[1:]:
             yield to_commit(self._repo, commit, self)
 
     def child_log(self) -> Iterator[Commit]:
-        start = self._commit.parents[1]
-        end = self._repo.merge_base(self._commit.parents[0],
-                                    self._commit.parents[1])
+        start = self.raw_commit.parents[1]
+        end = self._repo.merge_base(self.raw_commit.parents[0],
+                                    self.raw_commit.parents[1])
         for commit in self._repo.walker(start, end, self):
             commit.level = self.level + 1
             yield commit

@@ -35,7 +35,7 @@ def commit_type(line: Commit) -> str:
     # TODO Add support for ocotopus branch display
     if isinstance(line, Foldable):
         if isinstance(line.parent, Foldable) \
-            and line.oid == line.parent._commit.parents[0].id:
+            and line.oid == line.parent.raw_commit.parents[0].id:
             return "●─┤"
 
         return "●─╮"
@@ -45,7 +45,7 @@ def commit_type(line: Commit) -> str:
         return "✂  "
 
     if isinstance(line.parent, Foldable) \
-        and line.oid != line.parent._commit.parents[1].id:
+        and line.oid != line.parent.raw_commit.parents[1].id:
         return "●─╯"
     return "●  "
 
