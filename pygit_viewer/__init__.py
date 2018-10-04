@@ -79,8 +79,7 @@ class Repo:
             git_commit = self._repo.revparse_single(sth)
         return to_commit(self, git_commit)
 
-    def merge_base(self, oid1: GitCommit,
-                   oid2: GitCommit) -> Optional[GitCommit]:
+    def merge_base(self, oid1: GitCommit, oid2: GitCommit) -> Optional[Commit]:
         try:
             oid: Oid = self._repo.merge_base(oid1.id, oid2.id)
         except Exception:  # pylint: disable=broad-except
