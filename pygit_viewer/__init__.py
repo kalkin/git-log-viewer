@@ -3,9 +3,10 @@ from datetime import datetime
 from typing import Iterator, Optional
 
 import babel.dates
-from pygit2 import Commit as GitCommit, Oid  # pylint: disable=no-name-in-module
-from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
+from pygit2 import Commit as GitCommit  # pylint: disable=no-name-in-module
+from pygit2 import Oid  # pylint: disable=no-name-in-module
 from pygit2 import discover_repository  # pylint: disable=no-name-in-module
+from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
 
 
 class Commit:
