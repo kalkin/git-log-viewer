@@ -202,10 +202,14 @@ def fold_open(start: Foldable, index: int):
 
 
 def cli():
+    i = 0
     for commit in REPO.walker():
+        i += 1
         msg = format_commit(commit)
         HISTORY.append(commit)
         TEXTFIELD.text += msg + "\n"
+        if i > 100:
+            break
     APPLICATION.run()
 
 
