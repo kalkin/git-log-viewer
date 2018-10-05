@@ -103,12 +103,10 @@ REPO = Repo(os.getcwd())
 def commit_type(line: Commit) -> str:
     ''' Helper method for displaying commit type.  '''
     # TODO Add support for ocotopus branch display
+    if line.noffff:
+        return "…… "
     if isinstance(line, Foldable):
-        if isinstance(line.parent, Foldable) \
-            and line.oid == line.parent.raw_commit.parents[0].id:
-            return "●─┤"
-
-        return "●─╮"
+        return foldable_type(line)
     elif isinstance(line, InitialCommit):
         return "◉  "
     elif isinstance(line, LastCommit):
@@ -119,6 +117,14 @@ def commit_type(line: Commit) -> str:
         and REPO.is_connected(line, 1):
         return "●─╯"
     return "●  "
+
+
+def foldable_type(line: Foldable) -> str:
+    if isinstance(line.parent, Foldable) \
+    and line.oid == line.parent.raw_commit.parents[0].id:
+        return "●─┤"
+
+    return "●─╮"
 
 
 @BINDINGS.add('c-c')
