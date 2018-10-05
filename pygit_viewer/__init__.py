@@ -3,9 +3,10 @@ from datetime import datetime
 from typing import Iterator, Optional
 
 import babel.dates
-from pygit2 import Commit as GitCommit, Oid  # pylint: disable=no-name-in-module
-from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
+from pygit2 import Commit as GitCommit  # pylint: disable=no-name-in-module
+from pygit2 import Oid  # pylint: disable=no-name-in-module
 from pygit2 import discover_repository  # pylint: disable=no-name-in-module
+from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
 
 
 class Commit:
@@ -16,6 +17,7 @@ class Commit:
         self.level = level
         self._parent = parent
         self._oid = commit.id
+        self.noffff = False
 
     def commiter_name(self) -> str:
         ''' Returns commiter name with mail as string. '''
@@ -79,8 +81,7 @@ class Repo:
             git_commit = self._repo.revparse_single(sth)
         return to_commit(self, git_commit)
 
-    def merge_base(self, oid1: GitCommit,
-                   oid2: GitCommit) -> Optional[GitCommit]:
+    def merge_base(self, oid1: GitCommit, oid2: GitCommit) -> Optional[Commit]:
         try:
             oid: Oid = self._repo.merge_base(oid1.id, oid2.id)
         except Exception:  # pylint: disable=broad-except
@@ -95,9 +96,9 @@ class Repo:
             return False
         base = self.merge_base(child.raw_commit,
                                child.parent.raw_commit.parents[parent_child])
-        if base:
-            return True
-        return False
+        if not base:
+            return False
+        return base.oid == child.oid
 
     def walker(self, start=None, end=None, parent=None) -> Iterator[Commit]:
         if not start:
@@ -154,9 +155,22 @@ class Foldable(Commit):
         start = self.raw_commit.parents[1]
         end = self._repo.merge_base(self.raw_commit.parents[0],
                                     self.raw_commit.parents[1])
+        not_first_merge = False
+
         for commit in self._repo.walker(start, end, self):
             commit.level = self.level + 1
             yield commit
+            if end and commit.raw_commit.parents:
+                if end.oid == commit.raw_commit.parents[0].id:
+                    if not_first_merge:
+                        end.level += 1
+                        end.noffff = True
+                        yield end
+                    break
+                elif end.oid in [_.id for _ in commit.raw_commit.parents]:
+                    end = self._repo.merge_base(self.raw_commit.parents[0],
+                                                commit.raw_commit.parents[0])
+                    not_first_merge = True
 
     @property
     def is_folded(self):
@@ -184,7 +198,7 @@ class Merge(Foldable):
             subject = self._commit.message.strip().splitlines()[0]
             if subject.startswith("Merge pull request #"):
                 words = subject.replace("Merge pull request #", "#").split()
-                words = [words[0]] + words[4:]
+                words = words[4:]
                 subject = ' '.join(words)
                 subject = 'MERGE: ' + subject
             return subject
