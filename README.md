@@ -4,6 +4,18 @@
 
 An alternative to tig which supports folding the merges.
 
+## 2018-10-05
+
+The interesting property of tig(1) is that it internally uses git. This means
+all it log outputs are customizable.
+
+### Issues
+
+- Depends on not adapted yet (2018) version of prompt_toolkit@v2
+- The git log iteration and recognition algorithm needs to be reworked
+- prompt_toolkit@v2 has no List widget. Currently we use a `TextArea`. It is a
+  hazzle to adopt it
+
 ## 2018-09-15
 
 Because we use prompt_toolkit@v2.0 this breaks all other applications depending
@@ -25,6 +37,6 @@ wrapper around libgit2 (pygit2), a good terminal library prompt_toolkit and is a
 dependency brought in by many operating systems.
 
 The first draft used urwid library and the extension library urwidtrees. Sadly
-git data structures fit very poorly for the default `TreeWidget`s.
+git data structures fit poorly for the default `TreeWidget`s.
 
 The second current (2018-08-25) version uses the new prompt_toolkit 2.0 library
