@@ -198,7 +198,7 @@ class Merge(Foldable):
             subject = self._commit.message.strip().splitlines()[0]
             if subject.startswith("Merge pull request #"):
                 words = subject.replace("Merge pull request #", "#").split()
-                words = [words[0]] + words[4:]
+                words = words[4:]
                 subject = ' '.join(words)
                 subject = 'MERGE: ' + subject
             return subject
