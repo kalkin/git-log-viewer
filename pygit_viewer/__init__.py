@@ -19,6 +19,18 @@ class Commit:
         self._oid = commit.id
         self.noffff = False
 
+    def author_name(self) -> str:
+        ''' Returns author name with mail as string. '''
+        commit = self._commit
+        return commit.author.name + " <" + commit.author.email + ">"
+
+    def author_date(self):
+        ''' Returns relative commiter date '''
+        # pylint: disable=invalid-name
+        timestamp: int = self._commit.author.time
+        delta = datetime.now() - datetime.fromtimestamp(timestamp)
+        return babel.dates.format_timedelta(delta, format='short').strip('.')
+
     def commiter_name(self) -> str:
         ''' Returns commiter name with mail as string. '''
         commit = self._commit
@@ -55,8 +67,8 @@ class Commit:
 
     def __str__(self):
         hash_id: str = self.short_id()
-        rel_date: str = self.commiter_date()
-        author = self.commiter_name().split()[0]
+        rel_date: str = self.author_date()
+        author = self.author_name().split()[0]
         return " ".join([hash_id, rel_date, author, self.subject()])
 
     @property
