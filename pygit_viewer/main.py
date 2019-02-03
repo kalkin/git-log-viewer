@@ -146,7 +146,8 @@ def current_line(pos: int) -> Commit:
 
 
 def open_in_pager(command: str):
-    os.system('xterm -e "%s|LESS="-R" $PAGER"' % command)
+    os.system('$(echo $TERM|cut -d"-" -f1) -e $SHELL -c "%s|LESS="-R" $PAGER"'
+              % command)
 
 
 def show_diff(commit: Commit):
