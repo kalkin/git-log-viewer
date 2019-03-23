@@ -44,6 +44,13 @@ class Commit:
         return babel.dates.format_timedelta(delta, format='short').strip('.')
 
     @property
+    def icon(self) -> str:
+        if self.noffff:
+            return "……"
+
+        return "●"
+
+    @property
     def raw_commit(self) -> GitCommit:
         return self._commit
 
@@ -185,6 +192,20 @@ class Foldable(Commit):
                     not_first_merge = True
 
     @property
+    def icon(self):
+        if self.noffff:
+            return "……"
+        if isinstance(self.parent, Foldable) \
+                and self.oid != self.parent.raw_commit.parents[1].id \
+                and self._repo.is_connected(self, 1):
+            return "●─╯"
+        if isinstance(self.parent, Foldable) \
+        and self.oid == self.parent.raw_commit.parents[0].id:
+            return "●─┤"
+
+        return "●─╮"
+
+    @property
     def is_folded(self):
         return self._folded
 
@@ -196,11 +217,21 @@ class Foldable(Commit):
 
 
 class InitialCommit(Commit):
-    pass
+    @property
+    def icon(self) -> str:
+        if self.noffff:
+            return "……"
+
+        return "◉"
 
 
 class LastCommit(Commit):
-    pass
+    @property
+    def icon(self) -> str:
+        if self.noffff:
+            return "……"
+
+        return "✂"
 
 
 class Merge(Foldable):
@@ -218,6 +249,7 @@ class Merge(Foldable):
 
 
 class Octopus(Foldable):
+    # TODO Add support for ocotopus branch display
     pass
 
 

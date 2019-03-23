@@ -13,12 +13,12 @@ from prompt_toolkit.layout.containers import Container, HSplit, Window
 from prompt_toolkit.layout.controls import BufferControl
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.layout.margins import ScrollbarMargin
-from pygit_viewer import Commit, Foldable, InitialCommit, LastCommit, Repo
+from pygit_viewer import Commit, Foldable, Repo
 
 HISTORY: list = []
 
 
-class LogPager(object):
+class LogPager:
     """
     A simple input field.
 
@@ -100,40 +100,13 @@ APPLICATION = Application(
 REPO = Repo(os.getcwd())
 
 
-def commit_type(line: Commit) -> str:
-    ''' Helper method for displaying commit type.  '''
-    # TODO Add support for ocotopus branch display
-    if line.noffff:
-        return "…… "
-    if isinstance(line, Foldable):
-        return foldable_type(line)
-    elif isinstance(line, InitialCommit):
-        return "◉  "
-    elif isinstance(line, LastCommit):
-        return "✂  "
-
-    if isinstance(line.parent, Foldable) \
-        and line.oid != line.parent.raw_commit.parents[1].id \
-        and REPO.is_connected(line, 1):
-        return "●─╯"
-    return "●  "
-
-
-def foldable_type(line: Foldable) -> str:
-    if isinstance(line.parent, Foldable) \
-    and line.oid == line.parent.raw_commit.parents[0].id:
-        return "●─┤"
-
-    return "●─╮"
-
-
 @BINDINGS.add('c-c')
 def _(_):
     get_app().exit(result=False)
 
 
 def format_commit(line: Commit) -> str:
-    return " ".join([commit_type(line), str(line)])
+    return " ".join([line.icon.ljust(4, " "), str(line)])
 
 
 def current_row(textarea: LogPager) -> int:
