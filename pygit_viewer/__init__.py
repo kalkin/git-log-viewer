@@ -114,7 +114,7 @@ class Repo:
 
     def walker(self, start=None, end=None, parent=None) -> Iterator[Commit]:
         if not start:
-            start = self._repo.head.target
+            start = self._repo.head.target  # pylint: disable=no-member
         elif isinstance(start, str):
             start = self._repo.revparse_single(start).id
         elif isinstance(start, Commit):
@@ -241,7 +241,8 @@ def to_commit(repo: Repo, git_commit: GitCommit, parent: Commit = None):
     parents_len = len(git_commit.parents)
     if parents_len == 1:
         return Commit(git_commit, parent, level)
-    elif parents_len == 2:
+
+    if parents_len == 2:
         return Merge(repo, git_commit, level=level, parent=parent)
 
     return Octopus(repo, git_commit, level=level, parent=parent)
