@@ -3,6 +3,7 @@
 # pylint: disable=missing-docstring,fixme
 
 import os
+from typing import Any, List
 
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
@@ -13,9 +14,10 @@ from prompt_toolkit.layout.containers import Container, HSplit, Window
 from prompt_toolkit.layout.controls import BufferControl
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.layout.margins import ScrollbarMargin
+
 from pygit_viewer import Commit, Foldable, Repo
 
-HISTORY: list = []
+HISTORY: List[Commit] = []
 
 
 class LogPager:
@@ -44,7 +46,7 @@ class LogPager:
     :param style: A style string.
     """
 
-    def __init__(self, text='', style=''):
+    def __init__(self, text: str = '', style: str = '') -> None:
         assert isinstance(text, str)
 
         self.buffer = Buffer(document=Document(text, 0), read_only=True)
@@ -64,22 +66,22 @@ class LogPager:
             right_margins=right_margins)
 
     @property
-    def text(self):
+    def text(self) -> str:
         return self.buffer.text
 
     @text.setter
-    def text(self, value):
+    def text(self, value: str) -> Any:
         self.buffer.set_document(Document(value, 0), bypass_readonly=True)
 
     @property
-    def document(self):
+    def document(self) -> Document:
         return self.buffer.document
 
     @document.setter
-    def document(self, value):
+    def document(self, value: Document) -> Any:
         self.buffer.document = value
 
-    def __pt_container__(self):
+    def __pt_container__(self) -> Window:
         return self.window
 
 
@@ -118,12 +120,12 @@ def current_line(pos: int) -> Commit:
     return HISTORY[pos]
 
 
-def open_in_pager(command: str):
+def open_in_pager(command: str) -> Any:
     os.system('$(echo $TERM|cut -d"-" -f1) -e $SHELL -c "%s|LESS="-R" $PAGER"'
               % command)
 
 
-def show_diff(commit: Commit):
+def show_diff(commit: Commit) -> Any:
     command = "COLOR=1 vcs-show %s" % commit.oid
     open_in_pager(command)
 
@@ -149,7 +151,7 @@ def open_diff(_):
     show_diff(commit)
 
 
-def fold_close(line: Foldable, index: int):
+def fold_close(line: Foldable, index: int) -> Any:
     lines = TEXTFIELD.text.splitlines()
     line.fold()
     level = line.level
@@ -162,7 +164,7 @@ def fold_close(line: Foldable, index: int):
     TEXTFIELD.text = "\n".join(lines)
 
 
-def fold_open(start: Foldable, index: int):
+def fold_open(start: Foldable, index: int) -> Any:
     lines = TEXTFIELD.text.splitlines()
     start.unfold()
     index += 1
@@ -175,7 +177,7 @@ def fold_open(start: Foldable, index: int):
     TEXTFIELD.text = "\n".join(lines)
 
 
-def cli():
+def cli() -> Any:
     i = 0
     for commit in REPO.walker():
         i += 1

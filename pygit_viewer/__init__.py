@@ -1,6 +1,6 @@
 # pylint: disable=missing-docstring,fixme
 from datetime import datetime
-from typing import Iterator, Optional
+from typing import Any, Iterator, Optional, Union
 
 import babel.dates
 from pygit2 import Commit as GitCommit  # pylint: disable=no-name-in-module
@@ -12,19 +12,22 @@ from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
 class Commit:
     ''' Wrapper object around a pygit2.Commit object. '''
 
-    def __init__(self, commit: GitCommit, parent=None, level: int = 0) -> None:
-        self._commit = commit
-        self.level = level
-        self._parent = parent
-        self._oid = commit.id
-        self.noffff = False
+    def __init__(self,
+                 commit: GitCommit,
+                 parent: Optional['Commit'] = None,
+                 level: int = 0) -> None:
+        self._commit: GitCommit = commit
+        self.level: int = level
+        self._parent: Optional['Commit'] = parent
+        self._oid: Oid = commit.id
+        self.noffff: bool = False
 
     def author_name(self) -> str:
         ''' Returns author name with mail as string. '''
         commit = self._commit
         return commit.author.name + " <" + commit.author.email + ">"
 
-    def author_date(self):
+    def author_date(self) -> str:
         ''' Returns relative commiter date '''
         # pylint: disable=invalid-name
         timestamp: int = self._commit.author.time
@@ -36,7 +39,7 @@ class Commit:
         commit = self._commit
         return commit.committer.name + " <" + commit.committer.email + ">"
 
-    def commiter_date(self):
+    def commiter_date(self) -> str:
         ''' Returns relative commiter date '''
         # pylint: disable=invalid-name
         timestamp: int = self._commit.committer.time
@@ -72,14 +75,14 @@ class Commit:
     def __repr__(self) -> str:
         return str(self._commit.id)
 
-    def __str__(self):
+    def __str__(self) -> str:
         hash_id: str = self.short_id()
         rel_date: str = self.author_date()
         author = self.author_name().split()[0]
         return " ".join([hash_id, rel_date, author, self.subject()])
 
     @property
-    def parent(self):
+    def parent(self) -> Optional['Commit']:
         return self._parent
 
     @property
@@ -90,13 +93,14 @@ class Commit:
 class Repo:
     ''' A wrapper around `pygit2.Repository`. '''
 
-    def __init__(self, path):
+    def __init__(self, path: str) -> None:
         self._repo = GitRepo(discover_repository(path))
 
-    def get(self, sth) -> Commit:
+    def get(self, sth: Union[str, Oid]) -> Commit:
         try:
             git_commit = self._repo[sth]
         except ValueError:
+            assert isinstance(sth, str)
             git_commit = self._repo.revparse_single(sth)
         return to_commit(self, git_commit)
 
@@ -110,7 +114,7 @@ class Repo:
         result = self._repo[oid]
         return to_commit(self, result)
 
-    def is_connected(self, child: Commit, parent_child=1) -> bool:
+    def is_connected(self, child: Commit, parent_child: int = 1) -> bool:
         if not isinstance(child.parent, Foldable):
             return False
         base = self.merge_base(child.raw_commit,
@@ -119,20 +123,18 @@ class Repo:
             return False
         return base.oid == child.oid
 
-    def walker(self, start=None, end=None, parent=None) -> Iterator[Commit]:
-        if not start:
+    def walker(self,
+               start_c: Optional[Commit] = None,
+               end_c: Optional[Commit] = None,
+               parent: Optional[Commit] = None) -> Iterator[Commit]:
+        if not start_c:
             start = self._repo.head.target  # pylint: disable=no-member
-        elif isinstance(start, str):
-            start = self._repo.revparse_single(start).id
-        elif isinstance(start, Commit):
-            start = start.oid
-        elif isinstance(start, GitCommit):
-            start = start.id
+        else:
+            start = start_c.oid
 
-        if isinstance(end, str):
-            end = self._repo.revparse_single(end).id
-        elif isinstance(end, Commit):
-            end = end.oid
+        end = None
+        if end_c:
+            end = end_c.oid or None
 
         git_commit = self._repo[start]
         parent = to_commit(self, git_commit, parent)
@@ -150,7 +152,7 @@ class Repo:
             yield tmp
             parent = tmp
 
-    def revparse_single(self, text: str):
+    def revparse_single(self, text: str) -> Commit:
         git_commit = self._repo.revparse_single(text)
         return to_commit(self, git_commit)
 
@@ -159,7 +161,7 @@ class Foldable(Commit):
     def __init__(self,
                  repo: Repo,
                  commit: GitCommit,
-                 parent=None,
+                 parent: Optional[Commit] = None,
                  level: int = 1) -> None:
         super().__init__(commit, parent, level)
         self._folded = True
@@ -171,9 +173,9 @@ class Foldable(Commit):
             yield to_commit(self._repo, commit, self)
 
     def child_log(self) -> Iterator[Commit]:
-        start = self.raw_commit.parents[1]
-        end = self._repo.merge_base(self.raw_commit.parents[0],
-                                    self.raw_commit.parents[1])
+        start: GitCommit = self.raw_commit.parents[1]
+        end: Optional[Commit] = self._repo.merge_base(
+            self.raw_commit.parents[0], self.raw_commit.parents[1])
         not_first_merge = False
 
         for commit in self._repo.walker(start, end, self):
@@ -192,7 +194,7 @@ class Foldable(Commit):
                     not_first_merge = True
 
     @property
-    def icon(self):
+    def icon(self) -> str:
         if self.noffff:
             return "……"
         if isinstance(self.parent, Foldable) \
@@ -206,13 +208,13 @@ class Foldable(Commit):
         return "●─╮"
 
     @property
-    def is_folded(self):
+    def is_folded(self) -> bool:
         return self._folded
 
-    def unfold(self):
+    def unfold(self) -> Any:
         self._folded = False
 
-    def fold(self):
+    def fold(self) -> Any:
         self._folded = True
 
 
@@ -262,7 +264,9 @@ def _calculate_level(parent: Commit) -> int:
     return level
 
 
-def to_commit(repo: Repo, git_commit: GitCommit, parent: Commit = None):
+def to_commit(repo: Repo,
+              git_commit: GitCommit,
+              parent: Optional[Commit] = None) -> Commit:
     level = 0
     try:
         if not git_commit.parents:
