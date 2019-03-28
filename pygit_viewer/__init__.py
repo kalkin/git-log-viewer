@@ -1,4 +1,6 @@
 # pylint: disable=missing-docstring,fixme
+import random
+import time
 from datetime import datetime
 from typing import Any, Iterator, Optional, Union
 
@@ -47,6 +49,13 @@ class Commit:
         return babel.dates.format_timedelta(delta, format='short').strip('.')
 
     @property
+    def next(self) -> 'Commit':
+        if self._commit.parents:
+            commit = self._commit.parents[0]
+            return Commit(commit, self, level=self.level)
+        raise IndexError
+
+    @property
     def icon(self) -> str:
         if self.noffff:
             return "……"
@@ -72,13 +81,16 @@ class Commit:
         ''' Returns a shortend commit id. '''
         return str(self._commit.id)[0:max_len - 1]
 
+    def short_author_name(self) -> str:
+        return self.author_name().split()[0]
+
     def __repr__(self) -> str:
         return str(self._commit.id)
 
     def __str__(self) -> str:
         hash_id: str = self.short_id()
         rel_date: str = self.author_date()
-        author = self.author_name().split()[0]
+        author = self.short_author_name()
         return " ".join([hash_id, rel_date, author, self.subject()])
 
     @property
@@ -122,6 +134,14 @@ class Repo:
         if not base:
             return False
         return base.oid == child.oid
+
+    def first_parent(self, commit: Commit) -> Commit:
+        raw_commit: GitCommit = commit.raw_commit
+        if not raw_commit.parents:
+            raise Exception('No child commits')
+
+        next_raw_commit: GitCommit = raw_commit.parents[0]
+        return to_commit(self, next_raw_commit, commit)
 
     def walker(self,
                start_c: Optional[Commit] = None,
@@ -197,10 +217,10 @@ class Foldable(Commit):
     def icon(self) -> str:
         if self.noffff:
             return "……"
-        if isinstance(self.parent, Foldable) \
-                and self.oid != self.parent.raw_commit.parents[1].id \
-                and self._repo.is_connected(self, 1):
-            return "●─╯"
+        # if isinstance(self.parent, Foldable) \
+        # and self.oid != self.parent.raw_commit.parents[1].id \
+        # and self._repo.is_connected(self, 1):
+        # return "●─╯"
         if isinstance(self.parent, Foldable) \
         and self.oid == self.parent.raw_commit.parents[0].id:
             return "●─┤"

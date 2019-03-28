@@ -1,123 +1,219 @@
 #!/usr/bin/env python3
-
 # pylint: disable=missing-docstring,fixme
-
 import os
+import sys
 from typing import Any, List
 
-from prompt_toolkit.application import Application
+from prompt_toolkit import Application
 from prompt_toolkit.application.current import get_app
-from prompt_toolkit.buffer import Buffer
-from prompt_toolkit.document import Document
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.containers import Container, HSplit, Window
-from prompt_toolkit.layout.controls import BufferControl
-from prompt_toolkit.layout.layout import Layout
+from prompt_toolkit.key_binding.key_processor import KeyPressEvent
+from prompt_toolkit.layout import Layout, UIContent, UIControl, Window
 from prompt_toolkit.layout.margins import ScrollbarMargin
+from prompt_toolkit.layout.screen import Point
+from prompt_toolkit.output.defaults import get_default_output
 
 from pygit_viewer import Commit, Foldable, Repo
 
-HISTORY: List[Commit] = []
+# get an instance of the logger object this module will use
+
+KB = KeyBindings()
+ROOT_CONTAINER: Window = Window(
+    right_margins=[ScrollbarMargin(display_arrows=True)])
 
 
-class LogPager:
-    """
-    A simple input field.
+class History(UIContent):
+    def __init__(self, repo: Repo) -> None:
+        self.date_max_len = 0
+        self.name_max_len = 0
+        self._repo = repo
+        self.line_count = len(list(self._repo.walker()))
+        self.commit_list: List[Commit] = []
+        super().__init__(
+            line_count=self.line_count,
+            get_line=self.get_line,
+            show_cursor=False)
 
-    This contains a ``prompt_toolkit`` :class:`~prompt_toolkit.buffer.Buffer`
-    object that hold the text data structure for the edited buffer, the
-    :class:`~prompt_toolkit.layout.BufferControl`, which applies a
-    :class:`~prompt_toolkit.lexers.Lexer` to the text and turns it into a
-    :class:`~prompt_toolkit.layout.UIControl`, and finally, this
-    :class:`~prompt_toolkit.layout.UIControl` is wrapped in a
-    :class:`~prompt_toolkit.layout.Window` object (just like any
-    :class:`~prompt_toolkit.layout.UIControl`), which is responsible for the
-    scrolling.
+        self.fill_up(50)
 
-    This widget does have some options, but it does not intend to cover every
-    single use case. For more configurations options, you can always build a
-    text area manually, using a :class:`~prompt_toolkit.buffer.Buffer`,
-    :class:`~prompt_toolkit.layout.BufferControl` and
-    :class:`~prompt_toolkit.layout.Window`.
+    def get_line(self, line_number: int):  # pylint: disable=method-hidden
+        length = len(self.commit_list)
+        if length - 1 < line_number:
+            amount = line_number - length + 1
+            self.fill_up(amount)
 
-    :param text: The initial text.
-    :param width: Window width. (:class:`~prompt_toolkit.layout.Dimension` object.)
-    :param height: Window height. (:class:`~prompt_toolkit.layout.Dimension` object.)
-    :param style: A style string.
-    """
+        commit = self.commit_list[line_number]
+        name = commit.short_author_name().ljust(self.name_max_len, " ") + " "
+        date = commit.author_date().ljust(self.date_max_len, " ") + " "
+        level = commit.level * '│ '
+        _type = level + commit.icon.ljust(4, " ")
 
-    def __init__(self, text: str = '', style: str = '') -> None:
-        assert isinstance(text, str)
+        if line_number == self.cursor_position.y:
+            return [("ansimagenta reverse", commit.short_id() + " "),
+                    ("ansiblue reverse", date), ("reverse ansigreen", name),
+                    ("reverse bold", _type), ("reverse", commit.subject())]
 
-        self.buffer = Buffer(document=Document(text, 0), read_only=True)
+        return [("ansimagenta", commit.short_id() + " "), ("ansiblue", date),
+                ("ansigreen", name), ("bold", _type), (" ", commit.subject())]
 
-        self.control = BufferControl(
-            buffer=self.buffer, lexer=None, focusable=True)
+    def toggle_fold(self, line_number):
+        commit = self.commit_list[line_number]
+        if not isinstance(commit, Foldable):
+            return
 
-        right_margins = [ScrollbarMargin(display_arrows=True)]
-        style = 'class:text-area ' + style
+        if commit.is_folded:
+            self._unfold(line_number, commit)
+        else:
+            self._fold(line_number + 1, commit)
 
-        self.window = Window(
-            dont_extend_height=False,
-            dont_extend_width=False,
-            content=self.control,
-            style=style,
-            wrap_lines=False,
-            right_margins=right_margins)
+    def show_diff(self) -> Any:
+        commit = self.commit_list[self.cursor_position.y]
+        command = "COLOR=1 vcs-show %s" % commit.oid
+        open_in_pager(command)
+
+    def _fold(self, line_number: int, commit: Foldable) -> Any:
+        assert not commit.is_folded
+        commit.fold()
+        for _ in commit.child_log():
+            commit = self.commit_list[line_number]
+            del self.commit_list[line_number]
+            if isinstance(commit, Foldable) and not commit.is_folded:
+                self._fold(line_number, commit)
+            self.line_count -= 1
+
+    def _unfold(self, line_number: int, commit: Foldable) -> Any:
+        assert commit.is_folded
+        commit.unfold()
+        index = 1
+        for _ in commit.child_log():
+            if len(_.author_date()) > self.date_max_len:
+                self.date_max_len = len(_.author_date())
+            if len(_.short_author_name()) > self.name_max_len:
+                self.name_max_len = len(_.short_author_name())
+            self.commit_list.insert(line_number + index, _)
+            index += 1
+
+        self.line_count += index
+
+    def fill_up(self, amount: int):
+        assert amount > 0
+        if not self.commit_list:
+            walker = self._repo.walker()
+            self.commit_list = [next(walker)]
+            amount -= 1
+
+            if len(self.commit_list[-1].author_date()) > self.date_max_len:
+                self.date_max_len = len(self.commit_list[-1].author_date())
+            if len(self.commit_list[-1].short_author_name()
+                   ) > self.name_max_len:
+                self.name_max_len = len(
+                    self.commit_list[-1].short_author_name())
+
+        for _ in range(0, amount):
+            cur = self.commit_list[-1]
+            commit = self._repo.first_parent(cur)
+            self.commit_list.append(commit)
+            if len(commit.author_date()) > self.date_max_len:
+                self.date_max_len = len(commit.author_date())
+            if len(commit.short_author_name()) > self.name_max_len:
+                self.name_max_len = len(commit.short_author_name())
+
+
+class LogView(UIControl):
+    def __init__(self, path: str = '.') -> None:
+        super().__init__()
+        self.content = History(Repo(path))
 
     @property
-    def text(self) -> str:
-        return self.buffer.text
+    def current_line(self) -> int:
+        return self.content.cursor_position.y
 
-    @text.setter
-    def text(self, value: str) -> Any:
-        self.buffer.set_document(Document(value, 0), bypass_readonly=True)
+    def create_content(self, width, height):
+        return self.content
+
+    def get_key_bindings(self):
+        """
+        The key bindings that are specific for this user control.
+
+        Return a :class:`.KeyBindings` object if some key bindings are
+        specified, or `None` otherwise.
+        """
+        return KB
+
+    def move_cursor_down(self):
+        old_point = self.content.cursor_position
+        if old_point.y + 1 < self.content.line_count:
+            new_position = Point(x=old_point.x, y=old_point.y + 1)
+            self.content.cursor_position = new_position
+        else:
+            last_commit = self.content.cursor_position[-1]
+            if not last_commit.parent:
+                return
+
+    def move_cursor_up(self):
+        old_point = self.content.cursor_position
+        if old_point.y > 0:
+            new_position = Point(x=old_point.x, y=old_point.y - 1)
+            self.content.cursor_position = new_position
+
+    def goto_line(self, line_number):
+        if line_number < 0:
+            line_number = 0
+        elif line_number >= self.content.line_count:
+            line_number = self.content.line_count - 1
+
+        if self.current_line != line_number:
+            old_point = self.content.cursor_position
+            new_position = Point(x=old_point.x, y=line_number)
+            self.content.cursor_position = new_position
+
+    def toggle_fold(self, line_number):
+        self.content.toggle_fold(line_number)
 
     @property
-    def document(self) -> Document:
-        return self.buffer.document
-
-    @document.setter
-    def document(self, value: Document) -> Any:
-        self.buffer.document = value
-
-    def __pt_container__(self) -> Window:
-        return self.window
+    def path(self) -> str:
+        return self.path
 
 
-TEXTFIELD = LogPager()
-# Global key bindings.
-BINDINGS = KeyBindings()
-
-ROOT_CONTAINER: Container = HSplit([
-    TEXTFIELD,
-])
-
-APPLICATION = Application(
-    layout=Layout(ROOT_CONTAINER, ),
-    key_bindings=BINDINGS,
-    mouse_support=True,
-    full_screen=True)
-
-REPO = Repo(os.getcwd())
+def screen_height() -> int:
+    return get_default_output().from_pty(sys.stdout).get_size().rows
 
 
-@BINDINGS.add('c-c')
-def _(_):
-    get_app().exit(result=False)
+LOG_VIEW = LogView()
 
 
-def format_commit(line: Commit) -> str:
-    return " ".join([line.icon.ljust(4, " "), str(line)])
+@KB.add('down')
+def down_key(_: KeyPressEvent):
+    LOG_VIEW.move_cursor_down()
 
 
-def current_row(textarea: LogPager) -> int:
-    document: Document = textarea.document
-    return document.cursor_position_row
+@KB.add('up')
+def up_key(_: KeyPressEvent):
+    LOG_VIEW.move_cursor_up()
 
 
-def current_line(pos: int) -> Commit:
-    return HISTORY[pos]
+@KB.add('pagedown')
+def pagedown_key(_: KeyPressEvent):
+    line_number = LOG_VIEW.current_line + screen_height() * 2 - 1
+    LOG_VIEW.goto_line(line_number)
+
+
+@KB.add('pageup')
+def pageup_key(_: KeyPressEvent):
+    line_number = LOG_VIEW.current_line - screen_height() * 2 + 1
+    LOG_VIEW.goto_line(line_number)
+
+
+@KB.add('tab')
+def tab(_: KeyPressEvent):
+    line_number = LOG_VIEW.current_line
+    LOG_VIEW.toggle_fold(line_number)
+    get_app().invalidate()
+
+
+@KB.add('enter')
+def enter(_: KeyPressEvent):
+    LOG_VIEW.content.show_diff()
 
 
 def open_in_pager(command: str) -> Any:
@@ -125,69 +221,13 @@ def open_in_pager(command: str) -> Any:
               % command)
 
 
-def show_diff(commit: Commit) -> Any:
-    command = "COLOR=1 vcs-show %s" % commit.oid
-    open_in_pager(command)
+@KB.add('c-c')
+def _(_):
+    get_app().exit(result=False)
 
 
-@BINDINGS.add('tab')
-def toggle_fold(_):
-    row = current_row(TEXTFIELD)
-    line: Commit = current_line(row)
-    point = TEXTFIELD.buffer.cursor_position
-    if isinstance(line, Foldable):
-        if line.is_folded:
-            fold_open(line, row)
-        else:
-            fold_close(line, row)
+ROOT_CONTAINER.content = LOG_VIEW
 
-    TEXTFIELD.buffer.cursor_position = point
+APP = Application(full_screen=True, layout=Layout(ROOT_CONTAINER))
 
-
-@BINDINGS.add('enter')
-def open_diff(_):
-    row = current_row(TEXTFIELD)
-    commit: Commit = current_line(row)
-    show_diff(commit)
-
-
-def fold_close(line: Foldable, index: int) -> Any:
-    lines = TEXTFIELD.text.splitlines()
-    line.fold()
-    level = line.level
-    index += 1
-    for commit in HISTORY[index:]:
-        if commit.level <= level:
-            break
-        del lines[index]
-        del HISTORY[index]
-    TEXTFIELD.text = "\n".join(lines)
-
-
-def fold_open(start: Foldable, index: int) -> Any:
-    lines = TEXTFIELD.text.splitlines()
-    start.unfold()
-    index += 1
-    for commit in start.child_log():
-        level = commit.level * '│ '
-        HISTORY.insert(index, commit)
-        msg = level + format_commit(commit)
-        lines.insert(index, msg)
-        index += 1
-    TEXTFIELD.text = "\n".join(lines)
-
-
-def cli() -> Any:
-    i = 0
-    for commit in REPO.walker():
-        i += 1
-        msg = format_commit(commit)
-        HISTORY.append(commit)
-        TEXTFIELD.text += msg + "\n"
-        if i > 100:
-            break
-    APPLICATION.run()
-
-
-if __name__ == '__main__':
-    cli()
+APP.run()
