@@ -60,7 +60,7 @@ class Commit:
         if self.noffff:
             return "……"
 
-        return "●"
+        return "○"
 
     @property
     def raw_commit(self) -> GitCommit:
@@ -221,8 +221,12 @@ class Foldable(Commit):
         # and self.oid != self.parent.raw_commit.parents[1].id \
         # and self._repo.is_connected(self, 1):
         # return "●─╯"
+
+        if self.subject().startswith('Update :'):
+            return '◎─╮'
+
         if isinstance(self.parent, Foldable) \
-        and self.oid == self.parent.raw_commit.parents[0].id:
+            and self.oid == self.parent.raw_commit.parents[0].id:
             return "●─┤"
 
         return "●─╮"
