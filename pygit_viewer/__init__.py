@@ -24,7 +24,7 @@ class Commit:
         self._parent: Optional['Commit'] = parent
         self._oid: Oid = commit.id
         self.noffff: bool = False
-        self._fork_point = None
+        self._fork_point: Optional[bool] = None
 
     def author_name(self) -> str:
         ''' Returns author name with mail as string. '''
@@ -33,11 +33,11 @@ class Commit:
 
     def is_fork_point(self) -> bool:
         if self._fork_point is None:
-            self._fork_point = self._parent \
+            self._fork_point = bool(self._parent \
                     and isinstance(self._parent, Merge) \
                     and self._parent.raw_commit.parents[0] == self._commit \
-                    and self._parent.is_rebased()
-        return self._fork_point
+                    and self._parent.is_rebased())
+        return bool(self._fork_point)
 
     def author_date(self) -> str:
         ''' Returns relative commiter date '''
@@ -207,9 +207,9 @@ class Foldable(Commit):
             yield to_commit(self._repo, commit, self)
 
     def child_log(self) -> Iterator[Commit]:
-        start: GitCommit = self.raw_commit.parents[1]
+        start: Commit = to_commit(self._repo, self.raw_commit.parents[1], self)
         end: Optional[Commit] = self._repo.merge_base(
-            self.raw_commit.parents[0], start)
+            self.raw_commit.parents[0], start.raw_commit)
 
         for commit in self._repo.walker(start, end, self):
             commit.level = self.level + 1
@@ -273,6 +273,7 @@ class CommitLink(Commit):
     @property
     def icon(self) -> str:
         return "└─"
+
 
 class Merge(Foldable):
     def subject(self) -> str:
