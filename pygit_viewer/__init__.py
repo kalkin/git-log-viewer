@@ -75,6 +75,14 @@ class Commit:
 
         return "○"
 
+    def render(self):
+        level = self.level * '│ '
+        _type = level + self.icon.ljust(4, " ")
+        return [("ansimagenta", self.short_id() + " "),
+                ("ansiblue", self.author_date()),
+                ("ansigreen", self.short_author_name()), ("bold", _type),
+                (" ", self.subject())]
+
     @property
     def raw_commit(self) -> GitCommit:
         return self._commit

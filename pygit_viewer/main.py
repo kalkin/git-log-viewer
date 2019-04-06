@@ -43,18 +43,16 @@ class History(UIContent):
             self.fill_up(amount)
 
         commit = self.commit_list[line_number]
-        name = commit.short_author_name().ljust(self.name_max_len, " ") + " "
-        date = commit.author_date().ljust(self.date_max_len, " ") + " "
-        level = commit.level * '│ '
-        _type = level + commit.icon.ljust(4, " ")
 
+        result = commit.render()
         if line_number == self.cursor_position.y:
-            return [("ansimagenta reverse", commit.short_id() + " "),
-                    ("ansiblue reverse", date), ("reverse ansigreen", name),
-                    ("reverse bold", _type), ("reverse", commit.subject())]
+            result = [('reverse ' + x[0], x[1]) for x in result]
 
-        return [("ansimagenta", commit.short_id() + " "), ("ansiblue", date),
-                ("ansigreen", name), ("bold", _type), (" ", commit.subject())]
+        result[1] = (result[1][0],
+                     result[1][1].ljust(self.date_max_len, " ") + " ")
+        result[2] = (result[2][0],
+                     result[2][1].ljust(self.name_max_len, " ") + " ")
+        return result
 
     def toggle_fold(self, line_number):
         commit = self.commit_list[line_number]
