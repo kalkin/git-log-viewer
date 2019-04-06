@@ -196,22 +196,10 @@ class Foldable(Commit):
         start: GitCommit = self.raw_commit.parents[1]
         end: Optional[Commit] = self._repo.merge_base(
             self.raw_commit.parents[0], self.raw_commit.parents[1])
-        not_first_merge = False
 
         for commit in self._repo.walker(start, end, self):
             commit.level = self.level + 1
             yield commit
-            if end and commit.raw_commit.parents:
-                if end.oid == commit.raw_commit.parents[0].id:
-                    if not_first_merge:
-                        end.level += 1
-                        end.noffff = True
-                        yield end
-                    break
-                elif end.oid in [_.id for _ in commit.raw_commit.parents]:
-                    end = self._repo.merge_base(self.raw_commit.parents[0],
-                                                commit.raw_commit.parents[0])
-                    not_first_merge = True
 
     @property
     def icon(self) -> str:
