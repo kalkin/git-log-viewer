@@ -262,6 +262,10 @@ class Merge(Foldable):
             return ""
 
 
+class RebasedMerge(Merge):
+    pass
+
+
 class Octopus(Foldable):
     # TODO Add support for ocotopus branch display
     pass
@@ -291,6 +295,13 @@ def to_commit(repo: Repo,
         return Commit(git_commit, parent, level)
 
     if parents_len == 2:
+        # TODO This is slow. We actually just have to check if any children is
+        # younger then the parent and then stop checking⁇?
+        merge_base = repo.merge_base(git_commit.parents[0],
+                                     git_commit.parents[1])
+        # pylint: disable=protected-access
+        if merge_base and merge_base._commit == git_commit.parents[0]:
+            return RebasedMerge(repo, git_commit, level=level, parent=parent)
         return Merge(repo, git_commit, level=level, parent=parent)
 
     return Octopus(repo, git_commit, level=level, parent=parent)

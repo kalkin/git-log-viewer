@@ -2,7 +2,8 @@
 import os
 
 from lettuce import after, before, step, world
-from pygit_viewer import Repo, Foldable, Commit
+
+from pygit_viewer import Commit, Foldable, RebasedMerge, Repo
 
 
 @before.each_scenario
@@ -87,6 +88,39 @@ def compare_commit(_, sth):
     assert expected == actual, 'Got {}' % actual
 
 
+@step(r'last child commit should be (\w+)')
+def last_commit_id(_, expected):
+    result = world.passed_commits[-1].short_id()
+    assert result == expected, "Expected: %s got %s" % (expected, result)
+
+
+@step(r'rebased-merge commit (\w+)')
+def rabesed_merge(_, sth):
+    world.commit = world.repo.get(sth)
+    assert isinstance(
+        world.commit, RebasedMerge
+    ), 'Expected a RebasedMerge got %s' % world.commit.__class__.__name__
+
+
+@step(r'last child class should be (\w+)')
+def last_child_class(_, expected):
+    assert world.passed_commits, "No passed commits"
+    result = world.passed_commits[-1].__class__.__name__
+    assert result == expected, "Expected: %s got %s" % (expected, result)
+
+
+@step(r'next class (?:should be|is a) (\w+)')
+def next_class(_, expected):
+    result = world.repo.first_parent(world.commit).__class__.__name__
+    assert result == expected, "Expected: %s got %s" % (expected, result)
+
+
+@step(r'next class should not be (\w+)')
+def next_not_class(_, expected):
+    result = world.repo.first_parent(world.commit).__class__.__name__
+    assert result != expected, "Expected: Not %s got %s" % (expected, result)
+
+
 @step(r'I unfold commit')
 def unfold_commit(_):
     world.commit.unfold()
@@ -103,3 +137,9 @@ def check_level(_, level):
 @step('commit is not folded')
 def not_folded(_):
     assert world.commit.is_folded is False
+
+
+@step(r'Then next is (\w+)')
+def next_is(_, expected):
+    result = world.repo.first_parent(world.commit).short_id()
+    assert result == expected, "Expected: %s got %s" % (expected, result)
