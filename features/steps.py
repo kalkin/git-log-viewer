@@ -3,7 +3,7 @@ import os
 
 from lettuce import after, before, step, world
 
-from pygit_viewer import Commit, Foldable, RebasedMerge, Repo
+from pygit_viewer import Commit, Foldable, Repo
 
 
 @before.each_scenario
@@ -27,8 +27,7 @@ def unset_world(scenario):
 def parse_path(text: str) -> str:
     if text == 'current working directory':
         return os.getcwd()
-    else:
-        assert False, 'Not implemented yet.'
+    assert False, 'Not implemented yet.'
 
 
 @step(r'(?:a )?walker over commits between (\w+) & (\w+)')
@@ -97,9 +96,7 @@ def last_commit_id(_, expected):
 @step(r'rebased-merge commit (\w+)')
 def rabesed_merge(_, sth):
     world.commit = world.repo.get(sth)
-    assert isinstance(
-        world.commit, RebasedMerge
-    ), 'Expected a RebasedMerge got %s' % world.commit.__class__.__name__
+    assert world.commit.is_rebased(), 'Expected a rebased Merge got %s' % world.commit.__class__.__name__
 
 
 @step(r'last child class should be (\w+)')
@@ -108,6 +105,11 @@ def last_child_class(_, expected):
     result = world.passed_commits[-1].__class__.__name__
     assert result == expected, "Expected: %s got %s" % (expected, result)
 
+
+@step(r'next commit (?:should be|is a) fork-point')
+def next_class(_):
+    result = world.repo.first_parent(world.commit)
+    assert result.is_fork_point()
 
 @step(r'next class (?:should be|is a) (\w+)')
 def next_class(_, expected):

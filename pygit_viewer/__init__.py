@@ -1,5 +1,6 @@
 # pylint: disable=missing-docstring,fixme
 import random
+import sys
 import time
 from datetime import datetime
 from typing import Any, Iterator, Optional, Union
@@ -23,11 +24,20 @@ class Commit:
         self._parent: Optional['Commit'] = parent
         self._oid: Oid = commit.id
         self.noffff: bool = False
+        self._fork_point = None
 
     def author_name(self) -> str:
         ''' Returns author name with mail as string. '''
         commit = self._commit
         return commit.author.name + " <" + commit.author.email + ">"
+
+    def is_fork_point(self) -> bool:
+        if self._fork_point is None:
+            self._fork_point = self._parent \
+                    and isinstance(self._parent, Merge) \
+                    and self._parent.raw_commit.parents[0] == self._commit \
+                    and self._parent.is_rebased()
+        return self._fork_point
 
     def author_date(self) -> str:
         ''' Returns relative commiter date '''
@@ -59,6 +69,9 @@ class Commit:
     def icon(self) -> str:
         if self.noffff:
             return "……"
+
+        if self.is_fork_point():
+            return "●─╯"
 
         return "○"
 
@@ -186,6 +199,7 @@ class Foldable(Commit):
         super().__init__(commit, parent, level)
         self._folded = True
         self._repo = repo
+        self._rebased = None
 
     def children(self) -> Iterator[Commit]:
         ''' Get all the parent commits without the first parent. '''
@@ -195,26 +209,36 @@ class Foldable(Commit):
     def child_log(self) -> Iterator[Commit]:
         start: GitCommit = self.raw_commit.parents[1]
         end: Optional[Commit] = self._repo.merge_base(
-            self.raw_commit.parents[0], self.raw_commit.parents[1])
+            self.raw_commit.parents[0], start)
 
         for commit in self._repo.walker(start, end, self):
             commit.level = self.level + 1
-            yield commit
+            if commit.raw_commit.parents and end \
+                and commit.raw_commit.parents[0] == end.raw_commit \
+                and self.raw_commit.parents[0] != end.raw_commit:
+                yield commit
+                yield CommitLink(end.raw_commit, commit, commit.level)
+            else:
+                yield commit
+
+    def is_rebased(self):
+        if self._rebased is None:
+            merge_base = self._repo.merge_base(self._commit.parents[0],
+                                               self._commit.parents[1])
+            self._rebased = merge_base and merge_base.raw_commit == self._commit.parents[
+                0]
+        return self._rebased
 
     @property
     def icon(self) -> str:
         if self.noffff:
             return "……"
-        # if isinstance(self.parent, Foldable) \
-        # and self.oid != self.parent.raw_commit.parents[1].id \
-        # and self._repo.is_connected(self, 1):
-        # return "●─╯"
 
         if self.subject().startswith('Update :'):
             return '◎─╮'
 
         if isinstance(self.parent, Foldable) \
-            and self.oid == self.parent.raw_commit.parents[0].id:
+            and self.parent.is_rebased():
             return "●─┤"
 
         return "●─╮"
@@ -230,6 +254,12 @@ class Foldable(Commit):
         self._folded = True
 
 
+class ForkPoint(Commit):
+    @property
+    def icon(self) -> str:
+        return "●─╯"
+
+
 class InitialCommit(Commit):
     @property
     def icon(self) -> str:
@@ -239,14 +269,10 @@ class InitialCommit(Commit):
         return "◉"
 
 
-class LastCommit(Commit):
+class CommitLink(Commit):
     @property
     def icon(self) -> str:
-        if self.noffff:
-            return "……"
-
-        return "✂"
-
+        return "└─"
 
 class Merge(Foldable):
     def subject(self) -> str:
@@ -262,8 +288,10 @@ class Merge(Foldable):
             return ""
 
 
-class RebasedMerge(Merge):
-    pass
+class Crossroads(Merge):
+    @property
+    def icon(self) -> str:
+        return "●─┤"
 
 
 class Octopus(Foldable):
@@ -280,6 +308,7 @@ def _calculate_level(parent: Commit) -> int:
     return level
 
 
+# pylint: disable=too-many-return-statements
 def to_commit(repo: Repo,
               git_commit: GitCommit,
               parent: Optional[Commit] = None) -> Commit:
@@ -288,20 +317,13 @@ def to_commit(repo: Repo,
         if not git_commit.parents:
             return InitialCommit(git_commit, parent, level)
     except Exception:  # pylint: disable=broad-except
-        return LastCommit(git_commit, parent, level)
+        return Commit(git_commit, parent, level)
 
     parents_len = len(git_commit.parents)
     if parents_len == 1:
         return Commit(git_commit, parent, level)
 
     if parents_len == 2:
-        # TODO This is slow. We actually just have to check if any children is
-        # younger then the parent and then stop checking⁇?
-        merge_base = repo.merge_base(git_commit.parents[0],
-                                     git_commit.parents[1])
-        # pylint: disable=protected-access
-        if merge_base and merge_base._commit == git_commit.parents[0]:
-            return RebasedMerge(repo, git_commit, level=level, parent=parent)
         return Merge(repo, git_commit, level=level, parent=parent)
 
     return Octopus(repo, git_commit, level=level, parent=parent)
