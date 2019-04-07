@@ -11,6 +11,8 @@ from pygit2 import Oid  # pylint: disable=no-name-in-module
 from pygit2 import discover_repository  # pylint: disable=no-name-in-module
 from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
 
+from pygit_viewer.providers import Atlassian
+
 
 class Commit:
     ''' Wrapper object around a pygit2.Commit object. '''
@@ -127,7 +129,13 @@ class Repo:
     ''' A wrapper around `pygit2.Repository`. '''
 
     def __init__(self, path: str) -> None:
+        self.provider = None
         self._repo = GitRepo(discover_repository(path))
+        if self._repo.remotes:
+            url = self._repo.remotes['origin'].url
+            cache_dir = self._repo.path + '/pygit-viewer/remotes/origin'
+            if Atlassian.enabled(url):
+                self.provider = Atlassian(url, cache_dir)
 
     def get(self, sth: Union[str, Oid]) -> Commit:
         try:
@@ -289,6 +297,9 @@ class Merge(Foldable):
         try:
             subject = self._commit.message.strip().splitlines()[0]
             if subject.startswith("Merge pull request #"):
+                if self._repo.provider and self._repo.provider.has_match(
+                        subject):
+                    return self._repo.provider.provide(subject)
                 words = subject.split()
                 subject = ' '.join(words[3:])
                 subject = 'MERGE: ' + subject
