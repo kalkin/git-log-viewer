@@ -43,7 +43,10 @@ class History(UIContent):
             amount = line_number - length + 1
             self.fill_up(amount)
 
-        commit = self.commit_list[line_number]
+        try:
+            commit = self.commit_list[line_number]
+        except:
+            return [("", "")]
 
         result = commit.render()
         if line_number == self.cursor_position.y:
