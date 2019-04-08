@@ -239,10 +239,9 @@ class Foldable(Commit):
 
     def is_rebased(self):
         if self._rebased is None:
-            merge_base = self._repo.merge_base(self._commit.parents[0],
-                                               self._commit.parents[1])
-            self._rebased = merge_base and merge_base.raw_commit == self._commit.parents[
-                0]
+            self._rebased = len(
+                self._commit.parents) >= 2 and self._repo._repo.descendant_of(
+                    self._commit.parents[1].id, self._commit.parents[0].id)
         return self._rebased
 
     @property
