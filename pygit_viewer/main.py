@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-docstring,fixme
 import os
+import subprocess
 import sys
 from typing import Any, List
 
@@ -215,8 +216,12 @@ def enter(_: KeyPressEvent):
 
 
 def open_in_pager(command: str) -> Any:
-    os.system('$(echo $TERM|cut -d"-" -f1) -e $SHELL -c "%s|LESS="-R" $PAGER"'
-              % command)
+    term = 'xterm'
+    if 'TERM' in os.environ['TERM']:
+        term = os.environ['TERM'].split('-')[0]
+    cmd = [term, '-e', 'sh', '-c', command]
+
+    subprocess.Popen(cmd, stdin=False, stdout=False, stderr=False)
 
 
 @KB.add('c-c')
