@@ -111,6 +111,9 @@ class History(UIContent):
         for _ in range(0, amount):
             cur = self.commit_list[-1]
             commit = self._repo.first_parent(cur)
+            if not commit:
+                break
+
             self.commit_list.append(commit)
             if len(commit.author_date()) > self.date_max_len:
                 self.date_max_len = len(commit.author_date())

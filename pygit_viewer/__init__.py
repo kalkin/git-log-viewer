@@ -164,10 +164,10 @@ class Repo:
             return False
         return base.oid == child.oid
 
-    def first_parent(self, commit: Commit) -> Commit:
+    def first_parent(self, commit: Commit) -> Optional[Commit]:
         raw_commit: GitCommit = commit.raw_commit
         if not raw_commit.parents:
-            raise Exception('No child commits')
+            return None
 
         next_raw_commit: GitCommit = raw_commit.parents[0]
         return to_commit(self, next_raw_commit, commit)
