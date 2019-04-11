@@ -19,8 +19,6 @@ from pygit_viewer import Commit, Foldable, Repo
 # get an instance of the logger object this module will use
 
 KB = KeyBindings()
-ROOT_CONTAINER: Window = Window(
-    right_margins=[ScrollbarMargin(display_arrows=True)])
 
 
 class History(UIContent):
@@ -106,8 +104,8 @@ class History(UIContent):
 
             if len(self.commit_list[-1].author_date()) > self.date_max_len:
                 self.date_max_len = len(self.commit_list[-1].author_date())
-            if len(self.commit_list[-1].short_author_name()
-                   ) > self.name_max_len:
+            if len(self.commit_list[-1].
+                   short_author_name()) > self.name_max_len:
                 self.name_max_len = len(
                     self.commit_list[-1].short_author_name())
 
@@ -235,8 +233,12 @@ def _(_):
     get_app().exit(result=False)
 
 
-ROOT_CONTAINER.content = LOG_VIEW
+def cli():
+    app = Application(
+        full_screen=True,
+        layout=Layout(
+            Window(
+                content=LOG_VIEW,
+                right_margins=[ScrollbarMargin(display_arrows=True)])))
 
-APP = Application(full_screen=True, layout=Layout(ROOT_CONTAINER))
-
-APP.run()
+    app.run()
