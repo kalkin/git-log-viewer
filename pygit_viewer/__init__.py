@@ -18,9 +18,11 @@ class Commit:
     ''' Wrapper object around a pygit2.Commit object. '''
 
     def __init__(self,
+                 repo,
                  commit: GitCommit,
                  parent: Optional['Commit'] = None,
                  level: int = 0) -> None:
+        self._repo = repo
         self._commit: GitCommit = commit
         self.level: int = level
         self._parent: Optional['Commit'] = parent
@@ -64,7 +66,7 @@ class Commit:
     def next(self) -> 'Commit':
         if self._commit.parents:
             commit = self._commit.parents[0]
-            return Commit(commit, self, level=self.level)
+            return Commit(self._repo, commit, self, level=self.level)
         raise IndexError
 
     @property
@@ -96,9 +98,18 @@ class Commit:
     def subject(self) -> str:
         ''' Returns the first line of the commit message. '''
         try:
-            return self._commit.message.strip().splitlines()[0]
+            subject = self._commit.message.strip().splitlines()[0]
+            if subject.startswith("Merge pull request #"):
+                if self._repo.provider and self._repo.provider.has_match(
+                        subject):
+                    return self._repo.provider.provide(subject)
+                words = subject.split()
+                subject = ' '.join(words[3:])
+                subject = 'MERGE: ' + subject
+            return subject
         except IndexError:
             return ""
+
 
     def short_id(self, max_len: int = 8) -> str:
         ''' Returns a shortend commit id. '''
@@ -212,7 +223,7 @@ class Foldable(Commit):
                  commit: GitCommit,
                  parent: Optional[Commit] = None,
                  level: int = 1) -> None:
-        super().__init__(commit, parent, level)
+        super().__init__(repo, commit, parent, level)
         self._folded = True
         self._repo = repo
         self._rebased = None
@@ -233,7 +244,7 @@ class Foldable(Commit):
                 and commit.raw_commit.parents[0] == end.raw_commit \
                 and self.raw_commit.parents[0] != end.raw_commit:
                 yield commit
-                yield CommitLink(end.raw_commit, commit, commit.level)
+                yield CommitLink(self._repo, end.raw_commit, commit, commit.level)
             else:
                 yield commit
 
@@ -291,20 +302,7 @@ class CommitLink(Commit):
 
 
 class Merge(Foldable):
-    def subject(self) -> str:
-        ''' Returns the first line of the commit message. '''
-        try:
-            subject = self._commit.message.strip().splitlines()[0]
-            if subject.startswith("Merge pull request #"):
-                if self._repo.provider and self._repo.provider.has_match(
-                        subject):
-                    return self._repo.provider.provide(subject)
-                words = subject.split()
-                subject = ' '.join(words[3:])
-                subject = 'MERGE: ' + subject
-            return subject
-        except IndexError:
-            return ""
+    pass
 
 
 class Crossroads(Merge):
@@ -334,13 +332,13 @@ def to_commit(repo: Repo,
     level = 0
     try:
         if not git_commit.parents:
-            return InitialCommit(git_commit, parent, level)
+            return InitialCommit(repo, git_commit, parent, level)
     except Exception:  # pylint: disable=broad-except
-        return Commit(git_commit, parent, level)
+        return Commit(repo, git_commit, parent, level)
 
     parents_len = len(git_commit.parents)
     if parents_len == 1:
-        return Commit(git_commit, parent, level)
+        return Commit(repo, git_commit, parent, level)
 
     if parents_len == 2:
         return Merge(repo, git_commit, level=level, parent=parent)
