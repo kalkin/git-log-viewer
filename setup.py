@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pygit-viewer",
-    version="0.3.0",
+    version="0.4.0",
     python_requires='>=3.6',
     author="Bahtiar `kalkin` Gadimov",
     author_email="bahtiar@gadimov.de",
@@ -21,7 +21,8 @@ setuptools.setup(
         pygit-viewer=pygit_viewer.main:cli
     ''',
     install_requires=[
-        'pygit2', 'prompt_toolkit >= 2.0, <3.0', 'Babel >= 2.5.1, <3.0'
+        'pygit2', 'prompt_toolkit >= 2.0, <3.0', 'Babel >= 2.5.1, <3.0',
+        'certifi', 'urllib3'
     ],
     tests_require=['lettuce >= 0.2.23, <= 0.3.0'],
     classifiers=[
