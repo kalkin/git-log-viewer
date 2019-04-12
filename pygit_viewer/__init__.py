@@ -51,18 +51,6 @@ class Commit:
         delta = datetime.now() - datetime.fromtimestamp(timestamp)
         return babel.dates.format_timedelta(delta, format='short').strip('.')
 
-    def commiter_name(self) -> str:
-        ''' Returns commiter name with mail as string. '''
-        commit = self._commit
-        return commit.committer.name + " <" + commit.committer.email + ">"
-
-    def commiter_date(self) -> str:
-        ''' Returns relative commiter date '''
-        # pylint: disable=invalid-name
-        timestamp: int = self._commit.committer.time
-        delta = datetime.now() - datetime.fromtimestamp(timestamp)
-        return babel.dates.format_timedelta(delta, format='short').strip('.')
-
     @property
     def next(self) -> 'Commit':
         if self._commit.parents:
