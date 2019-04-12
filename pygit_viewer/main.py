@@ -111,7 +111,7 @@ class History(UIContent):
 
         for _ in range(0, amount):
             cur = self.commit_list[-1]
-            commit = self._repo.first_parent(cur)
+            commit = cur.next
             if not commit:
                 break
 

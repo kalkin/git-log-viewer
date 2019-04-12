@@ -108,18 +108,18 @@ def last_child_class(_, expected):
 
 @step(r'next commit (?:should be|is a) fork-point')
 def next_class(_):
-    result = world.repo.first_parent(world.commit)
+    result = world.commit.next
     assert result.is_fork_point()
 
 @step(r'next class (?:should be|is a) (\w+)')
 def next_class(_, expected):
-    result = world.repo.first_parent(world.commit).__class__.__name__
+    result = world.commit.next.__class__.__name__
     assert result == expected, "Expected: %s got %s" % (expected, result)
 
 
 @step(r'next class should not be (\w+)')
 def next_not_class(_, expected):
-    result = world.repo.first_parent(world.commit).__class__.__name__
+    result = world.commit.next.__class__.__name__
     assert result != expected, "Expected: Not %s got %s" % (expected, result)
 
 
@@ -143,5 +143,5 @@ def not_folded(_):
 
 @step(r'Then next is (\w+)')
 def next_is(_, expected):
-    result = world.repo.first_parent(world.commit).short_id()
+    result = world.commit.next.short_id()
     assert result == expected, "Expected: %s got %s" % (expected, result)

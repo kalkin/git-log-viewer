@@ -52,11 +52,16 @@ class Commit:
         return babel.dates.format_timedelta(delta, format='short').strip('.')
 
     @property
-    def next(self) -> 'Commit':
-        if self._commit.parents:
-            commit = self._commit.parents[0]
-            return Commit(self._repo, commit, self, level=self.level)
-        raise IndexError
+    def next(self) -> Optional['Commit']:
+        raw_commit: GitCommit = self.raw_commit
+        try:
+            if not raw_commit.parents:
+                return None
+        except:  # pylint: disable=bare-except
+            return None
+
+        next_raw_commit: GitCommit = raw_commit.parents[0]
+        return to_commit(self._repo, next_raw_commit, self)
 
     @property
     def icon(self) -> str:
@@ -161,17 +166,6 @@ class Repo:
             return None
         result = self._repo[oid]
         return to_commit(self, result)
-
-    def first_parent(self, commit: Commit) -> Optional[Commit]:
-        raw_commit: GitCommit = commit.raw_commit
-        try:
-            if not raw_commit.parents:
-                return None
-        except:  # pylint: disable=bare-except
-            return None
-
-        next_raw_commit: GitCommit = raw_commit.parents[0]
-        return to_commit(self, next_raw_commit, commit)
 
     def walker(self,
                start_c: Optional[Commit] = None,
