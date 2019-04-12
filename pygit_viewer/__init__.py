@@ -101,8 +101,8 @@ class Commit:
         try:
             subject = self._commit.message.strip().splitlines()[0]
             if subject.startswith("Merge pull request #"):
-                if self._repo.provider and self._repo.provider.has_match(
-                        subject):
+                if self._repo.provider \
+                        and self._repo.provider.has_match(subject):
                     return self._repo.provider.provide(subject)
                 words = subject.split()
                 subject = ' '.join(words[3:])
@@ -138,8 +138,9 @@ class Commit:
 
 def providers():
     named_objects = {}
-    for ep in pkg_resources.iter_entry_points(group='pygit_viewer_plugins'):
-        named_objects.update({ep.name: ep.load()})
+    for entry_point in pkg_resources.iter_entry_points(
+            group='pygit_viewer_plugins'):
+        named_objects.update({entry_point.name: entry_point.load()})
     return named_objects
 
 
@@ -187,7 +188,7 @@ class Repo:
         try:
             if not raw_commit.parents:
                 return None
-        except:
+        except:  # pylint: disable=bare-except
             return None
 
         next_raw_commit: GitCommit = raw_commit.parents[0]
@@ -255,21 +256,22 @@ class Foldable(Commit):
                     and commit.raw_commit.parents[0] == end.raw_commit \
                     and self.raw_commit.parents[0] != end.raw_commit:
                     yield commit
-                    yield CommitLink(self._repo, end.raw_commit, commit, commit.level)
+                    yield CommitLink(self._repo, end.raw_commit, commit,
+                                     commit.level)
                 else:
                     yield commit
-            except:
+            except:  # pylint: disable=bare-except
                 break
 
     def is_rebased(self):
         try:
             if self._rebased is None:
-                self._rebased = len(self._commit.parents
-                                    ) >= 2 and self._repo._repo.descendant_of(
-                                        self._commit.parents[1].id,
-                                        self._commit.parents[0].id)
+                self._rebased = len(self._commit.parents) >= 2 and \
+                        self._repo._repo.descendant_of(  # pylint: disable=protected-access
+                            self._commit.parents[1].id,
+                            self._commit.parents[0].id)
             return self._rebased
-        except:
+        except:  # pylint: disable=bare-except
             return False
 
     @property
