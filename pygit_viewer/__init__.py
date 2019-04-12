@@ -184,7 +184,10 @@ class Repo:
 
     def first_parent(self, commit: Commit) -> Optional[Commit]:
         raw_commit: GitCommit = commit.raw_commit
-        if not raw_commit.parents:
+        try:
+            if not raw_commit.parents:
+                return None
+        except:
             return None
 
         next_raw_commit: GitCommit = raw_commit.parents[0]
@@ -247,20 +250,27 @@ class Foldable(Commit):
 
         for commit in self._repo.walker(start, end, self):
             commit.level = self.level + 1
-            if commit.raw_commit.parents and end \
-                and commit.raw_commit.parents[0] == end.raw_commit \
-                and self.raw_commit.parents[0] != end.raw_commit:
-                yield commit
-                yield CommitLink(self._repo, end.raw_commit, commit, commit.level)
-            else:
-                yield commit
+            try:
+                if commit.raw_commit.parents and end \
+                    and commit.raw_commit.parents[0] == end.raw_commit \
+                    and self.raw_commit.parents[0] != end.raw_commit:
+                    yield commit
+                    yield CommitLink(self._repo, end.raw_commit, commit, commit.level)
+                else:
+                    yield commit
+            except:
+                break
 
     def is_rebased(self):
-        if self._rebased is None:
-            self._rebased = len(
-                self._commit.parents) >= 2 and self._repo._repo.descendant_of(
-                    self._commit.parents[1].id, self._commit.parents[0].id)
-        return self._rebased
+        try:
+            if self._rebased is None:
+                self._rebased = len(self._commit.parents
+                                    ) >= 2 and self._repo._repo.descendant_of(
+                                        self._commit.parents[1].id,
+                                        self._commit.parents[0].id)
+            return self._rebased
+        except:
+            return False
 
     @property
     def icon(self) -> str:
