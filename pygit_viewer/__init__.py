@@ -223,10 +223,6 @@ class Repo:
             yield tmp
             parent = tmp
 
-    def revparse_single(self, text: str) -> Commit:
-        git_commit = self._repo.revparse_single(text)
-        return to_commit(self, git_commit)
-
 
 class Foldable(Commit):
     def __init__(self,
