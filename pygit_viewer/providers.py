@@ -62,9 +62,7 @@ class Atlassian:
     def enabled(repo) -> bool:
         try:
             if repo.remotes:
-                print(repo.remotes['origin'].url)
                 url = urllib3.util.parse_url(repo.remotes['origin'].url)
-                print("=> %s" % url.hostname)
                 return url.hostname.startswith('bitbucket')
         except Exception:  # pylint: disable=broad-except
             pass
