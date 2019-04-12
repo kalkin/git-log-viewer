@@ -174,15 +174,6 @@ class Repo:
         result = self._repo[oid]
         return to_commit(self, result)
 
-    def is_connected(self, child: Commit, parent_child: int = 1) -> bool:
-        if not isinstance(child.parent, Foldable):
-            return False
-        base = self.merge_base(child.raw_commit,
-                               child.parent.raw_commit.parents[parent_child])
-        if not base:
-            return False
-        return base.oid == child.oid
-
     def first_parent(self, commit: Commit) -> Optional[Commit]:
         raw_commit: GitCommit = commit.raw_commit
         try:
