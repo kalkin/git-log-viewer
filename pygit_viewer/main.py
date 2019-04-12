@@ -242,3 +242,7 @@ def cli():
                 right_margins=[ScrollbarMargin(display_arrows=True)])))
 
     app.run()
+
+
+if __name__ == '__main__':
+    cli()
