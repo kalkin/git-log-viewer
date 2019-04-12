@@ -29,8 +29,8 @@ class Cache:
 
 
 class Atlassian:
-    def __init__(self, url: str, cache_dir: str) -> None:
-        tmp = urllib3.util.parse_url(url)
+    def __init__(self, repo, cache_dir: str) -> None:
+        tmp = urllib3.util.parse_url(repo.remotes['origin'].url)
         pathlib.Path(cache_dir).mkdir(parents=True, exist_ok=True)
         self._cache = Cache(cache_dir + '/bitbucket.json')
 
@@ -59,12 +59,16 @@ class Atlassian:
                 port=443))
 
     @staticmethod
-    def enabled(identifier: str) -> bool:
+    def enabled(repo) -> bool:
         try:
-            url = urllib3.util.parse_url(identifier)
-            return url.hostname.startswith('bitbucket')
+            if repo.remotes:
+                print(repo.remotes['origin'].url)
+                url = urllib3.util.parse_url(repo.remotes['origin'].url)
+                print("=> %s" % url.hostname)
+                return url.hostname.startswith('bitbucket')
         except Exception:  # pylint: disable=broad-except
-            return False
+            pass
+        return False
 
     def has_match(self, subject: str) -> bool:
         return bool(self.pattern.search(subject))

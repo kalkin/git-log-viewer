@@ -16,7 +16,10 @@ setuptools.setup(
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    entry_points={'console_scripts': ['pygit-viewer=pygit_viewer.main:cli']},
+    entry_points={
+        'console_scripts': ['pygit-viewer=pygit_viewer.main:cli'],
+        'pygit_viewer_plugins': ['atlassian=pygit_viewer.providers:Atlassian'],
+    },
     install_requires=[
         'pygit2', 'prompt_toolkit >= 2.0, <3.0', 'Babel >= 2.5.1, <3.0',
         'certifi', 'urllib3'

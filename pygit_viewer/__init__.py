@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any, Iterator, Optional, Union
 
 import babel.dates
+import pkg_resources
 from pygit2 import Commit as GitCommit  # pylint: disable=no-name-in-module
 from pygit2 import Oid  # pylint: disable=no-name-in-module
 from pygit2 import discover_repository  # pylint: disable=no-name-in-module
@@ -110,7 +111,6 @@ class Commit:
         except IndexError:
             return ""
 
-
     def short_id(self, max_len: int = 8) -> str:
         ''' Returns a shortend commit id. '''
         return str(self._commit.id)[0:max_len - 1]
@@ -136,17 +136,24 @@ class Commit:
         return self._parent is not None
 
 
+def providers():
+    named_objects = {}
+    for ep in pkg_resources.iter_entry_points(group='pygit_viewer_plugins'):
+        named_objects.update({ep.name: ep.load()})
+    return named_objects
+
+
 class Repo:
     ''' A wrapper around `pygit2.Repository`. '''
 
     def __init__(self, path: str) -> None:
         self.provider = None
         self._repo = GitRepo(discover_repository(path))
-        if self._repo.remotes:
-            url = self._repo.remotes['origin'].url
-            cache_dir = self._repo.path + '/pygit-viewer/remotes/origin'
-            if Atlassian.enabled(url):
-                self.provider = Atlassian(url, cache_dir)
+        for provider in providers().values():
+            if provider.enabled(self._repo):
+                cache_dir = self._repo.path + '/pygit-viewer/remotes/origin'
+                self.provider = provider(self._repo, cache_dir)
+                break
 
     def get(self, sth: Union[str, Oid]) -> Commit:
         try:
