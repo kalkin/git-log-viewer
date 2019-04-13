@@ -280,7 +280,16 @@ class InitialCommit(Commit):
 class CommitLink(Commit):
     @property
     def icon(self) -> str:
-        return "└─"
+        return "↘"
+
+    def render(self):
+        level = self.level * '│ '
+        _type = level + self.icon.ljust(2, " ")
+        return [("ansimagenta italic", self.short_id() + " "),
+                ("ansiblue italic", self.author_date()),
+                ("ansigreen italic", self.short_author_name()), ("bold",
+                                                                 _type),
+                ("italic", self.subject())]
 
 
 class Merge(Foldable):
