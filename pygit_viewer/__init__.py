@@ -243,7 +243,7 @@ class Foldable(Commit):
             return "……"
 
         if self.subject().startswith('Update :'):
-            return '◎─╮'
+            return '●⇤╮'
 
         if isinstance(self.parent, Foldable) \
             and self.parent.is_rebased():
