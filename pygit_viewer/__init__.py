@@ -1,5 +1,4 @@
 # pylint: disable=missing-docstring,fixme
-import random
 import sys
 import time
 from datetime import datetime
@@ -207,11 +206,6 @@ class Foldable(Commit):
         self._folded = True
         self._repo = repo
         self._rebased = None
-
-    def children(self) -> Iterator[Commit]:
-        ''' Get all the parent commits without the first parent. '''
-        for commit in self.raw_commit.parents[1:]:
-            yield to_commit(self._repo, commit, self)
 
     def child_log(self) -> Iterator[Commit]:
         start: Commit = to_commit(self._repo, self.raw_commit.parents[1], self)
