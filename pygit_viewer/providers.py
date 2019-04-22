@@ -36,6 +36,8 @@ class Provider():
         self._repo = repo
         self._url = urllib3.util.parse_url(self._repo.remotes['origin'].url)
         self.auth_failed = False
+        self._http = urllib3.PoolManager(
+            cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
 
     @staticmethod
     def enabled(repo) -> bool:
@@ -64,8 +66,6 @@ class Atlassian(Provider):
         super().__init__(repo, Cache(file_path))
 
         self.pattern = re.compile(r'#([0-9]+)')
-        self._http = urllib3.PoolManager(
-            cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
         auth_tupple = self.authorization()
         if auth_tupple:
             basic_auth = '%s:%s' % auth_tupple
