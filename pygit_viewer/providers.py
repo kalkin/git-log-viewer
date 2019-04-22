@@ -60,6 +60,67 @@ class Provider():
         return None
 
 
+class GitHub(Provider):
+    def __init__(self, repo, cache_dir: str) -> None:
+        file_path = os.path.join(cache_dir, 'github.json')
+        super().__init__(repo, Cache(file_path))
+
+        self.pattern = re.compile(r'#([0-9]+)')
+        auth_tupple = self.authorization()
+        if auth_tupple:
+            basic_auth = '%s:%s' % auth_tupple
+            self._headers = urllib3.make_headers(
+                basic_auth=basic_auth, user_agent='pygit-viewer')
+
+        parts = self._url.path.split('/')
+        owner = parts[1]
+        name = parts[2]
+        self._api_url = 'https://api.github.com/repos/%s/%s/pulls/' % (owner,
+                                                                       name)
+
+    @staticmethod
+    def enabled(repo) -> bool:
+        try:
+            if repo.remotes:
+                url = urllib3.util.parse_url(repo.remotes['origin'].url)
+                return url.hostname == 'github.com'
+        except Exception:  # pylint: disable=broad-except
+            pass
+        return False
+
+    def has_match(self, subject: str) -> bool:
+        return bool(self.pattern.search(subject))
+
+    def provide(self, subject: str) -> str:
+        try:
+            return self._cache[subject]
+        except KeyError:
+            if self.auth_failed:
+                return subject
+
+            results = self.pattern.search(subject)
+            if results:
+                _id = results.group(1)
+                tmp = self._api_url + _id
+                request = self._http.request(
+                    'GET',
+                    tmp,
+                    headers=self._headers,
+                )
+                if request.status == 200:
+                    self._cache[subject] = json.loads(
+                        request.data.decode('utf-8'))['title']
+                elif request.status == 401:
+                    print('Failed to authenticate', file=sys.stderr)
+                    self.auth_failed = True
+                    return subject
+                else:
+                    print(request.data, file=sys.stderr)
+                    return subject
+
+        return self._cache[subject]
+
+
 class Atlassian(Provider):
     def __init__(self, repo, cache_dir: str) -> None:
         file_path = os.path.join(cache_dir, 'bitbucket.json')

@@ -18,7 +18,10 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     entry_points={
         'console_scripts': ['pygit-viewer=pygit_viewer.main:cli'],
-        'pygit_viewer_plugins': ['atlassian=pygit_viewer.providers:Atlassian'],
+        'pygit_viewer_plugins': [
+            'atlassian=pygit_viewer.providers:Atlassian',
+            'github=pygit_viewer.providers:GitHub',
+        ],
     },
     install_requires=[
         'pygit2', 'prompt_toolkit >= 2.0, <3.0', 'Babel >= 2.5.1, <3.0',
