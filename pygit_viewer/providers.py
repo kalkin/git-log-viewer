@@ -5,7 +5,7 @@ import os
 import pathlib
 import re
 import sys
-from typing import Any
+from typing import Any, Optional, Tuple
 
 import certifi
 import urllib3
@@ -34,6 +34,8 @@ class Provider():
     def __init__(self, repo, cache: Cache) -> None:
         self._cache = cache
         self._repo = repo
+        self._url = urllib3.util.parse_url(self._repo.remotes['origin'].url)
+        self.auth_failed = False
 
     @staticmethod
     def enabled(repo) -> bool:
@@ -45,32 +47,38 @@ class Provider():
     def provide(self, subject: str) -> str:
         raise NotImplementedError
 
+    def authorization(self) -> Optional[Tuple[str, str]]:
+        auth_store = netrc.netrc()
+        auth_tupple = auth_store.authenticators(self._url.host)
+        if auth_tupple:
+            if auth_tupple is not None:
+                return (auth_tupple[0], auth_tupple[2])  # type: ignore
+            return (auth_tupple[0], '')
+
+        return None
+
+
 class Atlassian(Provider):
     def __init__(self, repo, cache_dir: str) -> None:
         file_path = os.path.join(cache_dir, 'bitbucket.json')
         super().__init__(repo, Cache(file_path))
-        tmp = urllib3.util.parse_url(repo.remotes['origin'].url)
 
-        self.auth_failed = False
         self.pattern = re.compile(r'#([0-9]+)')
-        parts = tmp.path.split('/')
-        name = parts[1].upper()
         self._http = urllib3.PoolManager(
             cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
-        auth_store = netrc.netrc()
-        auth_tupple = auth_store.authenticators(tmp.host)
+        auth_tupple = self.authorization()
         if auth_tupple:
-            username = auth_tupple[0]
-            password = auth_tupple[2]
-            basic_auth = '%s:%s' % (username, password)
+            basic_auth = '%s:%s' % auth_tupple
             self._headers = urllib3.make_headers(basic_auth=basic_auth)
 
+        parts = self._url.path.split('/')
+        name = parts[1].upper()
         repo_name = parts[2]
         if repo_name.endswith('.git'):
             repo_name = repo_name[:-4]
 
-        self._url = str(
-            tmp._replace(
+        self._api_url = str(
+            self._url._replace(
                 path='/rest/api/1.0/projects/' + name + '/repos/' + repo_name,
                 scheme='https',
                 port=443))
@@ -98,7 +106,7 @@ class Atlassian(Provider):
             results = self.pattern.search(subject)
             if results:
                 _id = results.group(1)
-                tmp = self._url + '/pull-requests/' + _id
+                tmp = self._api_url + '/pull-requests/' + _id
                 request = self._http.request(
                     'GET',
                     tmp,
