@@ -109,7 +109,7 @@ class GitHub(Provider):
                 )
                 if request.status == 200:
                     self._cache[subject] = json.loads(
-                        request.data.decode('utf-8'))['title']
+                        request.data.decode('utf-8'))['title'] + ' (#%s)' % _id
                 elif request.status == 401:
                     print('Failed to authenticate', file=sys.stderr)
                     self.auth_failed = True
@@ -175,7 +175,7 @@ class Atlassian(Provider):
                 )
                 if request.status == 200:
                     self._cache[subject] = json.loads(
-                        request.data.decode('utf-8'))['title']
+                        request.data.decode('utf-8'))['title'] + ' (#%s)' % _id
                 elif request.status == 401:
                     print('Failed to authenticate', file=sys.stderr)
                     self.auth_failed = True
