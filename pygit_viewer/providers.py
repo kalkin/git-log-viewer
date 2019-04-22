@@ -13,6 +13,8 @@ import urllib3
 
 class Cache:
     def __init__(self, file_path: str) -> None:
+        cache_dir = os.path.dirname(file_path)
+        pathlib.Path(cache_dir).mkdir(parents=True, exist_ok=True)
         self._storage: dict = {}
         self._cache_file = file_path
         if os.path.isfile(file_path):
@@ -28,11 +30,26 @@ class Cache:
             json.dump(self._storage, outfile)
 
 
-class Atlassian:
+class Provider():
+    def __init__(self, repo, cache: Cache) -> None:
+        self._cache = cache
+        self._repo = repo
+
+    @staticmethod
+    def enabled(repo) -> bool:
+        raise NotImplementedError
+
+    def has_match(self, subject: str) -> bool:
+        raise NotImplementedError
+
+    def provide(self, subject: str) -> str:
+        raise NotImplementedError
+
+class Atlassian(Provider):
     def __init__(self, repo, cache_dir: str) -> None:
+        file_path = os.path.join(cache_dir, 'bitbucket.json')
+        super().__init__(repo, Cache(file_path))
         tmp = urllib3.util.parse_url(repo.remotes['origin'].url)
-        pathlib.Path(cache_dir).mkdir(parents=True, exist_ok=True)
-        self._cache = Cache(cache_dir + '/bitbucket.json')
 
         self.auth_failed = False
         self.pattern = re.compile(r'#([0-9]+)')
