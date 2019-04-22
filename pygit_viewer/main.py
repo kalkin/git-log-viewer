@@ -221,7 +221,10 @@ def enter(_: KeyPressEvent):
 
 def open_in_pager(command: str) -> Any:
     term = 'xterm'
-    if 'TERM' in os.environ['TERM']:
+    if 'TILIX_ID' in os.environ:
+        term = 'tilix'
+    elif 'TERM' in os.environ['TERM']:
+
         term = os.environ['TERM'].split('-')[0]
     cmd = [term, '-e', 'sh', '-c', command]
 
