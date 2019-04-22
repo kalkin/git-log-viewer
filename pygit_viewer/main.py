@@ -75,10 +75,10 @@ class History(UIContent):
         assert not commit.is_folded
         commit.fold()
         for _ in commit.child_log():
-            commit = self.commit_list[line_number]
+            cur_commit = self.commit_list[line_number]
             del self.commit_list[line_number]
-            if isinstance(commit, Foldable) and not commit.is_folded:
-                self._fold(line_number, commit)
+            if isinstance(cur_commit, Foldable) and not cur_commit.is_folded:
+                self._fold(line_number, cur_commit)
             self.line_count -= 1
 
     def _unfold(self, line_number: int, commit: Foldable) -> Any:
