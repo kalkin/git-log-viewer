@@ -13,6 +13,7 @@ Options:
 
 import logging
 import os
+import re
 import subprocess
 import sys
 from typing import Any, List
@@ -20,12 +21,17 @@ from typing import Any, List
 from docopt import docopt
 from prompt_toolkit import Application
 from prompt_toolkit.application.current import get_app
+from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
-from prompt_toolkit.layout import Layout, UIContent, UIControl, Window
+from prompt_toolkit.layout import (BufferControl, HSplit, Layout, UIContent,
+                                   Window)
+from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.layout.margins import ScrollbarMargin
 from prompt_toolkit.layout.screen import Point
 from prompt_toolkit.output.defaults import get_default_output
+from prompt_toolkit.search import SearchState
+from prompt_toolkit.widgets import SearchToolbar
 
 from pygit_viewer import Commit, Foldable, Repo
 
@@ -58,17 +64,15 @@ if DEBUG:
 
 KB = KeyBindings()
 
-def highlight_substring(search: SearchState, text: tuple) -> list[tuple]:
-    pass
 
-def highlight(t, needle):
-    haystack = t[1]
+def highlight(parts, needle):
+    haystack = parts[1]
     matches = list(re.finditer(re.escape(needle), haystack))
     if not matches:
-        return t
+        return parts
 
-    original_h = t[0]
-    new_h = 'bold ' + t[0]
+    original_h = parts[0]
+    new_h = parts[0] + ' ansired'
     cur = 0
     result = []
     if matches[0].start() == 0:
@@ -76,9 +80,6 @@ def highlight(t, needle):
         result = [(new_h, needle)]
         cur = len(needle)
         matches = matches[1:]
-
-        if not matches:
-            return result
 
     for match in matches:
         result += [(original_h, haystack[cur:match.start()])]
@@ -90,6 +91,10 @@ def highlight(t, needle):
     return result
 
 
+def highlight_substring(search: SearchState, text: tuple) -> list:
+    return highlight(text, search.text)
+
+
 class History(UIContent):
     def __init__(self, repo: Repo) -> None:
         self.date_max_len = 0
@@ -97,12 +102,21 @@ class History(UIContent):
         self._repo = repo
         self.line_count = len(list(self._repo.walker()))
         self.commit_list: List[Commit] = []
+        self.search_state = None
         super().__init__(
             line_count=self.line_count,
             get_line=self.get_line,
             show_cursor=False)
 
         self.fill_up(50)
+
+    def apply_search(self,
+                     search_state,
+                     include_current_position=True,
+                     count=1):
+        LOG.debug('appying search %r, %r, %r', search_state,
+                  include_current_position, count)
+        self.search_state = search_state
 
     def get_line(self, line_number: int):  # pylint: disable=method-hidden
         length = len(self.commit_list)
@@ -116,22 +130,38 @@ class History(UIContent):
             return [("", "")]
 
         result = commit.render()
-        if self.search_state and self.search_state.text in result[0][1]:
-            result[0] = (result[0][0] + ' bold', result[0][1])
+        _id = result[0]
+        author_date = (result[1][0],
+                       result[1][1].ljust(self.date_max_len, " ") + " ")
+        author_name = (result[2][0],
+                       result[2][1].ljust(self.name_max_len, " ") + " ")
+        icon = result[3]
+        subject = result[4]
+        branches = result[5:] or None
 
-        if self.search_state and self.search_state.text in result[2][1]:
-            result[2] = (result[2][0] + ' bold', result[2][1])
+        if self.search_state and self.search_state.text in _id[1]:
+            _id = highlight_substring(self.search_state, _id)
 
-        if self.search_state and self.search_state.text in result[4][1]:
-            result[4] = (result[4][0] + ' bold', result[4][1])
+        if self.search_state and self.search_state.text in author_name[1]:
+            author_name = highlight_substring(self.search_state, author_name)
+
+        if self.search_state and self.search_state.text in subject[1]:
+            subject = highlight_substring(self.search_state, subject)
+
+        tmp = [_id, author_date, author_name, icon, subject]
+        result = []
+        for sth in tmp:
+            if isinstance(sth, tuple):
+                result += [sth]
+            else:
+                result += sth
+
+        if branches:
+            result += branches
 
         if line_number == self.cursor_position.y:
             result = [('reverse ' + x[0], x[1]) for x in result]
 
-        result[1] = (result[1][0],
-                     result[1][1].ljust(self.date_max_len, " ") + " ")
-        result[2] = (result[2][0],
-                     result[2][1].ljust(self.name_max_len, " ") + " ")
         return result
 
     def toggle_fold(self, line_number):
@@ -182,8 +212,8 @@ class History(UIContent):
 
             if len(self.commit_list[-1].author_date()) > self.date_max_len:
                 self.date_max_len = len(self.commit_list[-1].author_date())
-            if len(self.commit_list[-1].short_author_name()
-                   ) > self.name_max_len:
+            if len(self.commit_list[-1].
+                   short_author_name()) > self.name_max_len:
                 self.name_max_len = len(
                     self.commit_list[-1].short_author_name())
 
@@ -200,9 +230,9 @@ class History(UIContent):
                 self.name_max_len = len(commit.short_author_name())
 
 
-class LogView(UIControl):
-    def __init__(self) -> None:
-        super().__init__()
+class LogView(BufferControl):
+    def __init__(self, search_buffer_control: SearchBufferControl) -> None:
+        buffer = Buffer()
         if ARGUMENTS['REVISION']:
             revision = ARGUMENTS['REVISION']
         else:
@@ -210,12 +240,18 @@ class LogView(UIControl):
         path = ARGUMENTS['--workdir'] or '.'
         path = os.path.abspath(os.path.expanduser(path))
         self.content = History(Repo(path, revision))
+        buffer.apply_search = self.content.apply_search
+        super().__init__(
+            buffer=buffer, search_buffer_control=search_buffer_control)
+
+    def is_focusable(self) -> bool:
+        return True
 
     @property
     def current_line(self) -> int:
         return self.content.cursor_position.y
 
-    def create_content(self, width, height):
+    def create_content(self, width, height, preview_search=False):
         return self.content
 
     def get_key_bindings(self):
@@ -266,7 +302,11 @@ def screen_height() -> int:
     return get_default_output().from_pty(sys.stdout).get_size().rows
 
 
-LOG_VIEW = LogView()
+SEARCH = SearchToolbar(vi_mode=True)
+LOG_VIEW = LogView(SEARCH.control)
+MAIN_VIEW = Window(
+    content=LOG_VIEW, right_margins=[ScrollbarMargin(display_arrows=True)])
+LAYOUT = Layout(HSplit([MAIN_VIEW, SEARCH]), focused_element=MAIN_VIEW)
 
 
 @KB.add('down')
@@ -303,6 +343,12 @@ def enter(_: KeyPressEvent):
     LOG_VIEW.content.show_diff()
 
 
+@KB.add('/')
+def search_forward(_: KeyPressEvent):
+    LAYOUT.search_links = {SEARCH.control: LOG_VIEW}
+    LAYOUT.focus(SEARCH.control)
+
+
 def open_in_pager(command: str) -> Any:
     term = 'xterm'
     if 'TILIX_ID' in os.environ:
@@ -321,13 +367,7 @@ def _(_):
 
 
 def cli():
-    app = Application(
-        full_screen=True,
-        layout=Layout(
-            Window(
-                content=LOG_VIEW,
-                right_margins=[ScrollbarMargin(display_arrows=True)])))
-
+    app = Application(full_screen=True, layout=LAYOUT)
     app.run()
 
 
