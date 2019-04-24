@@ -118,11 +118,13 @@ class ExampleTreeBrowser:
     def main(self):
         """Run the program."""
 
-        self.loop = urwid.MainLoop(
-            self.view, self.palette, unhandled_input=self.unhandled_input)
+        self.loop = urwid.MainLoop(  # pylint: disable=attribute-defined-outside-init
+            self.view,
+            self.palette,
+            unhandled_input=self.unhandled_input)
         self.loop.run()
 
-    def unhandled_input(self, k):
+    def unhandled_input(self, k):  # pylint: disable=no-self-use
         if k in ('q', 'Q'):
             raise urwid.ExitMainLoop()
 
@@ -134,10 +136,8 @@ def get_example_tree():
         retval['children'].append({"name": "child " + str(i)})
         retval['children'][i]['children'] = []
         for j in range(10):
-            retval['children'][i]['children'].append({
-                "name":
-                "grandchild " + str(i) + "." + str(j)
-            })
+            retval['children'][i]['children'].append(
+                {"name": "grandchild " + str(i) + "." + str(j)})
     return retval
 
 

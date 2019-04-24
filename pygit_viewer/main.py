@@ -22,7 +22,6 @@ from prompt_toolkit.layout import Layout, UIContent, UIControl, Window
 from prompt_toolkit.layout.margins import ScrollbarMargin
 from prompt_toolkit.layout.screen import Point
 from prompt_toolkit.output.defaults import get_default_output
-
 from pygit_viewer import Commit, Foldable, Repo
 
 # get an instance of the logger object this module will use
@@ -113,8 +112,8 @@ class History(UIContent):
 
             if len(self.commit_list[-1].author_date()) > self.date_max_len:
                 self.date_max_len = len(self.commit_list[-1].author_date())
-            if len(self.commit_list[-1].
-                   short_author_name()) > self.name_max_len:
+            if len(self.commit_list[-1].short_author_name()
+                   ) > self.name_max_len:
                 self.name_max_len = len(
                     self.commit_list[-1].short_author_name())
 
