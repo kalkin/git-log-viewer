@@ -104,8 +104,8 @@ class History(UIContent):
 
             if len(self.commit_list[-1].author_date()) > self.date_max_len:
                 self.date_max_len = len(self.commit_list[-1].author_date())
-            if len(self.commit_list[-1].short_author_name()
-                   ) > self.name_max_len:
+            if len(self.commit_list[-1].
+                   short_author_name()) > self.name_max_len:
                 self.name_max_len = len(
                     self.commit_list[-1].short_author_name())
 

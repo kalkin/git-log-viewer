@@ -281,8 +281,8 @@ class DirectoryBrowser:
     def main(self):
         """Run the program."""
 
-        self.loop = urwid.MainLoop(self.view, self.palette,
-                                   unhandled_input=self.unhandled_input)
+        self.loop = urwid.MainLoop(
+            self.view, self.palette, unhandled_input=self.unhandled_input)
         self.loop.run()
 
         # on exit, write the flagged filenames to the console

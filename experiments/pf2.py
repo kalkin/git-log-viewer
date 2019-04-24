@@ -17,7 +17,6 @@ EVENT_LOOP = create_eventloop()
 MANAGER = KeyBindingManager()
 REGISTRY = MANAGER.registry
 
-
 LAYOUT = VSplit([
     # One window that holds the BufferControl with the default buffer on the
     # left.
@@ -39,6 +38,7 @@ APPLICATION = Application(key_bindings_registry=REGISTRY, layout=LAYOUT)
 CLI = CommandLineInterface(application=APPLICATION, eventloop=EVENT_LOOP)
 CLI.run()
 
+
 @REGISTRY.add_binding(Keys.ControlQ, eager=True)
 def exit_(event):
     """
@@ -48,9 +48,6 @@ def exit_(event):
     interface and return this value from the `CommandLineInterface.run()` call.
     """
     event.cli.set_return_value(None)
-
-
-
 
 
 print('Exiting')

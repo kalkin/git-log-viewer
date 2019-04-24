@@ -32,7 +32,7 @@ def do_exit():
 
 yes_button = Button(text='Yes', handler=accept_yes)
 no_button = Button(text='No', handler=accept_no)
-textfield  = TextArea(lexer=PygmentsLexer(HtmlLexer))
+textfield = TextArea(lexer=PygmentsLexer(HtmlLexer))
 checkbox1 = Checkbox(text='Checkbox')
 checkbox2 = Checkbox(text='Checkbox')
 
@@ -47,29 +47,57 @@ radios = RadioList(values=[
 ])
 
 animal_completer = WordCompleter([
-    'alligator', 'ant', 'ape', 'bat', 'bear', 'beaver', 'bee', 'bison',
-    'butterfly', 'cat', 'chicken', 'crocodile', 'dinosaur', 'dog', 'dolphin',
-    'dove', 'duck', 'eagle', 'elephant', 'fish', 'goat', 'gorilla', 'kangaroo',
-    'leopard', 'lion', 'mouse', 'rabbit', 'rat', 'snake', 'spider', 'turkey',
-    'turtle', ], ignore_case=True)
+    'alligator',
+    'ant',
+    'ape',
+    'bat',
+    'bear',
+    'beaver',
+    'bee',
+    'bison',
+    'butterfly',
+    'cat',
+    'chicken',
+    'crocodile',
+    'dinosaur',
+    'dog',
+    'dolphin',
+    'dove',
+    'duck',
+    'eagle',
+    'elephant',
+    'fish',
+    'goat',
+    'gorilla',
+    'kangaroo',
+    'leopard',
+    'lion',
+    'mouse',
+    'rabbit',
+    'rat',
+    'snake',
+    'spider',
+    'turkey',
+    'turtle',
+],
+                                 ignore_case=True)
 
 root_container = HSplit([
     VSplit([
         Frame(body=Label(text='Left frame\ncontent')),
-        Dialog(title='The custom window',
-               body=Label('hello\ntest')),
+        Dialog(title='The custom window', body=Label('hello\ntest')),
         textfield,
-    ], height=D()),
+    ],
+           height=D()),
     VSplit([
-        Frame(body=ProgressBar(),
-              title='Progress bar'),
-        Frame(title='Checkbox list',
-              body=HSplit([
-                  checkbox1,
-                  checkbox2,
-              ])),
+        Frame(body=ProgressBar(), title='Progress bar'),
+        Frame(title='Checkbox list', body=HSplit([
+            checkbox1,
+            checkbox2,
+        ])),
         Frame(title='Radio list', body=radios),
-    ], padding=1),
+    ],
+           padding=1),
     Box(
         body=VSplit([
             yes_button,
@@ -80,79 +108,83 @@ root_container = HSplit([
     ),
 ])
 
-root_container = MenuContainer(body=root_container, menu_items=[
-    MenuItem('File', children=[
-        MenuItem('New'),
-        MenuItem('Open', children=[
-            MenuItem('From file...'),
-            MenuItem('From URL...'),
-            MenuItem('Something else..', children=[
-                MenuItem('A'),
-                MenuItem('B'),
-                MenuItem('C'),
-                MenuItem('D'),
-                MenuItem('E'),
+root_container = MenuContainer(
+    body=root_container,
+    menu_items=[
+        MenuItem(
+            'File',
+            children=[
+                MenuItem('New'),
+                MenuItem(
+                    'Open',
+                    children=[
+                        MenuItem('From file...'),
+                        MenuItem('From URL...'),
+                        MenuItem(
+                            'Something else..',
+                            children=[
+                                MenuItem('A'),
+                                MenuItem('B'),
+                                MenuItem('C'),
+                                MenuItem('D'),
+                                MenuItem('E'),
+                            ]),
+                    ]),
+                MenuItem('Save'),
+                MenuItem('Save as...'),
+                MenuItem('-', disabled=True),
+                MenuItem('Exit', handler=do_exit),
             ]),
+        MenuItem(
+            'Edit',
+            children=[
+                MenuItem('Undo'),
+                MenuItem('Cut'),
+                MenuItem('Copy'),
+                MenuItem('Paste'),
+                MenuItem('Delete'),
+                MenuItem('-', disabled=True),
+                MenuItem('Find'),
+                MenuItem('Find next'),
+                MenuItem('Replace'),
+                MenuItem('Go To'),
+                MenuItem('Select All'),
+                MenuItem('Time/Date'),
+            ]),
+        MenuItem('View', children=[
+            MenuItem('Status Bar'),
         ]),
-        MenuItem('Save'),
-        MenuItem('Save as...'),
-        MenuItem('-', disabled=True),
-        MenuItem('Exit', handler=do_exit),
+        MenuItem('Info', children=[
+            MenuItem('About'),
         ]),
-    MenuItem('Edit', children=[
-        MenuItem('Undo'),
-        MenuItem('Cut'),
-        MenuItem('Copy'),
-        MenuItem('Paste'),
-        MenuItem('Delete'),
-        MenuItem('-', disabled=True),
-        MenuItem('Find'),
-        MenuItem('Find next'),
-        MenuItem('Replace'),
-        MenuItem('Go To'),
-        MenuItem('Select All'),
-        MenuItem('Time/Date'),
-    ]),
-    MenuItem('View', children=[
-        MenuItem('Status Bar'),
-    ]),
-    MenuItem('Info', children=[
-        MenuItem('About'),
-    ]),
-], floats=[
-    Float(xcursor=True,
-          ycursor=True,
-          content=CompletionsMenu(
-              max_height=16,
-              scroll_offset=1)),
-])
+    ],
+    floats=[
+        Float(
+            xcursor=True,
+            ycursor=True,
+            content=CompletionsMenu(max_height=16, scroll_offset=1)),
+    ])
 
 # Global key bindings.
 bindings = KeyBindings()
 bindings.add('tab')(focus_next)
 bindings.add('s-tab')(focus_previous)
 
-
 style = Style.from_dict({
     'window.border': '#888888',
     'shadow': 'bg:#222222',
-
     'menu-bar': 'bg:#aaaaaa #888888',
     'menu-bar.selected-item': 'bg:#ffffff #000000',
     'menu': 'bg:#888888 #ffffff',
     'menu.border': '#aaaaaa',
     'window.border shadow': '#444444',
-
     'focused  button': 'bg:#880000 #ffffff noinherit',
 
     # Styling for Dialog widgets.
-
     'radiolist focused': 'noreverse',
     'radiolist focused radio.selected': 'reverse',
-
     'button-bar': 'bg:#aaaaff'
 })
-
 
 application = Application(
     layout=Layout(

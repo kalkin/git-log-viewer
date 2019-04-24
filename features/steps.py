@@ -96,7 +96,8 @@ def last_commit_id(_, expected):
 @step(r'rebased-merge commit (\w+)')
 def rabesed_merge(_, sth):
     world.commit = world.repo.get(sth)
-    assert world.commit.is_rebased(), 'Expected a rebased Merge got %s' % world.commit.__class__.__name__
+    assert world.commit.is_rebased(
+    ), 'Expected a rebased Merge got %s' % world.commit.__class__.__name__
 
 
 @step(r'last child class should be (\w+)')
@@ -110,6 +111,7 @@ def last_child_class(_, expected):
 def next_class(_):
     result = world.commit.next
     assert result.is_fork_point()
+
 
 @step(r'next class (?:should be|is a) (\w+)')
 def next_class(_, expected):

@@ -6,7 +6,6 @@ import urwid
 from urwidtrees.tree import SimpleTree
 from urwidtrees.widgets import TreeBox
 
-
 # define some colours
 palette = [
     ('body', 'black', 'light gray'),
@@ -21,6 +20,7 @@ palette = [
 
 class FocusableText(urwid.WidgetWrap):
     """Selectable Text used for nodes in our example"""
+
     def __init__(self, txt):
         t = urwid.Text(txt)
         w = urwid.AttrMap(t, 'body', 'focus')
@@ -31,6 +31,7 @@ class FocusableText(urwid.WidgetWrap):
 
     def keypress(self, size, key):
         return key
+
 
 # define a test tree in the format accepted by SimpleTree. Essentially, a
 # tree is given as (nodewidget, [list, of, subtrees]). SimpleTree accepts
@@ -64,15 +65,18 @@ def construct_example_simpletree_structure(selectable_nodes=True, children=3):
 
 def construct_example_tree(selectable_nodes=True, children=2):
     # define a list of tree structures to be passed on to SimpleTree
-    forrest = [construct_example_simpletree_structure(selectable_nodes,
-                                                      children)]
+    forrest = [
+        construct_example_simpletree_structure(selectable_nodes, children)
+    ]
 
     # stick out test tree into a SimpleTree and return
     return SimpleTree(forrest)
 
+
 def unhandled_input(k):
     #exit on q
     if k in ['q', 'Q']: raise urwid.ExitMainLoop()
+
 
 if __name__ == "__main__":
     # get example tree
@@ -86,4 +90,7 @@ if __name__ == "__main__":
     #add a text footer
     footer = urwid.AttrMap(urwid.Text('Q to quit'), 'focus')
     #enclose all in a frame
-    urwid.MainLoop(urwid.Frame(rootwidget, footer=footer), palette, unhandled_input = unhandled_input).run()  # go
+    urwid.MainLoop(
+        urwid.Frame(rootwidget, footer=footer),
+        palette,
+        unhandled_input=unhandled_input).run()  # go

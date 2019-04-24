@@ -41,6 +41,7 @@ def relative_date(t: int) -> str:
     delta = datetime.now() - datetime.fromtimestamp(t)
     return babel.dates.format_timedelta(delta, format='short').strip('.')
 
+
 def replace_name(email: str, name: str = None) -> str:
     """ Returns a string usable as author identification for display """
     return name + " <" + email + ">"
