@@ -125,7 +125,8 @@ class History(UIContent):
 class LogView(UIControl):
     def __init__(self, path: str = '.') -> None:
         super().__init__()
-        self.content = History(Repo(path))
+        revision = 'HEAD'
+        self.content = History(Repo(path, revision))
 
     @property
     def current_line(self) -> int:

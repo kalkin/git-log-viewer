@@ -139,9 +139,10 @@ def providers():
 class Repo:
     ''' A wrapper around `pygit2.Repository`. '''
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, revision: str) -> None:
         self.provider = None
         self._repo = GitRepo(discover_repository(path))
+        self.__start: GitCommit = self._repo.revparse_single(revision)
         for provider in providers().values():
             if provider.enabled(self._repo):
                 cache_dir = self._repo.path + '/pygit-viewer/remotes/origin'
@@ -171,7 +172,7 @@ class Repo:
                end_c: Optional[Commit] = None,
                parent: Optional[Commit] = None) -> Iterator[Commit]:
         if not start_c:
-            start = self._repo.head.target  # pylint: disable=no-member
+            start = self.__start.id
         else:
             start = start_c.oid
 
