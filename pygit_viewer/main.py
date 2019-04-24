@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-docstring,fixme
+"""pygit-viewer
+
+Usage:
+    pygit_viewer [REVISION]
+
+Arguments:
+    REVISION    A branch, tag or commit [default: HEAD]
+"""  # pylint: disable=missing-docstring,fixme
+
 import os
 import subprocess
 import sys
 from typing import Any, List
 
+from docopt import docopt
 from prompt_toolkit import Application
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.key_binding import KeyBindings
@@ -125,7 +134,11 @@ class History(UIContent):
 class LogView(UIControl):
     def __init__(self, path: str = '.') -> None:
         super().__init__()
-        revision = 'HEAD'
+        arguments = docopt(__doc__, version='v0.5.1')
+        if arguments['REVISION']:
+            revision = arguments['REVISION']
+        else:
+            revision = 'HEAD'
         self.content = History(Repo(path, revision))
 
     @property

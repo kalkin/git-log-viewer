@@ -26,7 +26,7 @@ setuptools.setup(
     },
     install_requires=[
         'pygit2', 'prompt_toolkit >= 2.0, <3.0', 'Babel >= 2.5.1, <3.0',
-        'certifi', 'urllib3'
+        'certifi', 'urllib3', 'docopt'
     ],
     tests_require=['lettuce >= 0.2.23, <= 0.3.0'],
     classifiers=[
