@@ -2,10 +2,11 @@
 """pygit-viewer
 
 Usage:
-    pygit_viewer [REVISION]
+    pygit_viewer [--workdir=DIR] [REVISION]
 
-Arguments:
-    REVISION    A branch, tag or commit [default: HEAD]
+Options:
+    REVISION        A branch, tag or commit [default: HEAD]
+    --workdir=DIR   Directory where the git repository is
 """  # pylint: disable=missing-docstring,fixme
 
 import os
@@ -131,13 +132,15 @@ class History(UIContent):
 
 
 class LogView(UIControl):
-    def __init__(self, path: str = '.') -> None:
+    def __init__(self) -> None:
         super().__init__()
         arguments = docopt(__doc__, version='v0.5.1')
         if arguments['REVISION']:
             revision = arguments['REVISION']
         else:
             revision = 'HEAD'
+        path = arguments['--workdir'] or '.'
+        path = os.path.abspath(os.path.expanduser(path))
         self.content = History(Repo(path, revision))
 
     @property
