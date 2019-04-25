@@ -1,4 +1,5 @@
 # pylint: disable=missing-docstring,fixme
+import itertools
 import sys
 import time
 from datetime import datetime
@@ -75,6 +76,13 @@ class Commit:
     def render(self):
         level = self.level * '│ '
         _type = level + self.icon.ljust(4, " ")
+        branches = self._repo.branches(self)
+        if branches:
+            return [("ansimagenta", self.short_id() + " "),
+                    ("ansiblue", self.author_date()),
+                    ("ansigreen", self.short_author_name()), ("bold", _type),
+                    (" ", self.subject())] + branches
+
         return [("ansimagenta", self.short_id() + " "),
                 ("ansiblue", self.author_date()),
                 ("ansigreen", self.short_author_name()), ("bold", _type),
@@ -142,6 +150,11 @@ class Repo:
     def __init__(self, path: str, revision: str) -> None:
         self.provider = None
         self._repo = GitRepo(discover_repository(path))
+        self._branches = {
+            r.shorthand: r.peel()
+            for r in self._repo.references.objects
+            if not r.shorthand.endswith('/HEAD')
+        }
         self.__start: GitCommit = self._repo.revparse_single(revision)
         for provider in providers().values():
             if provider.enabled(self._repo):
@@ -166,6 +179,12 @@ class Repo:
             return None
         result = self._repo[oid]
         return to_commit(self, result)
+
+    def branches(self, commit: Commit):
+        branch_tupples = [[('', ' '), ('ansiyellow', '«%s»' % name)]
+                          for name in self._branches
+                          if self._branches[name] == commit.raw_commit]
+        return list(itertools.chain(*branch_tupples))
 
     def walker(self,
                start_c: Optional[Commit] = None,
