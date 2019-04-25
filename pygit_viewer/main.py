@@ -2,13 +2,16 @@
 """pygit-viewer
 
 Usage:
-    pygit_viewer [--workdir=DIR] [REVISION]
+    pygit_viewer [--workdir=DIR] [REVISION] [-d | --debug]
+    pygit_viewer --version
 
 Options:
     REVISION        A branch, tag or commit [default: HEAD]
     --workdir=DIR   Directory where the git repository is
+    -d --debug         Enable sending debuggin output to journalctl
 """  # pylint: disable=missing-docstring,fixme
 
+import logging
 import os
 import subprocess
 import sys
@@ -23,7 +26,33 @@ from prompt_toolkit.layout import Layout, UIContent, UIControl, Window
 from prompt_toolkit.layout.margins import ScrollbarMargin
 from prompt_toolkit.layout.screen import Point
 from prompt_toolkit.output.defaults import get_default_output
+
 from pygit_viewer import Commit, Foldable, Repo
+
+ARGUMENTS = docopt(__doc__, version='v0.5.1')
+DEBUG = ARGUMENTS['--debug']
+
+LOG = logging.getLogger('pygit-viewer')
+
+if DEBUG:
+    LOG.setLevel(logging.DEBUG)
+    try:
+
+        def add_journal_handler():
+            from systemd.journal import JournalHandler
+            journald_handler = JournalHandler()
+            # set a formatter to include the level name
+            journald_handler.setFormatter(
+                logging.Formatter('[%(levelname)s] %(message)s'))
+
+            # add the journald handler to the current logger
+            LOG.addHandler(journald_handler)
+
+        add_journal_handler()
+
+        # optionally set the logging level
+    except:  # pylint: disable=bare-except
+        print("No systemd journal bindings", file=sys.stderr)
 
 # get an instance of the logger object this module will use
 
@@ -134,12 +163,11 @@ class History(UIContent):
 class LogView(UIControl):
     def __init__(self) -> None:
         super().__init__()
-        arguments = docopt(__doc__, version='v0.5.1')
-        if arguments['REVISION']:
-            revision = arguments['REVISION']
+        if ARGUMENTS['REVISION']:
+            revision = ARGUMENTS['REVISION']
         else:
             revision = 'HEAD'
-        path = arguments['--workdir'] or '.'
+        path = ARGUMENTS['--workdir'] or '.'
         path = os.path.abspath(os.path.expanduser(path))
         self.content = History(Repo(path, revision))
 
