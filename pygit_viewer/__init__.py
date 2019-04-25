@@ -68,7 +68,7 @@ class Commit:
             return "……"
 
         if self.is_fork_point():
-            return "●─╯"
+            return "●─┘"
 
         return "○"
 
@@ -250,7 +250,7 @@ class Foldable(Commit):
             and self.parent.is_rebased():
             return "●─┤"
 
-        return "●─╮"
+        return "●─┐"
 
     @property
     def is_folded(self) -> bool:
@@ -266,7 +266,7 @@ class Foldable(Commit):
 class ForkPoint(Commit):
     @property
     def icon(self) -> str:
-        return "●─╯"
+        return "●─┘"
 
 
 class InitialCommit(Commit):
