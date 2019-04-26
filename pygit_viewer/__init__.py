@@ -154,7 +154,7 @@ def providers():
 class Repo:
     ''' A wrapper around `pygit2.Repository`. '''
 
-    def __init__(self, path: str, revision: str) -> None:
+    def __init__(self, path: str, revision: str = 'HEAD') -> None:
         self.provider = None
         repo_path = discover_repository(path)
         if not repo_path:
