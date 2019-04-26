@@ -29,7 +29,7 @@ from prompt_toolkit.output.defaults import get_default_output
 
 from pygit_viewer import Commit, Foldable, Repo
 
-ARGUMENTS = docopt(__doc__, version='v0.5.1')
+ARGUMENTS = docopt(__doc__, version='v0.6.0')
 DEBUG = ARGUMENTS['--debug']
 
 LOG = logging.getLogger('pygit-viewer')
