@@ -94,7 +94,7 @@ def last_commit_id(_, expected):
 
 
 @step(r'rebased-merge commit (\w+)')
-def rabesed_merge(_, sth):
+def rebased_merge(_, sth):
     world.commit = world.repo.get(sth)
     assert world.commit.is_rebased(
     ), 'Expected a rebased Merge got %s' % world.commit.__class__.__name__
