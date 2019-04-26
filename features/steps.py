@@ -27,7 +27,7 @@ def unset_world(scenario):
 def parse_path(text: str) -> str:
     if text == 'current working directory':
         return os.getcwd()
-    assert False, 'Not implemented yet.'
+    raise NotImplementedError
 
 
 @step(r'(?:a )?walker over commits between (\w+) & (\w+)')
@@ -108,7 +108,7 @@ def last_child_class(_, expected):
 
 
 @step(r'next commit (?:should be|is a) fork-point')
-def next_class(_):
+def next_class_forkpoint(_):
     result = world.commit.next
     assert result.is_fork_point()
 
