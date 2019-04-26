@@ -149,7 +149,11 @@ class Repo:
 
     def __init__(self, path: str, revision: str) -> None:
         self.provider = None
-        self._repo = GitRepo(discover_repository(path))
+        repo_path = discover_repository(path)
+        if not repo_path:
+            print(' Not a git repository', file=sys.stderr)
+            sys.exit(2)
+        self._repo = GitRepo(repo_path)
         self._branches = {
             r.shorthand: r.peel()
             for r in self._repo.references.objects
