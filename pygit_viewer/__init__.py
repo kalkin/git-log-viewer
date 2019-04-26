@@ -1,4 +1,5 @@
 # pylint: disable=missing-docstring,fixme
+import functools
 import itertools
 import sys
 import time
@@ -31,11 +32,13 @@ class Commit:
         self.noffff: bool = False
         self._fork_point: Optional[bool] = None
 
+    @functools.lru_cache()
     def author_name(self) -> str:
         ''' Returns author name with mail as string. '''
         commit = self._commit
         return commit.author.name + " <" + commit.author.email + ">"
 
+    @functools.lru_cache()
     def is_fork_point(self) -> bool:
         if self._fork_point is None:
             self._fork_point = bool(self._parent \
@@ -44,6 +47,7 @@ class Commit:
                     and self._parent.is_rebased())
         return bool(self._fork_point)
 
+    @functools.lru_cache()
     def author_date(self) -> str:
         ''' Returns relative commiter date '''
         # pylint: disable=invalid-name
@@ -52,6 +56,7 @@ class Commit:
         return babel.dates.format_timedelta(delta, format='short').strip('.')
 
     @property
+    @functools.lru_cache()
     def next(self) -> Optional['Commit']:
         raw_commit: GitCommit = self.raw_commit
         try:
@@ -64,6 +69,7 @@ class Commit:
         return to_commit(self._repo, next_raw_commit, self)
 
     @property
+    @functools.lru_cache()
     def icon(self) -> str:
         if self.noffff:
             return "……"
@@ -73,6 +79,7 @@ class Commit:
 
         return "○"
 
+    @functools.lru_cache(maxsize=512, typed=True)
     def render(self):
         level = self.level * '│ '
         _type = level + self.icon.ljust(4, " ")
@@ -96,6 +103,7 @@ class Commit:
     def oid(self) -> Oid:
         return self._oid
 
+    @functools.lru_cache()
     def subject(self) -> str:
         ''' Returns the first line of the commit message. '''
         try:
@@ -184,6 +192,7 @@ class Repo:
         result = self._repo[oid]
         return to_commit(self, result)
 
+    @functools.lru_cache()
     def branches(self, commit: Commit):
         branch_tupples = [[('', ' '), ('ansiyellow', '«%s»' % name)]
                           for name in self._branches
@@ -351,6 +360,7 @@ def _calculate_level(parent: Commit) -> int:
 
 
 # pylint: disable=too-many-return-statements
+@functools.lru_cache(maxsize=512, typed=True)
 def to_commit(repo: Repo,
               git_commit: GitCommit,
               parent: Optional[Commit] = None) -> Commit:
