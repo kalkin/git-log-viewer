@@ -79,7 +79,6 @@ class Commit:
 
         return "○"
 
-    @functools.lru_cache(maxsize=512, typed=True)
     def render(self):
         level = self.level * '│ '
         _type = level + self.icon.ljust(4, " ")
