@@ -216,6 +216,18 @@ class Repo:
             parent = tmp
 
 
+def descendant_of(commit_a: GitCommit, commit_b: GitCommit) -> bool:
+    ''' Implements a heuristic based on commit time '''
+    try:
+        while commit_a.commit_time >= commit_b.commit_time:
+            commit_a = commit_a.parents[0]
+            if commit_a.id == commit_b.id:
+                return True
+    except:  # pylint: disable=bare-except
+        return False
+    return False
+
+
 class Foldable(Commit):
     def __init__(self,
                  repo: Repo,
@@ -250,9 +262,7 @@ class Foldable(Commit):
         try:
             if self._rebased is None:
                 self._rebased = len(self._commit.parents) >= 2 and \
-                        self._repo._repo.descendant_of(  # pylint: disable=protected-access
-                            self._commit.parents[1].id,
-                            self._commit.parents[0].id)
+                        self._repo.descendant_of(self._commit.parents[1], self._commit.parents[0])
             return self._rebased
         except:  # pylint: disable=bare-except
             return False
