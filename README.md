@@ -9,7 +9,7 @@ via plugins.
 
 * `git clone https://github.com/kalkin/pygit-viewer.git`
 * `cd pygit-viewer`
-* `pip3 install --user --update .`
+* `pip3 install --user --upgrade .`
 
 ## Usage
 
