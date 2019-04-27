@@ -21,3 +21,10 @@ via plugins.
     REVISION        A branch, tag or commit [default: HEAD]
     --workdir=DIR   Directory where the git repository is
     -d --debug      Enable sending debuggin output to journalctl
+
+### Debugging
+
+When `-d` option provided the application will log debug data to
+`journalctl(1)`. You can follow it like this:
+
+    journalctl --user -f
