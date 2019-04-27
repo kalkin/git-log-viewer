@@ -219,7 +219,7 @@ class History(UIContent):
 
         for _ in range(0, amount):
             cur = self.commit_list[-1]
-            commit = cur.next
+            commit: Commit = cur.next  # type: ignore
             if not commit:
                 break
 
@@ -240,7 +240,7 @@ class LogView(BufferControl):
         path = ARGUMENTS['--workdir'] or '.'
         path = os.path.abspath(os.path.expanduser(path))
         self.content = History(Repo(path, revision))
-        buffer.apply_search = self.content.apply_search
+        buffer.apply_search = self.content.apply_search  # type: ignore
         super().__init__(
             buffer=buffer, search_buffer_control=search_buffer_control)
 

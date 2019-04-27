@@ -55,8 +55,8 @@ class Commit:
         delta = datetime.now() - datetime.fromtimestamp(timestamp)
         return babel.dates.format_timedelta(delta, format='short').strip('.')
 
+    @functools.lru_cache()  # type: ignore
     @property
-    @functools.lru_cache()
     def next(self) -> Optional['Commit']:
         raw_commit: GitCommit = self.raw_commit
         try:
@@ -68,8 +68,8 @@ class Commit:
         next_raw_commit: GitCommit = raw_commit.parents[0]
         return to_commit(self._repo, next_raw_commit, self)
 
+    @functools.lru_cache()  # type: ignore
     @property
-    @functools.lru_cache()
     def icon(self) -> str:
         if self.noffff:
             return "……"
@@ -213,7 +213,7 @@ class Repo:
 
         git_commit = self._repo[start]
         parent = to_commit(self, git_commit, parent)
-        yield parent
+        yield parent  # type: ignore
         while True:
             try:
                 if not git_commit.parents:
@@ -231,7 +231,7 @@ class Repo:
 def descendant_of(commit_a: GitCommit, commit_b: GitCommit) -> bool:
     ''' Implements a heuristic based on commit time '''
     try:
-        while commit_a.commit_time >= commit_b.commit_time:
+        while commit_a.commit_time >= commit_b.commit_time:  # type: ignore
             commit_a = commit_a.parents[0]
             if commit_a.id == commit_b.id:
                 return True
@@ -279,6 +279,7 @@ class Foldable(Commit):
         except:  # pylint: disable=bare-except
             return False
 
+    @functools.lru_cache()  # type: ignore
     @property
     def icon(self) -> str:
         if self.noffff:
@@ -308,12 +309,14 @@ class Foldable(Commit):
 
 
 class ForkPoint(Commit):
+    @functools.lru_cache()  # type: ignore
     @property
     def icon(self) -> str:
         return "●─┘"
 
 
 class InitialCommit(Commit):
+    @functools.lru_cache()  # type: ignore
     @property
     def icon(self) -> str:
         if self.noffff:
@@ -323,6 +326,7 @@ class InitialCommit(Commit):
 
 
 class CommitLink(Commit):
+    @functools.lru_cache()  # type: ignore
     @property
     def icon(self) -> str:
         return "↘"
@@ -342,6 +346,7 @@ class Merge(Foldable):
 
 
 class Crossroads(Merge):
+    @functools.lru_cache()  # type: ignore
     @property
     def icon(self) -> str:
         return "●─┤"
