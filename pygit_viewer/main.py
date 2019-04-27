@@ -58,6 +58,37 @@ if DEBUG:
 
 KB = KeyBindings()
 
+def highlight_substring(search: SearchState, text: tuple) -> list[tuple]:
+    pass
+
+def highlight(t, needle):
+    haystack = t[1]
+    matches = list(re.finditer(re.escape(needle), haystack))
+    if not matches:
+        return t
+
+    original_h = t[0]
+    new_h = 'bold ' + t[0]
+    cur = 0
+    result = []
+    if matches[0].start() == 0:
+        match = matches[0]
+        result = [(new_h, needle)]
+        cur = len(needle)
+        matches = matches[1:]
+
+        if not matches:
+            return result
+
+    for match in matches:
+        result += [(original_h, haystack[cur:match.start()])]
+        result += [(new_h, haystack[match.start():match.end()])]
+        cur = match.end()
+
+    if cur < len(haystack):
+        result += [(original_h, haystack[cur:])]
+    return result
+
 
 class History(UIContent):
     def __init__(self, repo: Repo) -> None:
@@ -85,6 +116,15 @@ class History(UIContent):
             return [("", "")]
 
         result = commit.render()
+        if self.search_state and self.search_state.text in result[0][1]:
+            result[0] = (result[0][0] + ' bold', result[0][1])
+
+        if self.search_state and self.search_state.text in result[2][1]:
+            result[2] = (result[2][0] + ' bold', result[2][1])
+
+        if self.search_state and self.search_state.text in result[4][1]:
+            result[4] = (result[4][0] + ' bold', result[4][1])
+
         if line_number == self.cursor_position.y:
             result = [('reverse ' + x[0], x[1]) for x in result]
 
