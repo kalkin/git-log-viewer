@@ -8,7 +8,8 @@ Usage:
 Options:
     REVISION        A branch, tag or commit [default: HEAD]
     --workdir=DIR   Directory where the git repository is
-    -d --debug         Enable sending debuggin output to journalctl
+    -d --debug      Enable sending debuggin output to journalctl
+                    (journalctl --user -f)
 """  # pylint: disable=missing-docstring,fixme
 
 import logging
