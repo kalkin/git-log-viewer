@@ -11,6 +11,12 @@ via plugins.
 * `cd pygit-viewer`
 * `pip3 install --user --upgrade .`
 
+## Update
+
+* `git pull`
+* `cd pygit-viewer`
+* `pip3 install --user --upgrade .`
+
 ## Usage
 
     pygit_viewer [--workdir=DIR] [REVISION] [-d | --debug]
