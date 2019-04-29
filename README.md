@@ -13,8 +13,8 @@ via plugins.
 
 ## Update
 
-* `git pull`
 * `cd pygit-viewer`
+* `git pull`
 * `pip3 install --user --upgrade .`
 
 ## Usage
