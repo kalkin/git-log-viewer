@@ -55,7 +55,7 @@ class Commit:
         delta = datetime.now() - datetime.fromtimestamp(timestamp)
         return babel.dates.format_timedelta(delta, format='short').strip('.')
 
-    @property
+    @property  # type: ignore
     @functools.lru_cache()
     def next(self) -> Optional['Commit']:
         raw_commit: GitCommit = self.raw_commit
@@ -68,7 +68,7 @@ class Commit:
         next_raw_commit: GitCommit = raw_commit.parents[0]
         return to_commit(self._repo, next_raw_commit, self)
 
-    @property
+    @property  # type: ignore
     @functools.lru_cache()
     def icon(self) -> str:
         if self.noffff:
@@ -279,7 +279,7 @@ class Foldable(Commit):
         except:  # pylint: disable=bare-except
             return False
 
-    @property
+    @property  # type: ignore
     @functools.lru_cache()
     def icon(self) -> str:
         if self.noffff:
@@ -309,14 +309,14 @@ class Foldable(Commit):
 
 
 class ForkPoint(Commit):
-    @property
+    @property  # type: ignore
     @functools.lru_cache()
     def icon(self) -> str:
         return "●─┘"
 
 
 class InitialCommit(Commit):
-    @property
+    @property  # type: ignore
     @functools.lru_cache()
     def icon(self) -> str:
         if self.noffff:
@@ -326,7 +326,7 @@ class InitialCommit(Commit):
 
 
 class CommitLink(Commit):
-    @property
+    @property  # type: ignore
     @functools.lru_cache()
     def icon(self) -> str:
         return "↘"
@@ -346,7 +346,7 @@ class Merge(Foldable):
 
 
 class Crossroads(Merge):
-    @property
+    @property  # type: ignore
     @functools.lru_cache()
     def icon(self) -> str:
         return "●─┤"
