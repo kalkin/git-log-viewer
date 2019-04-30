@@ -19,7 +19,7 @@ Feature: Repository Walker
         Given foldable commit ce537d3
         And a walker over commit children
         When I walk over commits
-        then i should have iterated over 3 commits
+        Then i should have iterated over 3 commits
 
     Scenario: Find merge base
         Given commit A (fc0f00a)
