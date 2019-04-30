@@ -287,6 +287,12 @@ class LogView(BufferControl):
             new_position = Point(x=old_point.x, y=line_number)
             self.content.cursor_position = new_position
 
+    def goto_last(self):
+        old_point = self.content.cursor_position
+        if old_point.y < self.content.line_count:
+            new_position = Point(x=old_point.x, y=self.content.line_count - 1)
+            self.content.cursor_position = new_position
+
     def toggle_fold(self, line_number):
         self.content.toggle_fold(line_number)
 
@@ -361,6 +367,16 @@ def open_in_pager(command: str) -> Any:
 @KB.add('c-c')
 def _(_):
     get_app().exit(result=False)
+
+
+@KB.add('home')
+def first(_):
+    LOG_VIEW.goto_line(0)
+
+
+@KB.add('end')
+def last(_):
+    LOG_VIEW.goto_last()
 
 
 def cli():
