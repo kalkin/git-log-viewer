@@ -269,10 +269,6 @@ class LogView(BufferControl):
         if old_point.y + 1 < self.content.line_count:
             new_position = Point(x=old_point.x, y=old_point.y + 1)
             self.content.cursor_position = new_position
-        else:
-            last_commit = self.content.cursor_position[-1]
-            if not last_commit.parent:
-                return
 
     def move_cursor_up(self):
         old_point = self.content.cursor_position
