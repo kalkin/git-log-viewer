@@ -68,16 +68,29 @@ class Commit:
         next_raw_commit: GitCommit = raw_commit.parents[0]
         return to_commit(self._repo, next_raw_commit, self)
 
+    @functools.lru_cache()
+    def __stgit(self) -> bool:  # ↓ FIXME ↓
+        # pylint: disable=protected-access
+        for name in self._repo._branches:
+            if name.startswith('patches/') \
+            and self._repo._branches[name] == self.raw_commit:
+                return True
+        return False
+
     @property  # type: ignore
     @functools.lru_cache()
     def icon(self) -> str:
         if self.noffff:
             return "……"
 
-        if self.is_fork_point():
-            return "●─┘"
+        point = "●"
+        if self.__stgit():
+            point = "Ⓟ"
 
-        return "○"
+        if self.is_fork_point():
+            return point + "─┘"
+
+        return point
 
     def render(self):
         level = self.level * '│ '
@@ -195,7 +208,8 @@ class Repo:
     def branches(self, commit: Commit):
         branch_tupples = [[('', ' '), ('ansiyellow', '«%s»' % name)]
                           for name in self._branches
-                          if self._branches[name] == commit.raw_commit]
+                          if self._branches[name] == commit.raw_commit
+                          and not name.startswith('patches/')]
         return list(itertools.chain(*branch_tupples))
 
     def walker(self,
