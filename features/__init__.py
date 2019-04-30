@@ -1,20 +1,20 @@
 # pylint: disable=missing-docstring,invalid-name,unused-argument
 import os
 
-from lettuce import after, before, step, world
+from aloe import after, before, step, world
 
 from pygit_viewer import Commit, Foldable, Repo
 
 
-@before.each_scenario
-def init_repo(scenario):
+@before.each_example
+def init_repo(scenario, outline: dict, steps: list):
     world.repo = Repo(os.getcwd())
     world.commits = {}
     world.passed_commits = []
 
 
-@after.each_scenario
-def unset_world(scenario):
+@after.each_example
+def unset_world(scenario, outline: dict, steps: list):
     world.repo = None
     world.walker = None
     world.commit = None
