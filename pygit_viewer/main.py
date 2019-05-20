@@ -33,7 +33,6 @@ from prompt_toolkit.layout.screen import Point
 from prompt_toolkit.output.defaults import get_default_output
 from prompt_toolkit.search import SearchState
 from prompt_toolkit.widgets import SearchToolbar
-
 from pygit_viewer import Commit, Foldable, Repo
 
 ARGUMENTS = docopt(__doc__, version='v0.6.0')
@@ -278,7 +277,9 @@ class LogView(BufferControl):
 
     def goto_line(self, line_number):
         if line_number < 0:
-            line_number = 0
+            line_number = self.content.line_count + 1 - line_number
+            if line_number < 0:
+                line_number = 0
         elif line_number >= self.content.line_count:
             line_number = self.content.line_count - 1
 
