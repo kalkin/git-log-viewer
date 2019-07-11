@@ -128,7 +128,7 @@ class Commit:
                 words = subject.split()
                 subject = ' '.join(words[3:])
                 subject = 'MERGE: ' + subject
-            elif subject.split()[0].startswith(':'):
+            elif subject.split()[0].startswith(':') and self.modules():
                 words = subject.split()
                 subject = ' '.join(words[1:])
             return subject
