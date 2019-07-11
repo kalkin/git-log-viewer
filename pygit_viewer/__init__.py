@@ -1,6 +1,7 @@
 # pylint: disable=missing-docstring,fixme
 import functools
 import itertools
+import os
 import sys
 import time
 from datetime import datetime
@@ -13,7 +14,7 @@ from pygit2 import Oid  # pylint: disable=no-name-in-module
 from pygit2 import discover_repository  # pylint: disable=no-name-in-module
 from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
 
-from pygit_viewer.providers import Atlassian
+from pygit_viewer.providers import Cache
 
 
 class Commit:
@@ -100,12 +101,12 @@ class Commit:
             return [("ansimagenta", self.short_id() + " "),
                     ("ansiblue", self.author_date()),
                     ("ansigreen", self.short_author_name()), ("bold", _type),
-                    (" ", self.subject())] + branches
+                    ('red', self.modules()), (" ", self.subject())] + branches
 
         return [("ansimagenta", self.short_id() + " "),
                 ("ansiblue", self.author_date()),
                 ("ansigreen", self.short_author_name()), ("bold", _type),
-                (" ", self.subject())]
+                ('red', self.modules()), (" ", self.subject())]
 
     @property
     def raw_commit(self) -> GitCommit:
@@ -127,9 +128,27 @@ class Commit:
                 words = subject.split()
                 subject = ' '.join(words[3:])
                 subject = 'MERGE: ' + subject
+            elif subject.split()[0].startswith(':'):
+                words = subject.split()
+                subject = ' '.join(words[1:])
             return subject
         except IndexError:
             return ""
+
+    @functools.lru_cache()
+    def modules(self) -> str:
+        _id = str(self.oid)
+        try:
+            return self._repo.module_cache[_id]
+        except KeyError:
+            text = os.popen('vcs mod changed ' + str(self._oid)).read()
+            if text.strip():
+                text = ':' + ', :'.join(text.splitlines()) + ' '
+            else:
+                text = ''
+
+            self._repo.module_cache[_id] = text
+            return text
 
     def short_id(self, max_len: int = 8) -> str:
         ''' Returns a shortend commit id. '''
@@ -168,8 +187,10 @@ class Repo:
     ''' A wrapper around `pygit2.Repository`. '''
 
     def __init__(self, path: str, revision: str = 'HEAD') -> None:
+
         self.provider = None
         repo_path = discover_repository(path)
+        self.module_cache = Cache(repo_path + '/pygit-viewer/modules.json')
         if not repo_path:
             print(' Not a git repository', file=sys.stderr)
             sys.exit(2)
