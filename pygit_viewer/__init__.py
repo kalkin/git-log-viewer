@@ -101,12 +101,13 @@ class Commit:
             return [("ansimagenta", self.short_id() + " "),
                     ("ansiblue", self.author_date()),
                     ("ansigreen", self.short_author_name()), ("bold", _type),
-                    ('red', self.modules()), (" ", self.subject())] + branches
+                    ('ansiyellow', self.modules()),
+                    (" ", self.subject())] + branches
 
         return [("ansimagenta", self.short_id() + " "),
                 ("ansiblue", self.author_date()),
                 ("ansigreen", self.short_author_name()), ("bold", _type),
-                ('red', self.modules()), (" ", self.subject())]
+                ('ansiyellow', self.modules()), (" ", self.subject())]
 
     @property
     def raw_commit(self) -> GitCommit:
