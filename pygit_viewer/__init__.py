@@ -137,6 +137,8 @@ class Commit:
 
     @functools.lru_cache()
     def modules(self) -> str:
+        if not self._repo.has_modules:
+            return ''
         _id = str(self.oid)
         try:
             return self._repo.module_cache[_id]
@@ -191,6 +193,8 @@ class Repo:
         self.provider = None
         repo_path = discover_repository(path)
         self.module_cache = Cache(repo_path + '/pygit-viewer/modules.json')
+        self.has_modules = os.path.isfile(
+            os.path.dirname(repo_path) + '/../.gitsubtrees')
         if not repo_path:
             print(' Not a git repository', file=sys.stderr)
             sys.exit(2)
