@@ -33,6 +33,7 @@ from prompt_toolkit.layout.screen import Point
 from prompt_toolkit.output.defaults import get_default_output
 from prompt_toolkit.search import SearchState
 from prompt_toolkit.widgets import SearchToolbar
+
 from pygit_viewer import Commit, Foldable, Repo
 
 ARGUMENTS = docopt(__doc__, version='v0.6.0')
@@ -136,11 +137,15 @@ class History(UIContent):
         author_name = (result[2][0],
                        result[2][1].ljust(self.name_max_len, " ") + " ")
         icon = result[3]
-        subject = result[4]
-        branches = result[5:] or None
+        module = result[4]
+        subject = result[5]
+        branches = result[6:] or None
 
         if self.search_state and self.search_state.text in _id[1]:
             _id = highlight_substring(self.search_state, _id)
+
+        if self.search_state and self.search_state.text in module[1]:
+            module = highlight_substring(self.search_state, module)
 
         if self.search_state and self.search_state.text in author_name[1]:
             author_name = highlight_substring(self.search_state, author_name)
@@ -148,7 +153,7 @@ class History(UIContent):
         if self.search_state and self.search_state.text in subject[1]:
             subject = highlight_substring(self.search_state, subject)
 
-        tmp = [_id, author_date, author_name, icon, subject]
+        tmp = [_id, author_date, author_name, icon, module, subject]
         result = []
         for sth in tmp:
             if isinstance(sth, tuple):
@@ -212,8 +217,8 @@ class History(UIContent):
 
             if len(self.commit_list[-1].author_date()) > self.date_max_len:
                 self.date_max_len = len(self.commit_list[-1].author_date())
-            if len(self.commit_list[-1].
-                   short_author_name()) > self.name_max_len:
+            if len(self.commit_list[-1].short_author_name()
+                   ) > self.name_max_len:
                 self.name_max_len = len(
                     self.commit_list[-1].short_author_name())
 
