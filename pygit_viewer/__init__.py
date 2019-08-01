@@ -193,12 +193,12 @@ class Repo:
 
         self.provider = None
         repo_path = discover_repository(path)
-        self.module_cache = Cache(repo_path + '/pygit-viewer/modules.json')
-        self.has_modules = os.path.isfile(
-            os.path.dirname(repo_path) + '/../.gitsubtrees')
         if not repo_path:
             print(' Not a git repository', file=sys.stderr)
             sys.exit(2)
+        self.module_cache = Cache(repo_path + '/pygit-viewer/modules.json')
+        self.has_modules = os.path.isfile(
+            os.path.dirname(repo_path) + '/../.gitsubtrees')
         self._repo = GitRepo(repo_path)
         self._branches = {
             r.shorthand: r.peel()
