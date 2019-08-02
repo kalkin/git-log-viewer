@@ -34,7 +34,7 @@ from prompt_toolkit.output.defaults import get_default_output
 from prompt_toolkit.search import SearchState
 from prompt_toolkit.widgets import SearchToolbar
 
-from pygit_viewer import Commit, Foldable, Repo
+from pygit_viewer import Commit, CommitLink, Foldable, Repo
 
 ARGUMENTS = docopt(__doc__, version='v0.6.0', options_first=True)
 DEBUG = ARGUMENTS['--debug']
@@ -128,16 +128,24 @@ class History(UIContent):
         except IndexError:
             return [("", "")]
 
-        result = commit.render()
-        _id = result[0]
-        author_date = (result[1][0],
-                       result[1][1].ljust(self.date_max_len, " ") + " ")
-        author_name = (result[2][0],
-                       result[2][1].ljust(self.name_max_len, " ") + " ")
-        icon = result[3]
-        module = result[4]
-        subject = result[5]
-        branches = result[6:] or None
+        rendered = commit.render()
+        _id = rendered.short_id
+        author_date = (
+            rendered.author_date[0],
+            rendered.author_date[1].ljust(self.date_max_len, " ") + " ")
+        author_name = (
+            rendered.author_name[0],
+            rendered.author_name[1].ljust(self.name_max_len, " ") + " ")
+        icon = rendered.type
+        module = rendered.modules
+        subject = rendered.subject
+        branches = rendered.branches
+
+        if isinstance(commit, CommitLink):
+            if isinstance(subject, tuple):
+                subject = ('italic ' + subject[0], subject[1])
+            else:
+                subject = ('italic', subject)
 
         if self.search_state and self.search_state.text in _id[1]:
             _id = highlight_substring(self.search_state, _id)
@@ -215,8 +223,8 @@ class History(UIContent):
 
             if len(self.commit_list[-1].author_date()) > self.date_max_len:
                 self.date_max_len = len(self.commit_list[-1].author_date())
-            if len(self.commit_list[-1].short_author_name()
-                   ) > self.name_max_len:
+            if len(self.commit_list[-1].
+                   short_author_name()) > self.name_max_len:
                 self.name_max_len = len(
                     self.commit_list[-1].short_author_name())
 

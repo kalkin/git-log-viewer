@@ -13,9 +13,9 @@ from pygit2 import Commit as GitCommit  # pylint: disable=no-name-in-module
 from pygit2 import Oid  # pylint: disable=no-name-in-module
 from pygit2 import discover_repository  # pylint: disable=no-name-in-module
 from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
-from pygit_viewer.providers import Cache
 
 import pygit_viewer.vcs as vcs
+from pygit_viewer.providers import Cache
 
 
 class Commit:
@@ -95,20 +95,7 @@ class Commit:
         return point
 
     def render(self):
-        level = self.level * '│ '
-        _type = level + self.icon.ljust(4, " ")
-        branches = self._repo.branches(self)
-        if branches:
-            return [("ansimagenta", self.short_id() + " "),
-                    ("ansiblue", self.author_date()),
-                    ("ansigreen", self.short_author_name()), ("bold", _type),
-                    ('ansiyellow', self.modules()),
-                    (" ", self.subject())] + branches
-
-        return [("ansimagenta", self.short_id() + " "),
-                ("ansiblue", self.author_date()),
-                ("ansigreen", self.short_author_name()), ("bold", _type),
-                ('ansiyellow', self.modules()), (" ", self.subject())]
+        return LogEntry(self)
 
     @property
     def raw_commit(self) -> GitCommit:
@@ -144,14 +131,14 @@ class Commit:
         _id = str(self.oid)
         try:
             modules = self._repo.module_cache[_id]
-            return ', '.join([':' + x for x in modules]) + ' '
+            return ', '.join([':' + x for x in modules])
         except KeyError:
             # pylint: disable=protected-access
             try:
                 modules = list(
                     vcs.changed_modules(self._repo._repo, self._commit))
                 self._repo.module_cache[_id] = modules
-                return ', '.join([':' + x for x in modules]) + ' '
+                return ', '.join([':' + x for x in modules])
             except KeyError:
                 pass
         return ''
@@ -179,6 +166,48 @@ class Commit:
     @property
     def is_top(self) -> bool:
         return self._parent is not None
+
+
+class LogEntry:
+    def __init__(self, commit: Commit) -> None:
+        self.commit = commit
+
+    @property
+    def author_date(self):
+        return ("ansiblue", self.commit.author_date())
+
+    @property
+    def modules(self):
+        modules = self.commit.modules()
+        if modules != '':
+            return ('ansiyellow', modules + ' ')
+
+        return ('', ' ')
+
+    @property
+    def author_name(self):
+        return ("ansigreen", self.commit.short_author_name())
+
+    @property
+    def short_id(self):
+        return ("ansimagenta", self.commit.short_id())
+
+    @property
+    def subject(self):
+        return ('', self.commit.subject())
+
+    @property
+    def type(self):
+        level = self.commit.level * '│ '
+        _type = level + self.commit.icon.ljust(4, " ")
+        return ("bold", _type)
+
+    @property
+    def branches(self):
+        branches = self.commit._repo.branches(self.commit)
+        if branches:
+            return branches
+        return None
 
 
 def providers():
@@ -393,15 +422,6 @@ class CommitLink(Commit):
     @functools.lru_cache()
     def icon(self) -> str:
         return "↘"
-
-    def render(self):
-        level = self.level * '│ '
-        _type = level + self.icon.ljust(2, " ")
-        return [("ansimagenta italic", self.short_id() + " "),
-                ("ansiblue italic", self.author_date()),
-                ("ansigreen italic", self.short_author_name()), ("bold",
-                                                                 _type),
-                ("italic", self.subject())]
 
 
 class Merge(Foldable):
