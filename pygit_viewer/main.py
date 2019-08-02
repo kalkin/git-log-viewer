@@ -2,7 +2,7 @@
 """pygit-viewer
 
 Usage:
-    pygit_viewer [--workdir=DIR] [REVISION] [-d | --debug]
+    pygit_viewer [--workdir=DIR] [REVISION] [-d | --debug] [[--] <path>...]
     pygit_viewer --version
 
 Options:
@@ -36,7 +36,7 @@ from prompt_toolkit.widgets import SearchToolbar
 
 from pygit_viewer import Commit, Foldable, Repo
 
-ARGUMENTS = docopt(__doc__, version='v0.6.0')
+ARGUMENTS = docopt(__doc__, version='v0.6.0', options_first=True)
 DEBUG = ARGUMENTS['--debug']
 
 LOG = logging.getLogger('pygit-viewer')
@@ -236,13 +236,13 @@ class History(UIContent):
 class LogView(BufferControl):
     def __init__(self, search_buffer_control: SearchBufferControl) -> None:
         buffer = Buffer()
-        if ARGUMENTS['REVISION']:
+        if ARGUMENTS['REVISION'] and ARGUMENTS['REVISION'] != '--':
             revision = ARGUMENTS['REVISION']
         else:
             revision = 'HEAD'
         path = ARGUMENTS['--workdir'] or '.'
         path = os.path.abspath(os.path.expanduser(path))
-        self.content = History(Repo(path, revision))
+        self.content = History(Repo(path, revision, ARGUMENTS['<path>']))
         buffer.apply_search = self.content.apply_search  # type: ignore
         super().__init__(
             buffer=buffer, search_buffer_control=search_buffer_control)

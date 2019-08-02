@@ -5,7 +5,7 @@ import os
 import sys
 import time
 from datetime import datetime
-from typing import Any, Iterator, Optional, Union
+from typing import Any, Iterator, List, Optional, Union
 
 import babel.dates
 import pkg_resources
@@ -13,9 +13,9 @@ from pygit2 import Commit as GitCommit  # pylint: disable=no-name-in-module
 from pygit2 import Oid  # pylint: disable=no-name-in-module
 from pygit2 import discover_repository  # pylint: disable=no-name-in-module
 from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
+from pygit_viewer.providers import Cache
 
 import pygit_viewer.vcs as vcs
-from pygit_viewer.providers import Cache
 
 
 class Commit:
@@ -192,9 +192,12 @@ def providers():
 class Repo:
     ''' A wrapper around `pygit2.Repository`. '''
 
-    def __init__(self, path: str, revision: str = 'HEAD') -> None:
-
+    def __init__(self,
+                 path: str,
+                 revision: str = 'HEAD',
+                 files: List[str] = None) -> None:
         self.provider = None
+        self.files = files or []
         repo_path = discover_repository(path)
         if not repo_path:
             print(' Not a git repository', file=sys.stderr)
@@ -256,6 +259,9 @@ class Repo:
             end = end_c.oid or None
 
         git_commit = self._repo[start]
+        while self.files and not _commit_changed_files(git_commit, self.files):
+            git_commit = git_commit.parents[0]
+
         parent = to_commit(self, git_commit, parent)
         yield parent  # type: ignore
         while True:
@@ -268,8 +274,21 @@ class Repo:
             if git_commit.id == end:
                 break
             tmp = to_commit(self, git_commit, parent)
-            yield tmp
+            if not self.files or _commit_changed_files(git_commit, self.files):
+                yield tmp
             parent = tmp
+
+
+def _commit_changed_files(commit: GitCommit, files: List[str]) -> bool:
+    try:
+        changed_files = vcs.changed_files(commit)  # pylint: disable=protected-access
+        for _file in files:
+            if _file in changed_files:
+                return True
+    except KeyError:
+        pass
+
+    return False
 
 
 def descendant_of(commit_a: GitCommit, commit_b: GitCommit) -> bool:
