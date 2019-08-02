@@ -109,8 +109,6 @@ class History(UIContent):
             get_line=self.get_line,
             show_cursor=False)
 
-        self.fill_up(50)
-
     def apply_search(self,
                      search_state,
                      include_current_position=True,
