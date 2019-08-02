@@ -209,8 +209,8 @@ class History(UIContent):
     def fill_up(self, amount: int):
         assert amount > 0
         if not self.commit_list:
-            walker = self._repo.walker()
-            self.commit_list = [next(walker)]
+            self.walker = self._repo.walker()
+            self.commit_list = [next(self.walker)]
             amount -= 1
 
             if len(self.commit_list[-1].author_date()) > self.date_max_len:
@@ -221,8 +221,7 @@ class History(UIContent):
                     self.commit_list[-1].short_author_name())
 
         for _ in range(0, amount):
-            cur = self.commit_list[-1]
-            commit: Commit = cur.next  # type: ignore
+            commit: Commit = next(self.walker)  # type: ignore
             if not commit:
                 break
 
