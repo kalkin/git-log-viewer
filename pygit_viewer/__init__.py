@@ -14,6 +14,7 @@ from pygit2 import Oid  # pylint: disable=no-name-in-module
 from pygit2 import discover_repository  # pylint: disable=no-name-in-module
 from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
 
+import pygit_viewer.vcs as vcs
 from pygit_viewer.providers import Cache
 
 
@@ -142,16 +143,18 @@ class Commit:
             return ''
         _id = str(self.oid)
         try:
-            return self._repo.module_cache[_id]
+            modules = self._repo.module_cache[_id]
+            return ', '.join([':' + x for x in modules]) + ' '
         except KeyError:
-            text = os.popen('vcs mod changed ' + str(self._oid)).read()
-            if text.strip():
-                text = ':' + ', :'.join(text.splitlines()) + ' '
-            else:
-                text = ''
-
-            self._repo.module_cache[_id] = text
-            return text
+            # pylint: disable=protected-access
+            try:
+                modules = list(
+                    vcs.changed_modules(self._repo._repo, self._commit))
+                self._repo.module_cache[_id] = modules
+                return ', '.join([':' + x for x in modules]) + ' '
+            except KeyError:
+                pass
+        return ''
 
     def short_id(self, max_len: int = 8) -> str:
         ''' Returns a shortend commit id. '''
@@ -196,10 +199,11 @@ class Repo:
         if not repo_path:
             print(' Not a git repository', file=sys.stderr)
             sys.exit(2)
-        self.module_cache = Cache(repo_path + '/pygit-viewer/modules.json')
-        self.has_modules = os.path.isfile(
-            os.path.dirname(repo_path) + '/../.gitsubtrees')
         self._repo = GitRepo(repo_path)
+        self.module_cache = Cache(repo_path + '/pygit-viewer/modules.json')
+        self.has_modules = False
+        if vcs.modules(self._repo):
+            self.has_modules = True
         self._branches = {
             r.shorthand: r.peel()
             for r in self._repo.references.objects
