@@ -8,7 +8,7 @@ import sys
 from typing import Any, Optional, Tuple
 
 import certifi
-import urllib3
+import urllib3  # type: ignore
 
 
 class Cache:
