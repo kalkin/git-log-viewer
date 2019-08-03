@@ -219,7 +219,10 @@ class History(UIContent):
         assert amount > 0
         if not self.commit_list:
             self.walker = self._repo.walker()
-            self.commit_list = [next(self.walker)]
+            try:
+                self.commit_list = [next(self.walker)]
+            except Exception:
+                return
             amount -= 1
 
             if len(self.commit_list[-1].author_date()) > self.date_max_len:
@@ -230,7 +233,10 @@ class History(UIContent):
                     self.commit_list[-1].short_author_name())
 
         for _ in range(0, amount):
-            commit: Commit = next(self.walker)  # type: ignore
+            try:
+                commit: Commit = next(self.walker)  # type: ignore
+            except Exception:
+                return
             if not commit:
                 break
 
