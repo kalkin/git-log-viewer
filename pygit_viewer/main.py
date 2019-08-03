@@ -351,6 +351,8 @@ def pagedown_key(_: KeyPressEvent):
 @KB.add('pageup')
 def pageup_key(_: KeyPressEvent):
     line_number = LOG_VIEW.current_line - screen_height() * 2 + 1
+    if line_number < 0:
+        line_number = 0
     LOG_VIEW.goto_line(line_number)
 
 
