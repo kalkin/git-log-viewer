@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased - 2019-04-30
+## Unreleased - 2019-08-03
 
 ### Added
 
@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - module color to ansiyellow
 
+### Refactored
+
+- commit rendering
+
 ### Fixed
 
 - Fix search in pygit-viewer
@@ -25,6 +29,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - performance for module recognition
 - exit if not in git repo
 - Show module name in subject if it's unknown
+- going beyound 0 line
+- KeyError when no commits match path filter
+- KeyError when revision not found
 
 
 ## [v0.7.0] - 2019-04-30
