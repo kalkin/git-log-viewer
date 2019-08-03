@@ -131,12 +131,10 @@ class History(UIContent):
 
         rendered = commit.render()
         _id = rendered.short_id
-        author_date = (
-            rendered.author_date[0],
-            rendered.author_date[1].ljust(self.date_max_len, " ") + " ")
-        author_name = (
-            rendered.author_name[0],
-            rendered.author_name[1].ljust(self.name_max_len, " ") + " ")
+        author_date = (rendered.author_date[0], rendered.author_date[1].ljust(
+            self.date_max_len, " "))
+        author_name = (rendered.author_name[0], rendered.author_name[1].ljust(
+            self.name_max_len, " "))
         icon = rendered.type
         module = rendered.modules
         subject = rendered.subject
@@ -173,6 +171,8 @@ class History(UIContent):
 
         if line_number == self.cursor_position.y:
             result = [('reverse ' + x[0], x[1]) for x in result]
+
+        result = [(x[0], x[1] + ' ') for x in result]
 
         return result
 

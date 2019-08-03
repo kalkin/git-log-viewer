@@ -191,9 +191,9 @@ class LogEntry:
     def modules(self):
         modules = self.commit.modules()
         if modules != '':
-            return ('ansiyellow', modules + ' ')
+            return ('ansiyellow', modules)
 
-        return ('', ' ')
+        return ('', '')
 
     @property
     def author_name(self):
@@ -210,7 +210,7 @@ class LogEntry:
     @property
     def type(self):
         level = self.commit.level * '│ '
-        _type = level + self.commit.icon.ljust(4, " ")
+        _type = level + self.commit.icon
         return ("bold", _type)
 
     @property
