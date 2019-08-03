@@ -49,18 +49,14 @@ def changed_files(commit: Commit) -> Set[str]:
 
 def changed_modules(repo: Repository, commit: Commit) -> Set[str]:
     ''' Return all .gisubtrees modules which were changed in the specified commit '''
-    mods = modules(repo)
-    mods.sort(reverse=True)
+    dirs = modules(repo)
+    dirs.sort(reverse=True)
     files = {name: True for name in changed_files(commit)}
     result: List[str] = []
-    for mod in mods:
-        matches: List[str] = []
-        for _file in files:
-            if _file.startswith(mod):
-                matches += [_file]
-
+    for directory in dirs:
+        matches = [_file for _file in files if _file.startswith(directory)]
         if matches:
-            result.append(mod)
+            result.append(directory)
             for _file in matches:
                 del files[_file]
     return set(result)
