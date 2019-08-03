@@ -74,7 +74,7 @@ def highlight(parts, needle):
         return parts
 
     original_h = parts[0]
-    new_h = parts[0] + ' ansired'
+    new_h = parts[0] + ' ansired bold'
     cur = 0
     result = []
     if matches[0].start() == 0:
