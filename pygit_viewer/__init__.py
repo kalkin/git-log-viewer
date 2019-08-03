@@ -327,7 +327,9 @@ def _commit_changed_files(commit: GitCommit, files: List[str]) -> bool:
     try:
         changed_files = vcs.changed_files(commit)  # pylint: disable=protected-access
         for _file in files:
-            if _file in changed_files:
+            if _file in changed_files or [
+                    x for x in changed_files if x.startswith(_file)
+            ]:
                 return True
     except KeyError:
         pass
