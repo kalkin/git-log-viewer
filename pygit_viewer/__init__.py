@@ -18,6 +18,10 @@ import pygit_viewer.vcs as vcs
 from pygit_viewer.providers import Cache
 
 
+class NoPathMatches(Exception):
+    ''' Thrown when there is no commit match a path filter.'''
+
+
 class Commit:
     ''' Wrapper object around a pygit2.Commit object. '''
 
@@ -288,8 +292,12 @@ class Repo:
             end = end_c.oid or None
 
         git_commit = self._repo[start]
-        while self.files and not _commit_changed_files(git_commit, self.files):
-            git_commit = git_commit.parents[0]
+        try:
+            while self.files and not _commit_changed_files(
+                    git_commit, self.files):
+                git_commit = git_commit.parents[0]
+        except KeyError:
+            raise NoPathMatches()
 
         parent = to_commit(self, git_commit, parent)
         yield parent  # type: ignore

@@ -34,7 +34,7 @@ from prompt_toolkit.output.defaults import get_default_output
 from prompt_toolkit.search import SearchState
 from prompt_toolkit.widgets import SearchToolbar
 
-from pygit_viewer import Commit, CommitLink, Foldable, Repo
+from pygit_viewer import Commit, CommitLink, Foldable, NoPathMatches, Repo
 
 ARGUMENTS = docopt(__doc__, version='v0.6.0', options_first=True)
 DEBUG = ARGUMENTS['--debug']
@@ -317,7 +317,12 @@ def screen_height() -> int:
 
 
 SEARCH = SearchToolbar(vi_mode=True)
-LOG_VIEW = LogView(SEARCH.control)
+try:
+    LOG_VIEW = LogView(SEARCH.control)
+except NoPathMatches:
+    print("No paths match the given arguments.", file=sys.stderr)
+    sys.exit(1)
+
 MAIN_VIEW = Window(
     content=LOG_VIEW, right_margins=[ScrollbarMargin(display_arrows=True)])
 LAYOUT = Layout(HSplit([MAIN_VIEW, SEARCH]), focused_element=MAIN_VIEW)
