@@ -121,7 +121,10 @@ class Commit:
             if subject.startswith("Merge pull request #"):
                 if self._repo.provider \
                         and self._repo.provider.has_match(subject):
-                    return self._repo.provider.provide(subject)
+                    try:
+                        return self._repo.provider.provide(subject)
+                    except Exception:  # pylint: disable=broad-except
+                        return subject
                 words = subject.split()
                 subject = ' '.join(words[3:])
                 subject = 'MERGE: ' + subject
