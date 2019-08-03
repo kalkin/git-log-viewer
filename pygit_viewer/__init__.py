@@ -22,6 +22,10 @@ class NoPathMatches(Exception):
     ''' Thrown when there is no commit match a path filter.'''
 
 
+class NoRevisionMatches(Exception):
+    ''' Thrown when no revisions match the given arguments.'''
+
+
 class Commit:
     ''' Wrapper object around a pygit2.Commit object. '''
 
@@ -245,7 +249,10 @@ class Repo:
             for r in self._repo.references.objects
             if not r.shorthand.endswith('/HEAD')
         }
-        self.__start: GitCommit = self._repo.revparse_single(revision)
+        try:
+            self.__start: GitCommit = self._repo.revparse_single(revision)
+        except KeyError:
+            raise NoRevisionMatches
         for provider in providers().values():
             if provider.enabled(self._repo):
                 cache_dir = self._repo.path + '/pygit-viewer/remotes/origin'
