@@ -105,6 +105,7 @@ class History(UIContent):
         self.line_count = len(list(self._repo.walker()))
         self.commit_list: List[Commit] = []
         self.search_state = None
+        self.walker = self._repo.walker()
         super().__init__(
             line_count=self.line_count,
             get_line=self.get_line,
@@ -217,25 +218,10 @@ class History(UIContent):
 
     def fill_up(self, amount: int):
         assert amount > 0
-        if not self.commit_list:
-            self.walker = self._repo.walker()
-            try:
-                self.commit_list = [next(self.walker)]
-            except Exception:
-                return
-            amount -= 1
-
-            if len(self.commit_list[-1].author_date()) > self.date_max_len:
-                self.date_max_len = len(self.commit_list[-1].author_date())
-            if len(self.commit_list[-1].
-                   short_author_name()) > self.name_max_len:
-                self.name_max_len = len(
-                    self.commit_list[-1].short_author_name())
-
         for _ in range(0, amount):
             try:
                 commit: Commit = next(self.walker)  # type: ignore
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 return
             if not commit:
                 break
