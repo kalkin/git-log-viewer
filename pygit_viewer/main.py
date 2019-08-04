@@ -160,7 +160,7 @@ class History(UIContent):
             subject = highlight_substring(self.search_state, subject)
 
         tmp = [_id, author_date, author_name, icon, module, subject]
-        result = []
+        result: List[tuple] = []
         for sth in tmp:
             if isinstance(sth, tuple):
                 result += [sth]
