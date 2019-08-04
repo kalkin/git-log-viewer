@@ -116,11 +116,34 @@ class History(UIContent):
                      search_state,
                      include_current_position=True,
                      count=1):
-        LOG.debug('appying search %r, %r, %r', search_state,
+        LOG.debug('applying search %r, %r, %r', search_state,
                   include_current_position, count)
         self.search_state = search_state
+        index = self.cursor_position.y
+        new_position = self.cursor_position.y
+        LOG.debug('Current position %r', self.cursor_position.y)
+        while True:
+            try:
+                commit = self.commit_list[index]
+            except IndexError:
+                if not self.fill_up(50):
+                    break
 
-    def get_line(self, line_number: int):  # pylint: disable=method-hidden
+                commit = self.commit_list[index]
+
+            if self.search_state.text in commit.short_id() \
+                    or self.search_state.text in commit.subject() \
+                    or self.search_state.text in commit.short_author_name() \
+                    or self.search_state.text in commit.modules():
+                new_position = index
+                break
+
+            index += 1
+
+        if new_position != self.cursor_position.y:
+            self.cursor_position = Point(x=self.cursor_position.x, y=index)
+
+    def get_line(self, line_number: int) -> List[tuple]:  # pylint: disable=method-hidden
         length = len(self.commit_list)
         if length - 1 < line_number:
             amount = line_number - length + 1
@@ -218,21 +241,24 @@ class History(UIContent):
 
         self.line_count += index
 
-    def fill_up(self, amount: int):
+    def fill_up(self, amount: int) -> int:
         assert amount > 0
+        result = 0
         for _ in range(0, amount):
             try:
                 commit: Commit = next(self.walker)  # type: ignore
             except Exception:  # pylint: disable=broad-except
-                return
+                return result
             if not commit:
                 break
 
             self.commit_list.append(commit)
+            result += 1
             if len(commit.author_date()) > self.date_max_len:
                 self.date_max_len = len(commit.author_date())
             if len(commit.short_author_name()) > self.name_max_len:
                 self.name_max_len = len(commit.short_author_name())
+        return result
 
 
 class LogView(BufferControl):
