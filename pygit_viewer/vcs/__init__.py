@@ -42,7 +42,7 @@ def changed_files(commit: Commit) -> Set[str]:
     try:
         parent1 = commit.parents[0]
     except IndexError:
-        return ()
+        return set()
 
     deltas = commit.tree.diff_to_tree(parent1.tree).deltas
     result: List[str] = []
