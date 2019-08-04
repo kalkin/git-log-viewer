@@ -130,6 +130,9 @@ class History(UIContent):
         except IndexError:
             return [("", "")]
 
+        return self._render_commit(commit, line_number)
+
+    def _render_commit(self, commit: Commit, line_number: int) -> List[tuple]:
         rendered = commit.render()
         _id = rendered.short_id
         author_date = (rendered.author_date[0], rendered.author_date[1].ljust(
@@ -173,9 +176,7 @@ class History(UIContent):
         if line_number == self.cursor_position.y:
             result = [('reverse ' + x[0], x[1]) for x in result]
 
-        result = [(x[0], x[1] + ' ') for x in result]
-
-        return result
+        return [(x[0], x[1] + ' ') for x in result]
 
     def toggle_fold(self, line_number):
         commit = self.commit_list[line_number]
