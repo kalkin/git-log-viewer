@@ -5,13 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased - 2019-08-03
+## Unreleased - 2019-08-04
 
 ### Added
 
 - limiting logs to specific files
 - support for vcs(1) modules
 - vcs helper functions
+- jump to first search match
+- backward search
 
 ### Changed
 
@@ -32,7 +34,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - going beyound 0 line
 - KeyError when no commits match path filter
 - KeyError when revision not found
-
 
 ## [v0.7.0] - 2019-04-30
 
