@@ -31,7 +31,7 @@ from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.layout.margins import ScrollbarMargin
 from prompt_toolkit.layout.screen import Point
 from prompt_toolkit.output.defaults import get_default_output
-from prompt_toolkit.search import SearchState
+from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.widgets import SearchToolbar
 
 from pygit_viewer import (Commit, CommitLink, Foldable, NoPathMatches,
@@ -113,32 +113,41 @@ class History(UIContent):
             show_cursor=False)
 
     def apply_search(self,
-                     search_state,
+                     search_state: SearchState,
                      include_current_position=True,
                      count=1):
         LOG.debug('applying search %r, %r, %r', search_state,
                   include_current_position, count)
-        self.search_state = search_state
+        self.search_state: SearchState = search_state
         index = self.cursor_position.y
         new_position = self.cursor_position.y
         LOG.debug('Current position %r', self.cursor_position.y)
-        while True:
-            try:
-                commit = self.commit_list[index]
-            except IndexError:
-                if not self.fill_up(50):
+        needle = self.search_state.text
+        if self.search_state.direction == SearchDirection.FORWARD:
+            while True:
+                try:
+                    commit = self.commit_list[index]
+                except IndexError:
+                    if not self.fill_up(50):
+                        break
+
+                    commit = self.commit_list[index]
+
+                if needle in commit.short_id() or needle in commit.subject() \
+                        or needle in commit.short_author_name() or needle in commit.modules():
+                    new_position = index
                     break
 
+                index += 1
+        else:
+            while index >= 0:
                 commit = self.commit_list[index]
+                if needle in commit.short_id() or needle in commit.subject() \
+                        or needle in commit.short_author_name() or needle in commit.modules():
+                    new_position = index
+                    break
 
-            if self.search_state.text in commit.short_id() \
-                    or self.search_state.text in commit.subject() \
-                    or self.search_state.text in commit.short_author_name() \
-                    or self.search_state.text in commit.modules():
-                new_position = index
-                break
-
-            index += 1
+                index -= 1
 
         if new_position != self.cursor_position.y:
             self.cursor_position = Point(x=self.cursor_position.x, y=index)
@@ -391,6 +400,18 @@ def enter(_: KeyPressEvent):
 @KB.add('/')
 def search_forward(_: KeyPressEvent):
     LAYOUT.search_links = {SEARCH.control: LOG_VIEW}
+    search_state = SearchState(
+        direction=SearchDirection.FORWARD, ignore_case=False)
+    SEARCH.control.searcher_search_state = search_state
+    LAYOUT.focus(SEARCH.control)
+
+
+@KB.add('?')
+def search_backward(_: KeyPressEvent):
+    LAYOUT.search_links = {SEARCH.control: LOG_VIEW}
+    search_state = SearchState(
+        direction=SearchDirection.BACKWARD, ignore_case=False)
+    SEARCH.control.searcher_search_state = search_state
     LAYOUT.focus(SEARCH.control)
 
 
