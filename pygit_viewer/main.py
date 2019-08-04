@@ -98,6 +98,7 @@ def highlight_substring(search: SearchState, text: tuple) -> list:
 
 
 class History(UIContent):
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, repo: Repo) -> None:
         self.date_max_len = 0
         self.name_max_len = 0
