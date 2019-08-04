@@ -39,11 +39,19 @@ def modules(repo: Repository) -> List[str]:
 
 def changed_files(commit: Commit) -> Set[str]:
     ''' Return all files which were changed in the specified commit '''
-    parent1 = commit.parents[0]
+    try:
+        parent1 = commit.parents[0]
+    except IndexError:
+        return ()
+
     deltas = commit.tree.diff_to_tree(parent1.tree).deltas
     result: List[str] = []
     for delta in deltas:
-        result += [delta.old_file.path, delta.new_file.path]
+        try:
+            result += [delta.old_file.path, delta.new_file.path]
+        except UnicodeDecodeError:
+            pass
+
     return set(result)
 
 
