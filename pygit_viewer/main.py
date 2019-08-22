@@ -419,9 +419,9 @@ def open_in_pager(command: str) -> Any:
     term = 'xterm'
     if 'TILIX_ID' in os.environ:
         term = 'tilix'
-    elif 'TERM' in os.environ['TERM']:
-
+    elif 'TERM' in os.environ:
         term = os.environ['TERM'].split('-')[0]
+
     cmd = [term, '-e', 'sh', '-c', command]
 
     subprocess.Popen(cmd, stdin=False, stdout=False, stderr=False)
