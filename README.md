@@ -28,6 +28,12 @@ via plugins.
     --workdir=DIR   Directory where the git repository is
     -d --debug      Enable sending debuggin output to journalctl
 
+### Current State
+
+This piece of software works for me. I will not invest any more time besides
+fixing annoying bugs. I'm currently working on a more performant implementation
+in Ada.
+
 ### Debugging
 
 When `-d` option provided the application will log debug data to
