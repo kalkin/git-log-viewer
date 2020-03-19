@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - vcs helper functions
 - jump to first search match
 - backward search
+- vim like keybindings for j & k
 
 ### Changed
 
@@ -25,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- getting terminal name from `$TERM`
 - Fix search in pygit-viewer
 - duplicate walker initialization
 - goto line
