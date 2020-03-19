@@ -361,11 +361,13 @@ MAIN_VIEW = Window(
 LAYOUT = Layout(HSplit([MAIN_VIEW, SEARCH]), focused_element=MAIN_VIEW)
 
 
+@KB.add('j')
 @KB.add('down')
 def down_key(_: KeyPressEvent):
     LOG_VIEW.move_cursor_down()
 
 
+@KB.add('k')
 @KB.add('up')
 def up_key(_: KeyPressEvent):
     LOG_VIEW.move_cursor_up()
