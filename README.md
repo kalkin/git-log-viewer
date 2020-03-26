@@ -2,24 +2,25 @@
 
 ## About
 
-An alternative to tig / gvc which supports folding the merges and is expandable
-via plugins.
+An alternative to `tig(1)`/`gvc(1) which supports folding the merges and is
+expandable via plugins. The application can resolve the default merge titles
+done by using GitHub or Bitbucket to the actual pull request names.
 
 ## Installation
 
 * `git clone https://github.com/kalkin/pygit-viewer.git`
 * `cd pygit-viewer`
-* `pip3 install --user --upgrade .`
+* `pip3 install --user .`
 
 ## Update
 
 * `cd pygit-viewer`
-* `git pull`
+* `git pull --rebase`
 * `pip3 install --user --upgrade .`
 
 ## Usage
 
-    pygit_viewer [--workdir=DIR] [REVISION] [-d | --debug]
+    pygit_viewer [--workdir=DIR] [REVISION] [-d | --debug] [[--] <path>...]
     pygit_viewer --version
 
 ### Options
@@ -27,12 +28,17 @@ via plugins.
     REVISION        A branch, tag or commit [default: HEAD]
     --workdir=DIR   Directory where the git repository is
     -d --debug      Enable sending debuggin output to journalctl
+                    (journalctl --user -f)
 
 ### Current State
 
-This piece of software works for me. I will not invest any more time besides
-fixing annoying bugs. I'm currently working on a more performant implementation
-in Ada.
+This piece of software works for me and is pretty stable. The biggest issue with
+the current implementation is that it is not async. The following issues are
+arise from this and pull request for them are welcome:
+
+* Search will freeze the whole application until it matched something, even if
+  it has to iterate over a *whole* history.
+* Resolving merges to a pull request title can take some time.
 
 ### Debugging
 
