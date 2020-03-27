@@ -37,7 +37,7 @@ from prompt_toolkit.widgets import SearchToolbar
 from pygit_viewer import (Commit, CommitLink, Foldable, NoPathMatches,
                           NoRevisionMatches, Repo)
 
-ARGUMENTS = docopt(__doc__, version='v0.6.0', options_first=True)
+ARGUMENTS = docopt(__doc__, version='v1.0.0', options_first=True)
 DEBUG = ARGUMENTS['--debug']
 
 LOG = logging.getLogger('pygit-viewer')
