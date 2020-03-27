@@ -21,6 +21,7 @@ from typing import Any, List
 
 from docopt import docopt
 from prompt_toolkit import Application
+from prompt_toolkit import __version__ as ptk_version
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.key_binding import KeyBindings
@@ -30,12 +31,23 @@ from prompt_toolkit.layout import (BufferControl, HSplit, Layout, UIContent,
 from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.layout.margins import ScrollbarMargin
 from prompt_toolkit.layout.screen import Point
-from prompt_toolkit.output.defaults import get_default_output
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.widgets import SearchToolbar
 
 from pygit_viewer import (Commit, CommitLink, Foldable, NoPathMatches,
                           NoRevisionMatches, Repo)
+
+if ptk_version.startswith('3.'):
+    PTK_VERSION = 3
+    # pylint: disable=no-name-in-module,ungrouped-imports
+    from prompt_toolkit.output.defaults import create_output
+elif ptk_version.startswith('2.'):
+    PTK_VERSION = 2
+    # pylint: disable=no-name-in-module,ungrouped-imports
+    from prompt_toolkit.output.defaults import get_default_output as create_output
+else:
+    print("Unsupported prompt_toolkit version " + ptk_version, file=sys.stderr)
+    sys.exit(1)
 
 ARGUMENTS = docopt(__doc__, version='v1.0.0', options_first=True)
 DEBUG = ARGUMENTS['--debug']
@@ -343,7 +355,7 @@ class LogView(BufferControl):
 
 
 def screen_height() -> int:
-    return get_default_output().from_pty(sys.stdout).get_size().rows
+    return create_output().from_pty(sys.stdout).get_size().rows
 
 
 SEARCH = SearchToolbar(vi_mode=True)
