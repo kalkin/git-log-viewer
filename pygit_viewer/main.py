@@ -61,6 +61,7 @@ if DEBUG:
         # optionally set the logging level
     except:  # pylint: disable=bare-except
         print("No systemd journal bindings", file=sys.stderr)
+        sys.exit(1)
 
 # get an instance of the logger object this module will use
 
