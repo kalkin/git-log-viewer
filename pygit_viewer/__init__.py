@@ -28,7 +28,6 @@ class NoRevisionMatches(Exception):
 
 class Commit:
     ''' Wrapper object around a pygit2.Commit object. '''
-
     def __init__(self,
                  repo,
                  commit: GitCommit,
@@ -231,7 +230,6 @@ def providers():
 
 class Repo:
     ''' A wrapper around `pygit2.Repository`. '''
-
     def __init__(self,
                  path: str,
                  revision: str = 'HEAD',

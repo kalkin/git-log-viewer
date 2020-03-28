@@ -12,9 +12,8 @@ from pygit2 import Repository  # pylint: disable=no-name-in-module
 
 def modules(repo: Repository) -> List[str]:
     ''' Return list of all .gitsubtrees modules in repository '''
-
     def subtree_config_files() -> List[str]:
-        result = subprocess.run(
+        result = subprocess.run(  # pylint: disable=subprocess-run-check
             ['git', 'ls-files', '*/.gitsubtrees', '.gitsubtrees'],
             stdout=subprocess.PIPE,
             cwd=repo.workdir)

@@ -36,8 +36,8 @@ class Provider():
         self._repo = repo
         self._url = urllib3.util.parse_url(self._repo.remotes['origin'].url)
         self.auth_failed = False
-        self._http = urllib3.PoolManager(
-            cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
+        self._http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED',
+                                         ca_certs=certifi.where())
 
     @staticmethod
     def enabled(repo) -> bool:
@@ -69,8 +69,8 @@ class GitHub(Provider):
         auth_tupple = self.authorization()
         if auth_tupple:
             basic_auth = '%s:%s' % auth_tupple
-            self._headers = urllib3.make_headers(
-                basic_auth=basic_auth, user_agent='pygit-viewer')
+            self._headers = urllib3.make_headers(basic_auth=basic_auth,
+                                                 user_agent='pygit-viewer')
 
         parts = self._url.path.split('/')
         owner = parts[1]
@@ -139,10 +139,10 @@ class Atlassian(Provider):
             repo_name = repo_name[:-4]
 
         self._api_url = str(
-            self._url._replace(
-                path='/rest/api/1.0/projects/' + name + '/repos/' + repo_name,
-                scheme='https',
-                port=443))
+            self._url._replace(path='/rest/api/1.0/projects/' + name +
+                               '/repos/' + repo_name,
+                               scheme='https',
+                               port=443))
 
     @staticmethod
     def enabled(repo) -> bool:

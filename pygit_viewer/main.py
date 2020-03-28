@@ -47,7 +47,7 @@ if DEBUG:
     try:
 
         def add_journal_handler():
-            from systemd.journal import JournalHandler
+            from systemd.journal import JournalHandler  # pylint: disable=import-outside-toplevel
             journald_handler = JournalHandler()
             # set a formatter to include the level name
             journald_handler.setFormatter(
@@ -107,10 +107,9 @@ class History(UIContent):
         self.commit_list: List[Commit] = []
         self.search_state = None
         self.walker = self._repo.walker()
-        super().__init__(
-            line_count=self.line_count,
-            get_line=self.get_line,
-            show_cursor=False)
+        super().__init__(line_count=self.line_count,
+                         get_line=self.get_line,
+                         show_cursor=False)
 
     def apply_search(self,
                      search_state: SearchState,
@@ -168,10 +167,10 @@ class History(UIContent):
     def _render_commit(self, commit: Commit, line_number: int) -> List[tuple]:
         rendered = commit.render()
         _id = rendered.short_id
-        author_date = (rendered.author_date[0], rendered.author_date[1].ljust(
-            self.date_max_len, " "))
-        author_name = (rendered.author_name[0], rendered.author_name[1].ljust(
-            self.name_max_len, " "))
+        author_date = (rendered.author_date[0],
+                       rendered.author_date[1].ljust(self.date_max_len, " "))
+        author_name = (rendered.author_name[0],
+                       rendered.author_name[1].ljust(self.name_max_len, " "))
         icon = rendered.type
         module = rendered.modules
         subject = rendered.subject
@@ -281,8 +280,8 @@ class LogView(BufferControl):
         path = os.path.abspath(os.path.expanduser(path))
         self.content = History(Repo(path, revision, ARGUMENTS['<path>']))
         buffer.apply_search = self.content.apply_search  # type: ignore
-        super().__init__(
-            buffer=buffer, search_buffer_control=search_buffer_control)
+        super().__init__(buffer=buffer,
+                         search_buffer_control=search_buffer_control)
 
     def is_focusable(self) -> bool:
         return True
@@ -356,8 +355,8 @@ except NoPathMatches:
     print("No paths match the given arguments.", file=sys.stderr)
     sys.exit(1)
 
-MAIN_VIEW = Window(
-    content=LOG_VIEW, right_margins=[ScrollbarMargin(display_arrows=True)])
+MAIN_VIEW = Window(content=LOG_VIEW,
+                   right_margins=[ScrollbarMargin(display_arrows=True)])
 LAYOUT = Layout(HSplit([MAIN_VIEW, SEARCH]), focused_element=MAIN_VIEW)
 
 
@@ -402,8 +401,8 @@ def enter(_: KeyPressEvent):
 @KB.add('/')
 def search_forward(_: KeyPressEvent):
     LAYOUT.search_links = {SEARCH.control: LOG_VIEW}
-    search_state = SearchState(
-        direction=SearchDirection.FORWARD, ignore_case=False)
+    search_state = SearchState(direction=SearchDirection.FORWARD,
+                               ignore_case=False)
     SEARCH.control.searcher_search_state = search_state
     LAYOUT.focus(SEARCH.control)
 
@@ -411,8 +410,8 @@ def search_forward(_: KeyPressEvent):
 @KB.add('?')
 def search_backward(_: KeyPressEvent):
     LAYOUT.search_links = {SEARCH.control: LOG_VIEW}
-    search_state = SearchState(
-        direction=SearchDirection.BACKWARD, ignore_case=False)
+    search_state = SearchState(direction=SearchDirection.BACKWARD,
+                               ignore_case=False)
     SEARCH.control.searcher_search_state = search_state
     LAYOUT.focus(SEARCH.control)
 
