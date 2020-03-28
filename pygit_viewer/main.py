@@ -17,6 +17,7 @@ import os
 import re
 import subprocess
 import sys
+import threading
 from typing import Any, List
 
 from docopt import docopt
@@ -120,6 +121,7 @@ class History(UIContent):
         self.commit_list: List[Commit] = []
         self.search_state = None
         self.walker = self._repo.walker()
+        self._search_thread = None
         super().__init__(line_count=self.line_count,
                          get_line=self.get_line,
                          show_cursor=False)
@@ -128,6 +130,23 @@ class History(UIContent):
                      search_state: SearchState,
                      include_current_position=True,
                      count=1):
+        if self._search_thread is not None and self._search_thread.isAlive():
+            try:
+                self._search_thread._stop()  # pylint: disable=protected-access
+            except Exception:  # pylint: disable=broad-except
+                pass
+
+        self._search_thread = threading.Thread(
+            target=self.search,
+            args=(search_state, include_current_position, count),
+            daemon=True,
+        )
+        self._search_thread.start()
+
+    def search(self,
+               search_state: SearchState,
+               include_current_position=True,
+               count=1):
         LOG.debug('applying search %r, %r, %r', search_state,
                   include_current_position, count)
         self.search_state: SearchState = search_state
