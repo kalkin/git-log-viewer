@@ -541,7 +541,12 @@ def last(_):
 
 
 def cli():
-    app = Application(full_screen=True, layout=LAYOUT)
+    if PTK_VERSION == 3:
+        app = Application(full_screen=True,
+                          layout=LAYOUT,
+                          refresh_interval=0.2)
+    else:
+        app = Application(full_screen=True, layout=LAYOUT)
     app.run()
 
 
