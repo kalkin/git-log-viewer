@@ -368,6 +368,50 @@ class LogView(BufferControl):
     def toggle_fold(self, line_number):
         self.content.toggle_fold(line_number)
 
+    def is_folded(self, line_number: int) -> bool:
+        commit = self.content.commit_list[line_number]
+        if isinstance(commit, Foldable):
+            return commit.is_folded
+        return False
+
+    def is_foldable(self, line_number: int) -> bool:
+        commit = self.content.commit_list[line_number]
+        return isinstance(commit, Foldable)
+
+    def is_child(self, line_number: int) -> bool:
+        commit = self.content.commit_list[line_number]
+        return commit.level > 0
+
+    def go_to_parent(self, line_number: int):
+        commit = self.content.commit_list[line_number]
+        assert commit.level > 0 and line_number > 0
+        i = line_number - 1
+        while i >= 0:
+            candidat = self.content.commit_list[i]
+            if candidat.level < commit.level:
+                self.goto_line(i)
+                break
+            i -= 1
+
+    def is_link(self, line_number: int) -> bool:
+        commit = self.content.commit_list[line_number]
+        return isinstance(commit, CommitLink)
+
+    def go_to_link(self, line_number: int):
+        commit = self.content.commit_list[line_number]
+        assert isinstance(commit, CommitLink)
+        i = line_number + 1
+        while i < line_number + 400:
+            try:
+                candidat = self.content.commit_list[i]
+            except IndexError:
+                self.content.fill_up(50)
+
+            if candidat.short_id() == commit.short_id():
+                self.goto_line(i)
+                break
+            i += 1
+
     @property
     def path(self) -> str:
         return self.path
@@ -416,6 +460,27 @@ def pageup_key(_: KeyPressEvent):
     if line_number < 0:
         line_number = 0
     LOG_VIEW.goto_line(line_number)
+
+
+@KB.add('l')
+def fold(_: KeyPressEvent):
+    line_number = LOG_VIEW.current_line
+    if LOG_VIEW.is_link(line_number):
+        LOG.debug("DRIN")
+        LOG_VIEW.go_to_link(line_number)
+    elif LOG_VIEW.is_foldable(line_number):
+        if LOG_VIEW.is_folded(line_number):
+            LOG_VIEW.toggle_fold(line_number)
+
+
+@KB.add('h')
+def unfold(_: KeyPressEvent):
+    line_number = LOG_VIEW.current_line
+    if LOG_VIEW.is_foldable(line_number) and \
+            not LOG_VIEW.is_folded(line_number):
+        LOG_VIEW.toggle_fold(line_number)
+    elif LOG_VIEW.is_child(line_number):
+        LOG_VIEW.go_to_parent(line_number)
 
 
 @KB.add('tab')
