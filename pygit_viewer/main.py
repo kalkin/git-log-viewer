@@ -25,18 +25,20 @@ from prompt_toolkit import Application
 from prompt_toolkit import __version__ as ptk_version
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.buffer import Buffer
+from prompt_toolkit.data_structures import Point
+from prompt_toolkit.filters import Condition
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
-from prompt_toolkit.layout import (BufferControl, HSplit, Layout, UIContent,
-                                   Window)
+from prompt_toolkit.layout import (BufferControl, ConditionalContainer, HSplit,
+                                   Layout, UIContent, Window)
 from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.layout.margins import ScrollbarMargin
-from prompt_toolkit.layout.screen import Point
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.widgets import SearchToolbar
 
 from pygit_viewer import (Commit, CommitLink, Foldable, NoPathMatches,
                           NoRevisionMatches, Repo)
+from pygit_viewer.status import StatusBar
 
 if ptk_version.startswith('3.'):
     PTK_VERSION = 3
@@ -54,6 +56,7 @@ ARGUMENTS = docopt(__doc__, version='v1.0.0', options_first=True)
 DEBUG = ARGUMENTS['--debug']
 
 LOG = logging.getLogger('pygit-viewer')
+STATUS = StatusBar()
 
 if DEBUG:
     LOG.setLevel(logging.DEBUG)
@@ -138,6 +141,8 @@ class History(UIContent):
                 self._search_thread._stop()  # pylint: disable=protected-access
             except Exception:  # pylint: disable=broad-except
                 pass
+            finally:
+                STATUS.clear()
 
         args = (search_state, include_current_position, count)
         self._search_thread = Thread(target=self.search,
@@ -156,6 +161,7 @@ class History(UIContent):
         new_position = self.cursor_position.y
         LOG.debug('Current position %r', self.cursor_position.y)
         needle = self.search_state.text
+        STATUS.set_status("Searching for '%s'" % needle)
         if self.search_state.direction == SearchDirection.FORWARD:
             while True:
                 try:
@@ -184,6 +190,7 @@ class History(UIContent):
 
         if new_position != self.cursor_position.y:
             self.cursor_position = Point(x=self.cursor_position.x, y=index)
+        STATUS.clear()
 
     def get_line(self, line_number: int) -> List[tuple]:  # pylint: disable=method-hidden
         length = len(self.commit_list)
@@ -434,9 +441,21 @@ except NoPathMatches:
     print("No paths match the given arguments.", file=sys.stderr)
     sys.exit(1)
 
+
+@Condition
+def statis_is_visible() -> bool:
+    return bool(STATUS.content.text)
+
+
 MAIN_VIEW = Window(content=LOG_VIEW,
                    right_margins=[ScrollbarMargin(display_arrows=True)])
-LAYOUT = Layout(HSplit([MAIN_VIEW, SEARCH]), focused_element=MAIN_VIEW)
+STATUS_WINDOW = ConditionalContainer(content=Window(content=STATUS,
+                                                    height=1,
+                                                    ignore_content_height=True,
+                                                    wrap_lines=False),
+                                     filter=statis_is_visible)
+LAYOUT = Layout(HSplit([MAIN_VIEW, SEARCH, STATUS_WINDOW]),
+                focused_element=MAIN_VIEW)
 
 
 @KB.add('j')
