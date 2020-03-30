@@ -463,6 +463,7 @@ def pageup_key(_: KeyPressEvent):
 
 
 @KB.add('l')
+@KB.add('right')
 def fold(_: KeyPressEvent):
     line_number = LOG_VIEW.current_line
     if LOG_VIEW.is_link(line_number):
@@ -474,6 +475,7 @@ def fold(_: KeyPressEvent):
 
 
 @KB.add('h')
+@KB.add('left')
 def unfold(_: KeyPressEvent):
     line_number = LOG_VIEW.current_line
     if LOG_VIEW.is_foldable(line_number) and \
