@@ -10,6 +10,7 @@ from typing import Any, Iterator, List, Optional, Union
 import babel.dates
 import pkg_resources
 from pygit2 import Commit as GitCommit  # pylint: disable=no-name-in-module
+from pygit2 import Mailmap  # pylint: disable=no-name-in-module
 from pygit2 import Oid  # pylint: disable=no-name-in-module
 from pygit2 import discover_repository  # pylint: disable=no-name-in-module
 from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
@@ -158,7 +159,10 @@ class Commit:
         return str(self._commit.id)[0:max_len - 1]
 
     def short_author_name(self) -> str:
-        return self.author_name().split()[0]
+        signature = self._repo.mailmap.resolve_signature(self._commit.author)
+        if signature.name == self._commit.author.name:
+            return signature.name.split(' ')[0]
+        return signature.name
 
     def __repr__(self) -> str:
         return str(self._commit.id)
@@ -230,6 +234,8 @@ def providers():
 
 class Repo:
     ''' A wrapper around `pygit2.Repository`. '''
+
+    # pylint: disable=too-many-instance-attributes
     def __init__(self,
                  path: str,
                  revision: str = 'HEAD',
@@ -241,6 +247,7 @@ class Repo:
             print(' Not a git repository', file=sys.stderr)
             sys.exit(2)
         self._repo = GitRepo(repo_path)
+        self.mailmap = Mailmap.from_repository(self._repo)
         self.module_cache = Cache(repo_path + '/pygit-viewer/modules.json')
         self.has_modules = False
         if vcs.modules(self._repo):

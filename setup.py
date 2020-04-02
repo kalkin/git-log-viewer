@@ -25,8 +25,8 @@ setuptools.setup(
         ],
     },
     install_requires=[
-        'pygit2', 'prompt_toolkit >= 2.0, <4.0', 'Babel >= 2.5.1, <3.0',
-        'certifi', 'urllib3', 'docopt'
+        'pygit2 >= 0.28.0', 'prompt_toolkit >= 2.0, <4.0',
+        'Babel >= 2.5.1, <3.0', 'certifi', 'urllib3', 'docopt'
     ],
     tests_require=['aloe >= 0.1.19, <= 0.2.0'],
     classifiers=[
