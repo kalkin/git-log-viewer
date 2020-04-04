@@ -453,13 +453,6 @@ class Merge(Foldable):
     pass
 
 
-class Crossroads(Merge):
-    @property  # type: ignore
-    @functools.lru_cache()
-    def icon(self) -> str:
-        return "●─┤"
-
-
 class Octopus(Foldable):
     # TODO Add support for ocotopus branch display
     pass
