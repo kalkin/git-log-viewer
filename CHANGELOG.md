@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased - 2020-04-04
+
+### Added
+
+- keybindings 'h'/'l' & Left/Right to fold/unfold a node
+- compatibility with prompt\_toolkit@v3.0
+- use mailmap to resolve authors name
+
+### Fixed
+
+- exit with error if `-d` arg was passed but deps are missing
+- failure to run on MacOS X when no netrc exists
+- Search do not freeze the whole app
+- version number command line output
+- search freezing the whole application
+
+### Removed
+
+- obsolete experiments / scratch code
+
 ## [v1.0.0] - 2020-03-19
 
 ### Added
