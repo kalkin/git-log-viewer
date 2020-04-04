@@ -17,8 +17,8 @@ import os
 import re
 import subprocess
 import sys
-import threading
-from typing import Any, List
+from threading import Thread
+from typing import Any, Iterable, List, Optional, Tuple, Union
 
 from docopt import docopt
 from prompt_toolkit import Application
@@ -81,7 +81,8 @@ if DEBUG:
 KB = KeyBindings()
 
 
-def highlight(parts, needle):
+def highlight(parts: Tuple[str, str], needle: str
+              ) -> Union[Tuple[str, str], Iterable[Tuple[str, str]]]:
     haystack = parts[1]
     matches = list(re.finditer(re.escape(needle), haystack))
     if not matches:
@@ -107,7 +108,8 @@ def highlight(parts, needle):
     return result
 
 
-def highlight_substring(search: SearchState, text: tuple) -> list:
+def highlight_substring(search: SearchState, text: Tuple[str, str]
+                        ) -> Union[Tuple[str, str], Iterable[Tuple[str, str]]]:
     return highlight(text, search.text)
 
 
@@ -119,12 +121,13 @@ class History(UIContent):
         self._repo = repo
         self.line_count = len(list(self._repo.walker()))
         self.commit_list: List[Commit] = []
-        self.search_state = None
+        self.search_state: Optional[SearchState] = None
         self.walker = self._repo.walker()
-        self._search_thread = None
+        self._search_thread: Optional[Thread] = None
         super().__init__(line_count=self.line_count,
                          get_line=self.get_line,
                          show_cursor=False)
+        self.fill_up(100)
 
     def apply_search(self,
                      search_state: SearchState,
@@ -136,11 +139,10 @@ class History(UIContent):
             except Exception:  # pylint: disable=broad-except
                 pass
 
-        self._search_thread = threading.Thread(
-            target=self.search,
-            args=(search_state, include_current_position, count),
-            daemon=True,
-        )
+        args = (search_state, include_current_position, count)
+        self._search_thread = Thread(target=self.search,
+                                     args=args,
+                                     daemon=True)
         self._search_thread.start()
 
     def search(self,
@@ -149,7 +151,7 @@ class History(UIContent):
                count=1):
         LOG.debug('applying search %r, %r, %r', search_state,
                   include_current_position, count)
-        self.search_state: SearchState = search_state
+        self.search_state = search_state
         index = self.cursor_position.y
         new_position = self.cursor_position.y
         LOG.debug('Current position %r', self.cursor_position.y)

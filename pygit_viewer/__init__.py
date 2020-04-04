@@ -5,7 +5,7 @@ import os
 import sys
 import time
 from datetime import datetime
-from typing import Any, Iterator, List, Optional, Union
+from typing import Any, Iterator, List, Optional, Tuple, Union
 
 import babel.dates
 import pkg_resources
@@ -191,7 +191,7 @@ class LogEntry:
         return ("ansiblue", self.commit.author_date())
 
     @property
-    def modules(self):
+    def modules(self) -> Tuple[str, str]:
         modules = self.commit.modules()
         if modules != '':
             return ('ansiyellow', modules)
