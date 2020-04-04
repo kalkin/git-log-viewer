@@ -232,9 +232,10 @@ class History(UIContent):
         result: List[tuple] = []
         for sth in tmp:
             if isinstance(sth, tuple):
-                result += [sth]
+                result += [sth, ('', ' ')]
             else:
                 result += sth
+                result += [('', ' ')]
 
         if branches:
             result += branches
@@ -242,7 +243,7 @@ class History(UIContent):
         if line_number == self.cursor_position.y:
             result = [('reverse ' + x[0], x[1]) for x in result]
 
-        return [(x[0], x[1] + ' ') for x in result]
+        return [(x[0], x[1]) for x in result]
 
     def toggle_fold(self, line_number):
         commit = self.commit_list[line_number]
