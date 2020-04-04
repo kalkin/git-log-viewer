@@ -50,8 +50,12 @@ class Provider():
         raise NotImplementedError
 
     def authorization(self) -> Optional[Tuple[str, str]]:
-        auth_store = netrc.netrc()
-        auth_tupple = auth_store.authenticators(self._url.host)
+        try:
+            auth_store = netrc.netrc()
+            auth_tupple = auth_store.authenticators(self._url.host)
+        except (FileNotFoundError):
+            auth_tupple=None
+
         if auth_tupple:
             if auth_tupple is not None:
                 return (auth_tupple[0], auth_tupple[2])  # type: ignore
