@@ -274,7 +274,8 @@ class Repo:
         try:
             git_commit = self._repo[sth]
         except ValueError:
-            assert isinstance(sth, str)
+            if not isinstance(sth, str):
+                raise ValueError("Not found %s" % sth)
             git_commit = self._repo.revparse_single(sth)
         return to_commit(self, git_commit)
 
