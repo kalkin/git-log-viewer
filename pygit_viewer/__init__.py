@@ -41,6 +41,11 @@ class Commit:
         self._oid: Oid = commit.id
         self._fork_point: Optional[bool] = None
 
+    @property
+    @functools.lru_cache()
+    def branches(self) -> List[str]:
+        return self._repo.branches
+
     @functools.lru_cache()
     def author_name(self) -> str:
         ''' Returns author name with mail as string. '''
@@ -213,11 +218,14 @@ class LogEntry:
         return ("bold", _type)
 
     @property
+    @functools.lru_cache()
     def branches(self):
-        branches = self.commit._repo.branches(self.commit)
-        if branches:
-            return branches
-        return None
+        branches = self.commit.branches
+        branch_tupples = [[('', ' '), ('ansiyellow', '«%s»' % name)]
+                          for name in branches
+                          if branches[name] == self.commit.raw_commit
+                          and not name.startswith('patches/')]
+        return list(itertools.chain(*branch_tupples))
 
 
 def providers():
@@ -281,13 +289,9 @@ class Repo:
         result = self._repo[oid]
         return to_commit(self, result)
 
-    @functools.lru_cache()
-    def branches(self, commit: Commit):
-        branch_tupples = [[('', ' '), ('ansiyellow', '«%s»' % name)]
-                          for name in self._branches
-                          if self._branches[name] == commit.raw_commit
-                          and not name.startswith('patches/')]
-        return list(itertools.chain(*branch_tupples))
+    @property
+    def branches(self):
+        return self._branches
 
     def walker(self,
                start_c: Optional[Commit] = None,
