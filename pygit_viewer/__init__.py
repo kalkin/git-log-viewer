@@ -39,7 +39,6 @@ class Commit:
         self.level: int = level
         self._parent: Optional['Commit'] = parent
         self._oid: Oid = commit.id
-        self.noffff: bool = False
         self._fork_point: Optional[bool] = None
 
     @functools.lru_cache()
@@ -90,9 +89,6 @@ class Commit:
     @property  # type: ignore
     @functools.lru_cache()
     def icon(self) -> str:
-        if self.noffff:
-            return "……"
-
         point = "●"
         if self.__stgit():
             point = "Ⓟ"
@@ -399,9 +395,6 @@ class Foldable(Commit):
     @property  # type: ignore
     @functools.lru_cache()
     def icon(self) -> str:
-        if self.noffff:
-            return "……"
-
         if self.subject().startswith('Update :'):
             if isinstance(self.parent, Foldable) and self.parent.is_rebased():
                 return '●⇤┤'
@@ -429,9 +422,6 @@ class InitialCommit(Commit):
     @property  # type: ignore
     @functools.lru_cache()
     def icon(self) -> str:
-        if self.noffff:
-            return "……"
-
         return "◉"
 
 
