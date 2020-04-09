@@ -5,7 +5,7 @@ import os
 import sys
 import time
 from datetime import datetime
-from typing import Any, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import babel.dates
 import pkg_resources
@@ -42,9 +42,12 @@ class Commit:
         self._fork_point: Optional[bool] = None
 
     @property
-    @functools.lru_cache()
     def branches(self) -> List[str]:
-        return self._repo.branches
+        branches = self._repo.branches()
+        return [
+            name for name, commit in branches.items()
+            if commit == self.raw_commit
+        ]
 
     @functools.lru_cache()
     def author_name(self) -> str:
@@ -216,14 +219,12 @@ class LogEntry:
         _type = level + self.commit.icon
         return ("bold", _type)
 
-    @property
     @functools.lru_cache()
-    def branches(self):
+    def branches(self) -> List[Tuple[str, str]]:
         branches = self.commit.branches
         branch_tupples = [[('', ' '), ('ansiyellow', '«%s»' % name)]
                           for name in branches
-                          if branches[name] == self.commit.raw_commit
-                          and not name.startswith('patches/')]
+                          if not name.startswith('patches/')]
         return list(itertools.chain(*branch_tupples))
 
 
@@ -289,8 +290,8 @@ class Repo:
         result = self._repo[oid]
         return to_commit(self, result)
 
-    @property
-    def branches(self):
+    @functools.lru_cache()
+    def branches(self) -> Dict[str, Any]:
         return self._branches
 
     def walker(self,

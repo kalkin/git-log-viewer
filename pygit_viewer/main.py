@@ -214,7 +214,7 @@ class History(UIContent):
         icon = rendered.type
         module = rendered.modules
         subject = rendered.subject
-        branches = rendered.branches
+        branches = rendered.branches()
 
         if isinstance(commit, CommitLink):
             if isinstance(subject, tuple):
