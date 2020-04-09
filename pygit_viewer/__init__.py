@@ -425,13 +425,6 @@ class Foldable(Commit):
         self._folded = True
 
 
-class ForkPoint(Commit):
-    @property  # type: ignore
-    @functools.lru_cache()
-    def icon(self) -> str:
-        return "●─┘"
-
-
 class InitialCommit(Commit):
     @property  # type: ignore
     @functools.lru_cache()
