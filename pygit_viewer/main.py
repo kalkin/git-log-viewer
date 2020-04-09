@@ -610,7 +610,7 @@ def qkb(_):
     LAYOUT.focus(LOG_VIEW)
 
 
-@KB.add('c-c')
+@KG.add('c-c', is_global=True)
 def _(_):
     get_app().exit(result=False)
 
