@@ -5,6 +5,8 @@ from typing import List, Optional, Tuple
 from prompt_toolkit.layout import BufferControl, UIContent
 from prompt_toolkit.layout.controls import GetLinePrefixCallable
 
+from pygit_viewer import Commit
+
 
 class StatusContent(UIContent):
     '''
@@ -60,3 +62,27 @@ class StatusBar(BufferControl):
                        preview_search: bool = False) -> UIContent:
         self.content.width = width
         return self.content
+
+
+class CommitBar(BufferControl):
+    ''' Status bar implementation '''
+    def __init__(self):
+        super().__init__(focusable=False)
+        self.content = StatusContent()
+
+    def set_commit(self, commit: Commit) -> None:
+        ''' Set some text to show in the status bar '''
+        self.content.text = 'commit: %s' % commit.raw_commit.oid
+
+    def clear(self) -> None:
+        ''' Clear the content of the status bar '''
+        self.content.text = ''
+
+    def create_content(self,
+                       width: int,
+                       height: int,
+                       preview_search: bool = False) -> UIContent:
+        self.content.width = width
+        return self.content
+
+STATUS = StatusBar()
