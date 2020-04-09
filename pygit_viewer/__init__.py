@@ -83,11 +83,10 @@ class Commit:
         return to_commit(self._repo, next_raw_commit, self)
 
     @functools.lru_cache()
-    def __stgit(self) -> bool:  # ↓ FIXME ↓
-        # pylint: disable=protected-access
-        for name in self._repo._branches:
+    def __stgit(self) -> bool:
+        for name in self.branches:
             if name.startswith('patches/') \
-            and self._repo._branches[name] == self.raw_commit:
+                    and self.branches[name] == self.raw_commit:
                 return True
         return False
 
