@@ -89,6 +89,7 @@ if DEBUG:
 # get an instance of the logger object this module will use
 
 KB = KeyBindings()
+KG = KeyBindings()
 
 
 def highlight(parts: Tuple[str, str], needle: str
@@ -602,9 +603,9 @@ def open_in_pager(command: str) -> Any:
     subprocess.Popen(cmd, stdin=False, stdout=False, stderr=False)
 
 
-@KB.add('q')
+@KG.add('q', is_global=True, eager=True)
 def qkb(_):
-    LOG.warning('Focused: %s', LAYOUT.container)
+    LOG.debug('Hidding DIFF_VIEW')
     DIFF_VIEW.hide()
     LAYOUT.focus(LOG_VIEW)
 
@@ -643,12 +644,14 @@ def cli():
                           layout=LAYOUT,
                           refresh_interval=0.2,
                           style=patched_style(),
-                          color_depth=ColorDepth.TRUE_COLOR)
+                          color_depth=ColorDepth.TRUE_COLOR,
+                          key_bindings=KG)
     else:
         app = Application(full_screen=True,
                           layout=LAYOUT,
                           style=patched_style(),
-                          color_depth=ColorDepth.TRUE_COLOR)
+                          color_depth=ColorDepth.TRUE_COLOR,
+                          key_bindings=KG)
     app.editing_mode = EditingMode.VI
     app.run()
 
