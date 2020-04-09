@@ -27,6 +27,7 @@ from prompt_toolkit.application.current import get_app
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.data_structures import Point
 from prompt_toolkit.filters import Condition
+from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.layout import (BufferControl, ConditionalContainer, HSplit,
@@ -579,6 +580,7 @@ def cli():
                           refresh_interval=0.2)
     else:
         app = Application(full_screen=True, layout=LAYOUT)
+    app.editing_mode = EditingMode.VI
     app.run()
 
 
