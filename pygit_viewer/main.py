@@ -35,7 +35,6 @@ from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.layout.margins import ScrollbarMargin
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.widgets import SearchToolbar
-
 from pygit_viewer import (Commit, CommitLink, Foldable, NoPathMatches,
                           NoRevisionMatches, Repo)
 from pygit_viewer.status import StatusBar
@@ -268,7 +267,8 @@ class History(UIContent):
         open_in_pager(command)
 
     def _fold(self, line_number: int, commit: Foldable) -> Any:
-        assert not commit.is_folded
+        if commit.is_folded:
+            raise ValueError('Received an already folded commit')
         commit.fold()
         for _ in commit.child_log():
             cur_commit = self.commit_list[line_number]
@@ -278,7 +278,8 @@ class History(UIContent):
             self.line_count -= 1
 
     def _unfold(self, line_number: int, commit: Foldable) -> Any:
-        assert commit.is_folded
+        if not commit.is_folded:
+            raise ValueError('Received an already unfolded commit')
         commit.unfold()
         index = 1
         for _ in commit.child_log():
@@ -292,7 +293,9 @@ class History(UIContent):
         self.line_count += index
 
     def fill_up(self, amount: int) -> int:
-        assert amount > 0
+        if amount <= 0:
+            raise ValueError('Amount must be ≤ 0')
+
         result = 0
         for _ in range(0, amount):
             try:
@@ -394,14 +397,14 @@ class LogView(BufferControl):
 
     def go_to_parent(self, line_number: int):
         commit = self.content.commit_list[line_number]
-        assert commit.level > 0 and line_number > 0
-        i = line_number - 1
-        while i >= 0:
-            candidat = self.content.commit_list[i]
-            if candidat.level < commit.level:
-                self.goto_line(i)
-                break
-            i -= 1
+        if commit.level > 0 and line_number > 0:
+            i = line_number - 1
+            while i >= 0:
+                candidat = self.content.commit_list[i]
+                if candidat.level < commit.level:
+                    self.goto_line(i)
+                    break
+                i -= 1
 
     def is_link(self, line_number: int) -> bool:
         commit = self.content.commit_list[line_number]
@@ -409,7 +412,10 @@ class LogView(BufferControl):
 
     def go_to_link(self, line_number: int):
         commit = self.content.commit_list[line_number]
-        assert isinstance(commit, CommitLink)
+
+        if not isinstance(commit, CommitLink):
+            raise ValueError('Expected CommitLinkt got %s' % commit)
+
         i = line_number + 1
         while i < line_number + 400:
             try:
