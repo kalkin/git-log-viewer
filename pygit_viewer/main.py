@@ -58,6 +58,7 @@ DEBUG = ARGUMENTS['--debug']
 LOG = logging.getLogger('pygit-viewer')
 STATUS = StatusBar()
 
+LOG.setLevel(logging.CRITICAL)
 if DEBUG:
     LOG.setLevel(logging.DEBUG)
     try:
