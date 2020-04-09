@@ -16,7 +16,7 @@ from pygit2 import discover_repository  # pylint: disable=no-name-in-module
 from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
 
 import pygit_viewer.vcs as vcs
-from pygit_viewer.providers import Cache
+from pygit_viewer.providers import Cache, Provider
 
 
 class NoPathMatches(Exception):
@@ -34,7 +34,7 @@ class Commit:
                  commit: GitCommit,
                  parent: Optional['Commit'] = None,
                  level: int = 0) -> None:
-        self._repo = repo
+        self._repo: Repo = repo
         self._commit: GitCommit = commit
         self.level: int = level
         self._parent: Optional['Commit'] = parent
@@ -236,7 +236,7 @@ class Repo:
                  path: str,
                  revision: str = 'HEAD',
                  files: List[str] = None) -> None:
-        self.provider = None
+        self.provider: Optional[Provider] = None
         self.files = files or []
         repo_path = discover_repository(path)
         if not repo_path:
