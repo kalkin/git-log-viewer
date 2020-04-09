@@ -160,10 +160,12 @@ class History(UIContent):
         self.search_state = search_state
         index = self.cursor_position.y
         new_position = self.cursor_position.y
-        LOG.debug('Current position %r', self.cursor_position.y)
+        LOG.debug('Current position %r', index)
         needle = self.search_state.text
         STATUS.set_status("Searching for '%s'" % needle)
         if self.search_state.direction == SearchDirection.FORWARD:
+            if not include_current_position:
+                index += 1
             while True:
                 try:
                     commit = self.commit_list[index]
@@ -180,6 +182,8 @@ class History(UIContent):
 
                 index += 1
         else:
+            if not include_current_position and index > 0:
+                index -= 1
             while index >= 0:
                 commit = self.commit_list[index]
                 if needle in commit.short_id() or needle in commit.subject() \
@@ -536,6 +540,22 @@ def search_forward(_: KeyPressEvent):
                                ignore_case=False)
     SEARCH.control.searcher_search_state = search_state
     LAYOUT.focus(SEARCH.control)
+
+
+@KB.add('n')
+def search_next(_: KeyPressEvent):
+    search_state = SEARCH.control.searcher_search_state
+    if search_state.text:
+        search_state.direction = SearchDirection.FORWARD
+        LOG_VIEW.content.apply_search(search_state, False)
+
+
+@KB.add('p')
+def search_prev(_: KeyPressEvent):
+    search_state = SEARCH.control.searcher_search_state
+    if search_state.text:
+        search_state.direction = SearchDirection.BACKWARD
+        LOG_VIEW.content.apply_search(search_state, False)
 
 
 @KB.add('?')
