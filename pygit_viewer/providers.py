@@ -1,5 +1,6 @@
 # pylint: disable=missing-docstring,fixme
 import json
+import logging
 import netrc
 import os
 import pathlib
@@ -9,6 +10,8 @@ from typing import Any, Optional, Tuple
 
 import certifi
 import urllib3  # type: ignore
+
+LOG = logging.getLogger('pygit-viewer')
 
 
 class Cache:
