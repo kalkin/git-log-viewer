@@ -14,8 +14,10 @@ from pygit2 import Mailmap  # pylint: disable=no-name-in-module
 from pygit2 import Oid  # pylint: disable=no-name-in-module
 from pygit2 import discover_repository  # pylint: disable=no-name-in-module
 from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
+from pykka import Future, Timeout
 
 import pygit_viewer.vcs as vcs
+from pygit_viewer.actors import ProviderActor
 from pygit_viewer.providers import Cache, Provider
 
 
@@ -40,6 +42,7 @@ class Commit:
         self._parent: Optional['Commit'] = parent
         self._oid: Oid = commit.id
         self._fork_point: Optional[bool] = None
+        self._subject: Optional[Future] = None
 
     @property
     def branches(self) -> List[str]:
@@ -117,26 +120,25 @@ class Commit:
         return self._oid
 
     @functools.lru_cache()
-    def subject(self) -> str:
-        ''' Returns the first line of the commit message. '''
+    def _first_subject_line(self) -> str:
         try:
-            subject = self._commit.message.strip().splitlines()[0]
-            if subject.startswith("Merge pull request #"):
-                if self._repo.provider \
-                        and self._repo.provider.has_match(subject):
-                    try:
-                        return self._repo.provider.provide(subject)
-                    except Exception:  # pylint: disable=broad-except
-                        return subject
-                words = subject.split()
-                subject = ' '.join(words[3:])
-                subject = 'MERGE: ' + subject
-            elif subject.split()[0].startswith(':') and self.modules():
-                words = subject.split()
-                subject = ' '.join(words[1:])
-            return subject
+            return self._commit.message.strip().splitlines()[0]
         except IndexError:
             return ""
+
+    def subject(self) -> str:
+        ''' Returns the first line of the commit message. '''
+        if not self._repo.provider:
+            return self._first_subject_line()
+
+        if self._subject is None:
+            subject = self._first_subject_line()
+            self._subject = self._repo.provider.ask(subject, block=False)
+
+        try:
+            return self._subject.get(0)
+        except Timeout:
+            return self._first_subject_line()
 
     @functools.lru_cache()
     def modules(self) -> str:
@@ -244,7 +246,7 @@ class Repo:
                  path: str,
                  revision: str = 'HEAD',
                  files: List[str] = None) -> None:
-        self.provider: Optional[Provider] = None
+        self.provider: Optional[ProviderActor] = None
         self.files = files or []
         repo_path = discover_repository(path)
         if not repo_path:
@@ -265,10 +267,12 @@ class Repo:
             self.__start: GitCommit = self._repo.revparse_single(revision)
         except KeyError:
             raise NoRevisionMatches
+
         for provider in providers().values():
             if provider.enabled(self._repo):
                 cache_dir = self._repo.path + '/pygit-viewer/remotes/origin'
-                self.provider = provider(self._repo, cache_dir)
+                self.provider = ProviderActor.start(
+                    provider(self._repo, cache_dir))
                 break
 
     def get(self, sth: Union[str, Oid]) -> Commit:
