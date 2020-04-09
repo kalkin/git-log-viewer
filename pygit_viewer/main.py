@@ -639,19 +639,11 @@ def patched_style() -> Style:
 
 
 def cli():
-    if PTK_VERSION == 3:
-        app = Application(full_screen=True,
-                          layout=LAYOUT,
-                          refresh_interval=0.2,
-                          style=patched_style(),
-                          color_depth=ColorDepth.TRUE_COLOR,
-                          key_bindings=KG)
-    else:
-        app = Application(full_screen=True,
-                          layout=LAYOUT,
-                          style=patched_style(),
-                          color_depth=ColorDepth.TRUE_COLOR,
-                          key_bindings=KG)
+    app = Application(full_screen=True,
+                      layout=LAYOUT,
+                      style=patched_style(),
+                      color_depth=ColorDepth.TRUE_COLOR,
+                      key_bindings=KG)
     app.editing_mode = EditingMode.VI
     app.run()
 
