@@ -615,6 +615,11 @@ def _(_):
     get_app().exit(result=False)
 
 
+@KG.add('c-l', is_global=True)
+def _(_):
+    get_app().invalidate()
+
+
 @KB.add('home')
 def first(_):
     LOG_VIEW.goto_line(0)
