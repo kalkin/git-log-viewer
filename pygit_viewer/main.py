@@ -488,8 +488,8 @@ STATUS_WINDOW = ConditionalContainer(content=Window(content=STATUS,
                                                     ignore_content_height=True,
                                                     wrap_lines=False),
                                      filter=statis_is_visible)
-DIFF_VIEW = DiffView()
-LAYOUT = Layout(HSplit([MAIN_VIEW, SEARCH, DIFF_VIEW, STATUS_WINDOW]),
+DIFF_VIEW = DiffView(SEARCH.control)
+LAYOUT = Layout(HSplit([MAIN_VIEW, DIFF_VIEW, SEARCH, STATUS_WINDOW]),
                 focused_element=MAIN_VIEW)
 
 

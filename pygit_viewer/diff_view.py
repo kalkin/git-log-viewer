@@ -4,6 +4,8 @@ from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout import BufferControl, ConditionalContainer, Window
+from prompt_toolkit.layout.controls import SearchBufferControl
+from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.lexers import PygmentsLexer
 from pygit2 import Diff  # pylint: disable=no-name-in-module
 from pygments.lexers.diff import DiffLexer
@@ -11,22 +13,21 @@ from pygments.lexers.diff import DiffLexer
 
 class DiffControl(BufferControl):
     ''' Controll for the diff buffer '''
-    def __init__(self, buffer: Buffer):
+    def __init__(self, buffer: Buffer, search: SearchBufferControl):
         lexer = PygmentsLexer(DiffLexer)
-        super().__init__(
-            buffer=buffer,
-            lexer=lexer,
-            focusable=True,
-            focus_on_click=True,
-            key_bindings=None,
-        )
+        super().__init__(buffer=buffer,
+                         lexer=lexer,
+                         focusable=True,
+                         focus_on_click=True,
+                         key_bindings=None,
+                         search_buffer_control=search)
 
 
 class DiffView(ConditionalContainer):
     ''' Represents the hideable view for diffs which provides a read only
         buffer.
     '''
-    def __init__(self):
+    def __init__(self, search: SearchBufferControl):
         self._visible: bool = False
 
         @Condition
@@ -34,7 +35,7 @@ class DiffView(ConditionalContainer):
             return self._visible
 
         buffer = Buffer(read_only=True)
-        self.control = DiffControl(buffer)
+        self.control = DiffControl(buffer, search)
         super().__init__(Window(self.control), is_visible)
 
     def show_diff(self, commit):
