@@ -34,8 +34,13 @@ from prompt_toolkit.layout import (BufferControl, ConditionalContainer, HSplit,
                                    Layout, UIContent, Window)
 from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.layout.margins import ScrollbarMargin
+from prompt_toolkit.output.color_depth import ColorDepth
 from prompt_toolkit.search import SearchDirection, SearchState
+from prompt_toolkit.styles import style_from_pygments_cls
 from prompt_toolkit.widgets import SearchToolbar
+from pygments.style import Style
+from pygments.styles.solarized import SolarizedDarkStyle
+
 from pygit_viewer import (Commit, CommitLink, Foldable, NoPathMatches,
                           NoRevisionMatches, Repo)
 from pygit_viewer.status import StatusBar
@@ -594,13 +599,31 @@ def last(_):
     LOG_VIEW.goto_last()
 
 
+def patched_style() -> Style:
+    ''' Our patched solarized style.
+    '''  # pylint: disable=protected-access
+    style = style_from_pygments_cls(SolarizedDarkStyle)
+    for i in range(len(style._style_rules)):
+        t = style._style_rules[i]
+        if t[0] == 'pygments.generic.heading':
+            style._style_rules[i] = (t[0], 'nobold #b58900')
+        if t[0] == 'pygments.generic.subheading':
+            style._style_rules[i] = (t[0], 'nobold #d33682')
+    return style
+
+
 def cli():
     if PTK_VERSION == 3:
         app = Application(full_screen=True,
                           layout=LAYOUT,
-                          refresh_interval=0.2)
+                          refresh_interval=0.2,
+                          style=patched_style(),
+                          color_depth=ColorDepth.TRUE_COLOR)
     else:
-        app = Application(full_screen=True, layout=LAYOUT)
+        app = Application(full_screen=True,
+                          layout=LAYOUT,
+                          style=patched_style(),
+                          color_depth=ColorDepth.TRUE_COLOR)
     app.editing_mode = EditingMode.VI
     app.run()
 
