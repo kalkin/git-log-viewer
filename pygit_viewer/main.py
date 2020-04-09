@@ -26,8 +26,8 @@ from prompt_toolkit import __version__ as ptk_version
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.data_structures import Point
-from prompt_toolkit.filters import Condition
 from prompt_toolkit.enums import EditingMode
+from prompt_toolkit.filters import Condition
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.layout import (BufferControl, ConditionalContainer, HSplit,
@@ -43,6 +43,7 @@ from pygments.styles.solarized import SolarizedDarkStyle
 
 from pygit_viewer import (Commit, CommitLink, Foldable, NoPathMatches,
                           NoRevisionMatches, Repo)
+from pygit_viewer.diff_view import DiffView
 from pygit_viewer.status import StatusBar
 
 if ptk_version.startswith('3.'):
@@ -155,6 +156,15 @@ class History(UIContent):
                                      args=args,
                                      daemon=True)
         self._search_thread.start()
+
+    def current(self, index: int) -> Commit:
+        LOG.debug("Fetching current for index %d", index)
+        try:
+            commit = self.commit_list[index]
+            return commit
+        except IndexError:
+            LOG.info("No index %d in commit list", index)
+            return None
 
     def search(self,
                search_state: SearchState,
@@ -337,7 +347,8 @@ class LogView(BufferControl):
         self.content = History(Repo(path, revision, ARGUMENTS['<path>']))
         buffer.apply_search = self.content.apply_search  # type: ignore
         super().__init__(buffer=buffer,
-                         search_buffer_control=search_buffer_control)
+                         search_buffer_control=search_buffer_control,
+                         focus_on_click=True)
 
     def is_focusable(self) -> bool:
         return True
@@ -348,6 +359,9 @@ class LogView(BufferControl):
 
     def create_content(self, width, height, preview_search=False):
         return self.content
+
+    def current(self) -> Optional[Commit]:
+        return self.content.current(self.current_line)
 
     def get_key_bindings(self):
         """
@@ -473,7 +487,8 @@ STATUS_WINDOW = ConditionalContainer(content=Window(content=STATUS,
                                                     ignore_content_height=True,
                                                     wrap_lines=False),
                                      filter=statis_is_visible)
-LAYOUT = Layout(HSplit([MAIN_VIEW, SEARCH, STATUS_WINDOW]),
+DIFF_VIEW = DiffView()
+LAYOUT = Layout(HSplit([MAIN_VIEW, SEARCH, DIFF_VIEW, STATUS_WINDOW]),
                 focused_element=MAIN_VIEW)
 
 
@@ -535,7 +550,10 @@ def tab(_: KeyPressEvent):
 
 @KB.add('enter')
 def enter(_: KeyPressEvent):
-    LOG_VIEW.content.show_diff()
+    commit = LOG_VIEW.current()
+    if commit:
+        DIFF_VIEW.show_diff(commit)
+        LAYOUT.focus(DIFF_VIEW)
 
 
 @KB.add('/')
@@ -584,6 +602,13 @@ def open_in_pager(command: str) -> Any:
     subprocess.Popen(cmd, stdin=False, stdout=False, stderr=False)
 
 
+@KB.add('q')
+def qkb(_):
+    LOG.warning('Focused: %s', LAYOUT.container)
+    DIFF_VIEW.hide()
+    LAYOUT.focus(LOG_VIEW)
+
+
 @KB.add('c-c')
 def _(_):
     get_app().exit(result=False)
@@ -604,11 +629,11 @@ def patched_style() -> Style:
     '''  # pylint: disable=protected-access
     style = style_from_pygments_cls(SolarizedDarkStyle)
     for i in range(len(style._style_rules)):
-        t = style._style_rules[i]
-        if t[0] == 'pygments.generic.heading':
-            style._style_rules[i] = (t[0], 'nobold #b58900')
-        if t[0] == 'pygments.generic.subheading':
-            style._style_rules[i] = (t[0], 'nobold #d33682')
+        tpl = style._style_rules[i]
+        if tpl[0] == 'pygments.generic.heading':
+            style._style_rules[i] = (tpl[0], 'nobold #b58900')
+        if tpl[0] == 'pygments.generic.subheading':
+            style._style_rules[i] = (tpl[0], 'nobold #d33682')
     return style
 
 

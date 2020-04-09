@@ -9,10 +9,13 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import babel.dates
 import pkg_resources
-from pygit2 import Commit as GitCommit  # pylint: disable=no-name-in-module
+from pygit2 import GIT_DIFF_REVERSE  # pylint: disable=no-name-in-module
+from pygit2 import Diff  # pylint: disable=no-name-in-module
 from pygit2 import Mailmap  # pylint: disable=no-name-in-module
 from pygit2 import Oid  # pylint: disable=no-name-in-module
+from pygit2 import Tree  # pylint: disable=no-name-in-module
 from pygit2 import discover_repository  # pylint: disable=no-name-in-module
+from pygit2 import Commit as GitCommit  # pylint: disable=no-name-in-module
 from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
 from pykka import Future, Timeout
 
@@ -181,6 +184,14 @@ class Commit:
     @property
     def parent(self) -> Optional['Commit']:
         return self._parent
+
+    def diff(self) -> Optional[Diff]:
+        if self._commit.parents:
+            a = self._commit
+            b = self._commit.parents[0]
+            # pylint: disable=protected-access
+            return self._repo._repo.diff(a, b, None, GIT_DIFF_REVERSE)
+        return self._commit.tree.diff_to_tree(flags=GIT_DIFF_REVERSE)
 
     @property
     def is_top(self) -> bool:
