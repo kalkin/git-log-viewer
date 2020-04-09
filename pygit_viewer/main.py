@@ -46,7 +46,7 @@ if ptk_version.startswith('3.'):
 elif ptk_version.startswith('2.'):
     PTK_VERSION = 2
     # pylint: disable=no-name-in-module,ungrouped-imports
-    from prompt_toolkit.output.defaults import get_default_output as create_output
+    from prompt_toolkit.output.defaults import get_default_output
 else:
     print("Unsupported prompt_toolkit version " + ptk_version, file=sys.stderr)
     sys.exit(1)
@@ -434,6 +434,8 @@ class LogView(BufferControl):
 
 
 def screen_height() -> int:
+    if PTK_VERSION == 2:
+        return get_default_output().from_pty(sys.stdout).get_size().rows
     return create_output().from_pty(sys.stdout).get_size().rows
 
 
