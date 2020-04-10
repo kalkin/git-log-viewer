@@ -22,7 +22,12 @@ class Cache:
         self._cache_file = file_path
         if os.path.isfile(file_path):
             with open(file_path, encoding='utf-8') as data_file:
-                self._storage = json.loads(data_file.read())
+                try:
+                    self._storage = json.loads(data_file.read())
+                except json.decoder.JSONDecodeError as e:
+                    LOG.warning('Failed to parse %s: %s', data_file.name,
+                                e.msg)
+                    self._storage = {}
 
     def __getitem__(self, key) -> Any:
         return self._storage[key]
@@ -57,7 +62,7 @@ class Provider():
             auth_store = netrc.netrc()
             auth_tupple = auth_store.authenticators(self._url.host)
         except (FileNotFoundError):
-            auth_tupple=None
+            auth_tupple = None
 
         if auth_tupple:
             if auth_tupple is not None:
