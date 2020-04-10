@@ -494,7 +494,7 @@ STATUS_WINDOW = ConditionalContainer(content=Window(content=STATUS,
                                                     ignore_content_height=True,
                                                     wrap_lines=False),
                                      filter=statis_is_visible)
-DIFF_VIEW = DiffView(SEARCH.control)
+DIFF_VIEW = DiffView()
 
 
 @Condition
