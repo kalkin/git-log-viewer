@@ -105,5 +105,5 @@ class DiffView(ConditionalContainer):
                          max_available_height: int) -> Dimension:
         dim = super().preferred_height(width, max_available_height)
         if self._visible:
-            dim.preferred = max_available_height
+            dim.preferred = max_available_height / 2
         return dim
