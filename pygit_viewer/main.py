@@ -38,13 +38,12 @@ from prompt_toolkit.output.color_depth import ColorDepth
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.styles import style_from_pygments_cls
 from prompt_toolkit.widgets import SearchToolbar
-from pygments.style import Style
-from pygments.styles.solarized import SolarizedDarkStyle
-
 from pygit_viewer import (Commit, CommitLink, Foldable, NoPathMatches,
                           NoRevisionMatches, Repo)
 from pygit_viewer.diff_view import DiffView
-from pygit_viewer.status import STATUS, CommitBar
+from pygit_viewer.status import STATUS
+from pygments.style import Style
+from pygments.styles.solarized import SolarizedDarkStyle
 
 if ptk_version.startswith('3.'):
     PTK_VERSION = 3
@@ -62,7 +61,6 @@ ARGUMENTS = docopt(__doc__, version='v1.0.0', options_first=True)
 DEBUG = ARGUMENTS['--debug']
 
 LOG = logging.getLogger('pygit-viewer')
-COMMIT_BAR = CommitBar()
 
 LOG.setLevel(logging.CRITICAL)
 if DEBUG:
@@ -488,13 +486,8 @@ STATUS_WINDOW = ConditionalContainer(content=Window(content=STATUS,
                                                     ignore_content_height=True,
                                                     wrap_lines=False),
                                      filter=statis_is_visible)
-COMMIT_BAR_WINDOW = Window(content=COMMIT_BAR,
-                           height=1,
-                           ignore_content_height=True,
-                           wrap_lines=False)
 DIFF_VIEW = DiffView(SEARCH.control)
-LAYOUT = Layout(HSplit(
-    [MAIN_VIEW, COMMIT_BAR_WINDOW, DIFF_VIEW, SEARCH, STATUS_WINDOW]),
+LAYOUT = Layout(HSplit([MAIN_VIEW, DIFF_VIEW, SEARCH, STATUS_WINDOW]),
                 focused_element=MAIN_VIEW)
 
 
@@ -646,8 +639,7 @@ def last(_):
 
 
 def update_commit_bar() -> None:
-    commit = LOG_VIEW.current()
-    COMMIT_BAR.set_commit(commit)
+    pass
 
 
 def patched_style() -> Style:

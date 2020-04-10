@@ -8,6 +8,8 @@ from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout import BufferControl, ConditionalContainer, Window
 from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.layout.dimension import Dimension
+from prompt_toolkit.layout.margins import ScrollbarMargin
+from prompt_toolkit.widgets import Frame
 from pygit2 import Diff  # pylint: disable=no-name-in-module
 from pygit2 import Signature  # pylint: disable=no-name-in-module
 from pygit_viewer.lexer import COMMIT_LEXER
@@ -41,7 +43,11 @@ class DiffView(ConditionalContainer):
 
         buffer = Buffer(read_only=True)
         self.control = DiffControl(buffer, search)
-        super().__init__(Window(self.control), is_visible)
+        super().__init__(
+            Frame(
+                Window(self.control,
+                       right_margins=[ScrollbarMargin(display_arrows=True)])),
+            is_visible)
 
     @staticmethod
     def name_from_signature(sign: Signature) -> str:
