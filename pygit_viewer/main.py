@@ -660,6 +660,18 @@ def patched_style() -> Style:
             style._style_rules[i] = (tpl[0], 'nobold #b58900')
         if tpl[0] == 'pygments.generic.subheading':
             style._style_rules[i] = (tpl[0], 'nobold #d33682')
+
+    style._style_rules += [
+        ('pygments.commit', 'noinherit'),
+        ('pygments.commit.author', 'ansigreen'),
+        ('pygments.commit.authordate', 'ansiblue'),
+        ('pygments.commit.id', 'ansimagenta'),
+        ('pygments.commit.committer', 'italic ansigreen'),
+        ('pygments.commit.commitdate', 'italic ansiblue'),
+        ('pygments.commit.refs', 'ansiyellow'),
+        ('pygments.commit.modules', 'ansiyellow'),
+        ('pygments.commit.end', 'bold'),
+    ]
     return style
 
 

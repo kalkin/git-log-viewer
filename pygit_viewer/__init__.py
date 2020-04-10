@@ -172,6 +172,14 @@ class Commit:
             return signature.name.split(' ')[0]
         return signature.name
 
+    @property
+    def author_signature(self) -> (str, str):
+        return self._repo.mailmap.resolve_signature(self._commit.author)
+
+    @property
+    def committer_signature(self) -> (str, str):
+        return self._repo.mailmap.resolve_signature(self._commit.committer)
+
     def __repr__(self) -> str:
         return str(self._commit.id)
 

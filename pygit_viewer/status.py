@@ -85,4 +85,5 @@ class CommitBar(BufferControl):
         self.content.width = width
         return self.content
 
+
 STATUS = StatusBar()
