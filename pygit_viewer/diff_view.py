@@ -89,6 +89,10 @@ class DiffView(ConditionalContainer):
         self.control.buffer.set_document(doc, bypass_readonly=True)
         self._visible = True
 
+    def is_visible(self) -> bool:
+        ''' Return true if visible '''
+        return self._visible
+
     def hide(self):
         ''' Hide the view '''
         self._visible = False

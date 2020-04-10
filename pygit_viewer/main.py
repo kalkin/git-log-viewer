@@ -33,7 +33,8 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.layout import (BufferControl, ConditionalContainer, HSplit,
                                    Layout, UIContent, Window)
 from prompt_toolkit.layout.controls import SearchBufferControl
-from prompt_toolkit.layout.margins import ScrollbarMargin
+from prompt_toolkit.layout.margins import (ConditionalMargin, Margin,
+                                           ScrollbarMargin)
 from prompt_toolkit.output.color_depth import ColorDepth
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.styles import style_from_pygments_cls
@@ -479,14 +480,33 @@ def statis_is_visible() -> bool:
     return bool(STATUS.content.text)
 
 
-MAIN_VIEW = Window(content=LOG_VIEW,
-                   right_margins=[ScrollbarMargin(display_arrows=True)])
+class MyMargin(Margin):
+    def get_width(self, get_ui_content) -> int:
+        return 1
+
+    def create_margin(self, window_render_info: "WindowRenderInfo", width: int,
+                      height: int):
+        return [('', ' ')]
+
+
 STATUS_WINDOW = ConditionalContainer(content=Window(content=STATUS,
                                                     height=1,
                                                     ignore_content_height=True,
                                                     wrap_lines=False),
                                      filter=statis_is_visible)
 DIFF_VIEW = DiffView(SEARCH.control)
+
+
+@Condition
+def diff_visible() -> bool:
+    return DIFF_VIEW.is_visible()
+
+
+MAIN_VIEW = Window(content=LOG_VIEW,
+                   right_margins=[
+                       ScrollbarMargin(display_arrows=True),
+                       ConditionalMargin(MyMargin(), filter=diff_visible)
+                   ])
 LAYOUT = Layout(HSplit([MAIN_VIEW, DIFF_VIEW, SEARCH, STATUS_WINDOW]),
                 focused_element=MAIN_VIEW)
 
