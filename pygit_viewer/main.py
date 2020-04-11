@@ -38,12 +38,13 @@ from prompt_toolkit.output.color_depth import ColorDepth
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.styles import style_from_pygments_cls
 from prompt_toolkit.widgets import SearchToolbar
+from pygments.style import Style
+from pygments.styles.solarized import SolarizedDarkStyle
+
 from pygit_viewer import (Commit, CommitLink, Foldable, NoPathMatches,
                           NoRevisionMatches, Repo)
 from pygit_viewer.diff_view import DiffView
 from pygit_viewer.status import STATUS
-from pygments.style import Style
-from pygments.styles.solarized import SolarizedDarkStyle
 
 if ptk_version.startswith('3.'):
     PTK_VERSION = 3
