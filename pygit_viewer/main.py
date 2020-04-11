@@ -216,10 +216,13 @@ def search_backward(_: KeyPressEvent):
 
 
 @KG.add('q', is_global=True, eager=True)
-def qkb(_):
+def close(_):
     LOG.debug('Hidding DIFF_VIEW')
-    DIFF_VIEW.hide()
-    LAYOUT.focus(MAIN_VIEW)
+    if DIFF_VIEW.is_visible():
+        DIFF_VIEW.hide()
+        LAYOUT.focus(MAIN_VIEW)
+    else:
+        get_app().exit(result=False)
 
 
 @KG.add('c-c', is_global=True)
