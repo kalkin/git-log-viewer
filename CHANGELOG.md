@@ -5,25 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased - 2020-04-04
+## Unreleased - 2020-04-11
 
 ### Added
 
-- keybindings 'h'/'l' & Left/Right to fold/unfold a node
-- compatibility with prompt\_toolkit@v3.0
-- use mailmap to resolve authors name
+- bind 'CTRL-L' to repainting the app
+- bind 'n' & 'p' to next & previous search
+- bind 'q' to exit the app in history view
+- commit bar showing currently selected commit id
+- resolve pull-request titles async without freezing ui
+- add a diff view
+- diff view use key bindings '{' & '}' for jumping between hunks
+- make diff view searchable
+- show diff stats in the diff view
+- use a statusbar for showing search progress
+- improvement: add own custom style
 
 ### Fixed
 
-- exit with error if `-d` arg was passed but deps are missing
-- failure to run on MacOS X when no netrc exists
-- Search do not freeze the whole app
-- version number command line output
-- search freezing the whole application
+- crash when cache file has invalid json
+- CTRL-C exits anything
+- missing Refs line in diff view
+- whitespace in search highlighting
 
-### Removed
+### Refactored
 
-- obsolete experiments / scratch code
+- `Commit.branches()` return only branches pointing to itself
+- `Commit.__stgit` protected-access
+- get rid of asserts in code
+- key bindings for log view do not depend on global `LOG_VIEW`
+- log view to ui package
+- Make mypy ♥
+- make pylint ♥ by not using assert
+- move history window code to history module
+- move rendering of branchnames to `LogEntry`
+- remove dead code
+- remove unneeded Croasroads class
+- remove unused CommitBar
+- remove unused ForkPoint class
+- remove unused self.noffff property
+- remove unused vcs-show
+- screen size functionality to utils module
 
 ## [v1.0.0] - 2020-03-19
 
