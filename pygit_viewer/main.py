@@ -331,7 +331,9 @@ class History(UIContent):
 
 
 class LogView(BufferControl):
-    def __init__(self, search_buffer_control: SearchBufferControl) -> None:
+    def __init__(self,
+                 search_buffer_control: SearchBufferControl,
+                 key_bindings: Optional[KeyBindings] = None) -> None:
         buffer = Buffer()
         if ARGUMENTS['REVISION'] and ARGUMENTS['REVISION'] != '--':
             revision = ARGUMENTS['REVISION']
@@ -343,7 +345,8 @@ class LogView(BufferControl):
         buffer.apply_search = self.content.apply_search  # type: ignore
         super().__init__(buffer=buffer,
                          search_buffer_control=search_buffer_control,
-                         focus_on_click=True)
+                         focus_on_click=True,
+                         key_bindings=key_bindings)
 
     def is_focusable(self) -> bool:
         return True
@@ -357,15 +360,6 @@ class LogView(BufferControl):
 
     def current(self) -> Optional[Commit]:
         return self.content.current(self.current_line)
-
-    def get_key_bindings(self):
-        """
-        The key bindings that are specific for this user control.
-
-        Return a :class:`.KeyBindings` object if some key bindings are
-        specified, or `None` otherwise.
-        """
-        return KB
 
     def move_cursor_down(self):
         old_point = self.content.cursor_position
@@ -461,7 +455,7 @@ def screen_height() -> int:
 
 SEARCH = SearchToolbar(vi_mode=True)
 try:
-    LOG_VIEW = LogView(SEARCH.control)
+    LOG_VIEW = LogView(SEARCH.control, key_bindings=KB)
 except NoRevisionMatches:
     print('No revisions match the given arguments.', file=sys.stderr)
     sys.exit(1)
