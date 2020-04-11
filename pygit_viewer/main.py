@@ -109,13 +109,14 @@ def diff_visible() -> bool:
     return DIFF_VIEW.is_visible()
 
 
-MAIN_VIEW = Window(content=LOG_VIEW,
-                   right_margins=[
-                       ScrollbarMargin(display_arrows=True),
-                       ConditionalMargin(MyMargin(), filter=diff_visible)
-                   ])
-LAYOUT = Layout(HSplit([MAIN_VIEW, DIFF_VIEW, SEARCH, STATUS_WINDOW]),
-                focused_element=MAIN_VIEW)
+MAIN_VIEW = HSplit([
+    Window(content=LOG_VIEW,
+           right_margins=[
+               ScrollbarMargin(display_arrows=True),
+               ConditionalMargin(MyMargin(), filter=diff_visible)
+           ]), SEARCH, STATUS_WINDOW
+])
+LAYOUT = Layout(HSplit([MAIN_VIEW, DIFF_VIEW]), focused_element=MAIN_VIEW)
 
 
 @KB.add('j')
@@ -190,16 +191,20 @@ def enter(_: KeyPressEvent):
 
 @KB.add('/')
 def search_forward(_: KeyPressEvent):
-    LAYOUT.search_links = {SEARCH.control: LOG_VIEW}
+    control = LAYOUT.current_control
+    search_control = LOG_VIEW.search_buffer_control
+    LAYOUT.search_links = {search_control: control}
     search_state = SearchState(direction=SearchDirection.FORWARD,
                                ignore_case=False)
-    SEARCH.control.searcher_search_state = search_state
-    LAYOUT.focus(SEARCH.control)
+    search_control.searcher_search_state = search_state
+    LAYOUT.focus(search_control)
 
 
 @KB.add('n')
 def search_next(_: KeyPressEvent):
-    search_state = SEARCH.control.searcher_search_state
+    control = LAYOUT.current_control
+    search = control.search_buffer_control
+    search_state = search.searcher_search_state
     if search_state.text:
         search_state.direction = SearchDirection.FORWARD
         LOG_VIEW.content.apply_search(search_state, False)
@@ -208,7 +213,9 @@ def search_next(_: KeyPressEvent):
 
 @KB.add('p')
 def search_prev(_: KeyPressEvent):
-    search_state = SEARCH.control.searcher_search_state
+    control = LAYOUT.current_control
+    search = control.search_buffer_control
+    search_state = search.searcher_search_state
     if search_state.text:
         search_state.direction = SearchDirection.BACKWARD
         LOG_VIEW.content.apply_search(search_state, False)
@@ -217,11 +224,13 @@ def search_prev(_: KeyPressEvent):
 
 @KB.add('?')
 def search_backward(_: KeyPressEvent):
-    LAYOUT.search_links = {SEARCH.control: LOG_VIEW}
+    control = LAYOUT.current_control
+    search_control = control.search_buffer_control
+    LAYOUT.search_links = {search_control: control}
     search_state = SearchState(direction=SearchDirection.BACKWARD,
                                ignore_case=False)
-    SEARCH.control.searcher_search_state = search_state
-    LAYOUT.focus(SEARCH.control)
+    search_control.searcher_search_state = search_state
+    LAYOUT.focus(search_control)
 
 
 @KG.add('q', is_global=True, eager=True)
