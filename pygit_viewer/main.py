@@ -33,7 +33,7 @@ from pygments.styles.solarized import SolarizedDarkStyle
 
 from pygit_viewer import NoPathMatches, NoRevisionMatches
 from pygit_viewer.ui.diff_view import DiffView
-from pygit_viewer.ui.log import HistoryContainer
+from pygit_viewer.ui.history import HistoryContainer
 from pygit_viewer.utils import repo_from_args, screen_height
 
 ARGUMENTS = docopt(__doc__, version='v1.0.0', options_first=True)
@@ -95,13 +95,12 @@ def diff_visible() -> bool:
     return DIFF_VIEW.is_visible()
 
 
-MAIN_VIEW = HistoryContainer(KB,
-                             REPO,
-                             right_margins=[
-                                 ScrollbarMargin(display_arrows=True),
-                                 ConditionalMargin(MyMargin(),
-                                                   filter=diff_visible)
-                             ])
+MARGINS = [
+    ScrollbarMargin(display_arrows=True),
+    ConditionalMargin(MyMargin(), filter=diff_visible)
+]
+
+MAIN_VIEW = HistoryContainer(KB, REPO, right_margins=MARGINS)
 LAYOUT = Layout(HSplit([MAIN_VIEW, DIFF_VIEW]), focused_element=MAIN_VIEW)
 
 
