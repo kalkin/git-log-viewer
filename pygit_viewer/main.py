@@ -112,62 +112,67 @@ LAYOUT = Layout(HSplit([MAIN_VIEW, DIFF_VIEW]), focused_element=MAIN_VIEW)
 @KB.add('j')
 @KB.add('down')
 def down_key(_: KeyPressEvent):
-    LOG_VIEW.move_cursor_down()
+    LAYOUT.current_control.move_cursor_down()
 
 
 @KB.add('k')
 @KB.add('up')
 def up_key(_: KeyPressEvent):
-    LOG_VIEW.move_cursor_up()
+    LAYOUT.current_control.move_cursor_up()
 
 
 @KB.add('pagedown')
 def pagedown_key(_: KeyPressEvent):
-    line_number = LOG_VIEW.current_line + screen_height() * 2 - 1
-    LOG_VIEW.goto_line(line_number)
+    control = LAYOUT.current_control
+    line_number = control.current_line + screen_height() * 2 - 1
+    control.goto_line(line_number)
 
 
 @KB.add('pageup')
 def pageup_key(_: KeyPressEvent):
-    line_number = LOG_VIEW.current_line - screen_height() * 2 + 1
+    control = LAYOUT.current_control
+    line_number = control.current_line - screen_height() * 2 + 1
     if line_number < 0:
         line_number = 0
-    LOG_VIEW.goto_line(line_number)
+    control.goto_line(line_number)
 
 
 @KB.add('l')
 @KB.add('right')
 def fold(_: KeyPressEvent):
-    line_number = LOG_VIEW.current_line
-    if LOG_VIEW.is_link(line_number):
-        LOG.debug("DRIN")
-        LOG_VIEW.go_to_link(line_number)
-    elif LOG_VIEW.is_foldable(line_number):
-        if LOG_VIEW.is_folded(line_number):
-            LOG_VIEW.toggle_fold(line_number)
+    control = LAYOUT.current_control
+    line_number = control.current_line
+    if control.is_link(line_number):
+        control.go_to_link(line_number)
+    elif control.is_foldable(line_number):
+        if control.is_folded(line_number):
+            control.toggle_fold(line_number)
 
 
 @KB.add('h')
 @KB.add('left')
 def unfold(_: KeyPressEvent):
-    line_number = LOG_VIEW.current_line
-    if LOG_VIEW.is_foldable(line_number) and \
-            not LOG_VIEW.is_folded(line_number):
-        LOG_VIEW.toggle_fold(line_number)
-    elif LOG_VIEW.is_child(line_number):
-        LOG_VIEW.go_to_parent(line_number)
+    control = LAYOUT.current_control
+    line_number = control.current_line
+    if control.is_foldable(line_number) and \
+            not control.is_folded(line_number):
+        control.toggle_fold(line_number)
+    elif control.is_child(line_number):
+        control.go_to_parent(line_number)
 
 
 @KB.add('tab')
 def tab(_: KeyPressEvent):
-    line_number = LOG_VIEW.current_line
-    LOG_VIEW.toggle_fold(line_number)
+    control = LAYOUT.current_control
+    line_number = control.current_line
+    control.toggle_fold(line_number)
     get_app().invalidate()
 
 
 @KB.add('enter')
 def enter(_: KeyPressEvent):
-    commit = LOG_VIEW.current()
+    control = LAYOUT.current_control
+    commit = control.current()
     if commit:
         DIFF_VIEW.show_diff(commit)
         LAYOUT.focus(DIFF_VIEW)
@@ -176,7 +181,7 @@ def enter(_: KeyPressEvent):
 @KB.add('/')
 def search_forward(_: KeyPressEvent):
     control = LAYOUT.current_control
-    search_control = LOG_VIEW.search_buffer_control
+    search_control = control.search_buffer_control
     LAYOUT.search_links = {search_control: control}
     search_state = SearchState(direction=SearchDirection.FORWARD,
                                ignore_case=False)
@@ -191,7 +196,7 @@ def search_next(_: KeyPressEvent):
     search_state = search.searcher_search_state
     if search_state.text:
         search_state.direction = SearchDirection.FORWARD
-        LOG_VIEW.content.apply_search(search_state, False)
+        control.content.apply_search(search_state, False)
 
 
 @KB.add('p')
@@ -201,7 +206,7 @@ def search_prev(_: KeyPressEvent):
     search_state = search.searcher_search_state
     if search_state.text:
         search_state.direction = SearchDirection.BACKWARD
-        LOG_VIEW.content.apply_search(search_state, False)
+        control.content.apply_search(search_state, False)
 
 
 @KB.add('?')
@@ -234,12 +239,14 @@ def _(_):
 
 @KB.add('home')
 def first(_):
-    LOG_VIEW.goto_line(0)
+    control = LAYOUT.current_control
+    control.goto_line(0)
 
 
 @KB.add('end')
 def last(_):
-    LOG_VIEW.goto_last()
+    control = LAYOUT.current_control
+    control.goto_last()
 
 
 def patched_style() -> Style:
