@@ -1,5 +1,4 @@
 ''' Diff View '''
-
 import datetime
 
 from prompt_toolkit.buffer import Buffer
@@ -18,6 +17,45 @@ from pygit_viewer.lexer import COMMIT_LEXER
 
 LOCAL_TZ = datetime.datetime.now(datetime.timezone(
     datetime.timedelta(0))).astimezone().tzinfo
+
+
+class DiffDocument(Document):
+    def start_of_paragraph(self, count: int = 1, before: bool = False) -> int:
+        """
+        Return the start of the current paragraph. (Relative cursor position.)
+        """ # pylint: disable=invalid-unary-operand-type
+
+        def match_func(text: str) -> bool:
+            return text.startswith('@@')
+
+        line_index = self.find_previous_matching_line(match_func=match_func,
+                                                      count=count)
+
+        if line_index:
+            add = 0 if before else 1
+            return min(0, self.get_cursor_up_position(count=-line_index) + add)
+
+        return -self.cursor_position
+
+    def end_of_paragraph(self, count: int = 1, after: bool = False) -> int:
+        """
+        Return the end of the current paragraph. (Relative cursor position.)
+        """
+        def match_func(text: str) -> bool:
+            return text.startswith('@@')
+
+        line_index = self.find_next_matching_line(match_func=match_func,
+                                                  count=count)
+        if line_index:
+            add = 0 if after else 1
+            return max(0,
+                       self.get_cursor_down_position(count=line_index) - add)
+
+        return len(self.text_after_cursor)
+
+
+Document.start_of_paragraph = DiffDocument.start_of_paragraph
+Document.end_of_paragraph = DiffDocument.end_of_paragraph
 
 
 class DiffControl(BufferControl):
@@ -88,7 +126,7 @@ class DiffView(ConditionalContainer):
         text += commit._commit.message
         text += "\n---\n\n"
         text += "\n\n".join([p.text for p in diff])
-        doc = Document(text, cursor_position=0)
+        doc = DiffDocument(text, cursor_position=0)
 
         self.control.buffer.set_document(doc, bypass_readonly=True)
         self._visible = True
