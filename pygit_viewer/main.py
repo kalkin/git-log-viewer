@@ -43,8 +43,8 @@ from pygments.styles.solarized import SolarizedDarkStyle
 
 from pygit_viewer import (Commit, CommitLink, Foldable, NoPathMatches,
                           NoRevisionMatches, Repo)
-from pygit_viewer.diff_view import DiffView
-from pygit_viewer.status import STATUS
+from pygit_viewer.ui.diff_view import DiffView
+from pygit_viewer.ui.status import STATUS
 
 if ptk_version.startswith('3.'):
     PTK_VERSION = 3
