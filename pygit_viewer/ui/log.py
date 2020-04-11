@@ -2,10 +2,11 @@
 import logging
 import re
 from threading import Thread
-from typing import Any, Iterable, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple
 
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.data_structures import Point
+from prompt_toolkit.formatted_text import StyleAndTextTuples
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import BufferControl, UIContent
 from prompt_toolkit.layout.controls import SearchBufferControl
@@ -17,13 +18,9 @@ from pygit_viewer.ui.status import STATUS
 LOG = logging.getLogger('pygit-viewer')
 
 
-def highlight_substring(search: SearchState, text: Tuple[str, str]
-                        ) -> Union[Tuple[str, str], Iterable[Tuple[str, str]]]:
-    return highlight(text, search.text)
-
-
-def highlight(parts: Tuple[str, str], needle: str
-              ) -> Union[Tuple[str, str], Iterable[Tuple[str, str]]]:
+def highlight_substring(search: SearchState,
+                        parts: Tuple[str, str]) -> StyleAndTextTuples:
+    needle: str = search.text
     haystack = parts[1]
     matches = list(re.finditer(re.escape(needle), haystack))
     if not matches:
