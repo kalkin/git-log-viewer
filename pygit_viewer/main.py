@@ -17,7 +17,6 @@ import sys
 
 from docopt import docopt
 from prompt_toolkit import Application
-from prompt_toolkit import __version__ as ptk_version
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.filters import Condition
@@ -37,19 +36,7 @@ from pygit_viewer import NoPathMatches, NoRevisionMatches
 from pygit_viewer.ui.diff_view import DiffView
 from pygit_viewer.ui.log import LogView
 from pygit_viewer.ui.status import STATUS
-from pygit_viewer.utils import repo_from_args
-
-if ptk_version.startswith('3.'):
-    PTK_VERSION = 3
-    # pylint: disable=no-name-in-module,ungrouped-imports
-    from prompt_toolkit.output.defaults import create_output
-elif ptk_version.startswith('2.'):
-    PTK_VERSION = 2
-    # pylint: disable=no-name-in-module,ungrouped-imports
-    from prompt_toolkit.output.defaults import get_default_output
-else:
-    print("Unsupported prompt_toolkit version " + ptk_version, file=sys.stderr)
-    sys.exit(1)
+from pygit_viewer.utils import repo_from_args, screen_height
 
 ARGUMENTS = docopt(__doc__, version='v1.0.0', options_first=True)
 DEBUG = ARGUMENTS['--debug']
@@ -82,13 +69,6 @@ if DEBUG:
 
 KB = KeyBindings()
 KG = KeyBindings()
-
-
-def screen_height() -> int:
-    if PTK_VERSION == 2:
-        return get_default_output().from_pty(sys.stdout).get_size().rows
-    return create_output().from_pty(sys.stdout).get_size().rows
-
 
 SEARCH = SearchToolbar(vi_mode=True)
 try:
