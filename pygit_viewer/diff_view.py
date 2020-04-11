@@ -116,7 +116,11 @@ class DiffView(ConditionalContainer):
         text += "AuthorDate: %s\n" % self.date_from_signature(author)
         if commit.modules():
             text += "Modules:    %s\n" % commit.modules()
+
         refs = ["«%s»" % name for name in commit.branches]
+        if refs:
+            text += "Refs:       %s\n" % ", ".join(refs)
+
         if committer.name != author.name:
             text += "Committer:     %s\n" % self.name_from_signature(committer)
         if committer.time != author.time:
