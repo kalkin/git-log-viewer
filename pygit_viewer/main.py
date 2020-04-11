@@ -22,7 +22,7 @@ from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
-from prompt_toolkit.layout import ConditionalContainer, HSplit, Layout, Window
+from prompt_toolkit.layout import HSplit, Layout, Window
 from prompt_toolkit.layout.margins import (ConditionalMargin, Margin,
                                            ScrollbarMargin)
 from prompt_toolkit.output.color_depth import ColorDepth
@@ -35,7 +35,7 @@ from pygments.styles.solarized import SolarizedDarkStyle
 from pygit_viewer import NoPathMatches, NoRevisionMatches
 from pygit_viewer.ui.diff_view import DiffView
 from pygit_viewer.ui.log import LogView
-from pygit_viewer.ui.status import STATUS
+from pygit_viewer.ui.status import STATUS_WINDOW
 from pygit_viewer.utils import repo_from_args, screen_height
 
 ARGUMENTS = docopt(__doc__, version='v1.0.0', options_first=True)
@@ -82,11 +82,6 @@ except NoPathMatches:
     sys.exit(1)
 
 
-@Condition
-def statis_is_visible() -> bool:
-    return bool(STATUS.content.text)
-
-
 class MyMargin(Margin):
     def get_width(self, get_ui_content) -> int:
         return 1
@@ -96,11 +91,6 @@ class MyMargin(Margin):
         return [('', ' ')]
 
 
-STATUS_WINDOW = ConditionalContainer(content=Window(content=STATUS,
-                                                    height=1,
-                                                    ignore_content_height=True,
-                                                    wrap_lines=False),
-                                     filter=statis_is_visible)
 DIFF_VIEW = DiffView()
 
 

@@ -1,8 +1,9 @@
 ''' Status bar ui stuff '''
-
 from typing import List, Optional, Tuple
 
-from prompt_toolkit.layout import BufferControl, UIContent
+from prompt_toolkit.filters import Condition
+from prompt_toolkit.layout import (BufferControl, ConditionalContainer,
+                                   UIContent, Window)
 from prompt_toolkit.layout.controls import GetLinePrefixCallable
 
 
@@ -63,3 +64,16 @@ class StatusBar(BufferControl):
 
 
 STATUS = StatusBar()
+
+
+@Condition
+def statis_is_visible() -> bool:
+    ''' Return `True` if status line is visible '''
+    return bool(STATUS.content.text)
+
+
+STATUS_WINDOW = ConditionalContainer(content=Window(content=STATUS,
+                                                    height=1,
+                                                    ignore_content_height=True,
+                                                    wrap_lines=False),
+                                     filter=statis_is_visible)
