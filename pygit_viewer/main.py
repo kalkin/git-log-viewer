@@ -123,21 +123,18 @@ LAYOUT = Layout(HSplit([MAIN_VIEW, DIFF_VIEW]), focused_element=MAIN_VIEW)
 @KB.add('down')
 def down_key(_: KeyPressEvent):
     LOG_VIEW.move_cursor_down()
-    update_commit_bar()
 
 
 @KB.add('k')
 @KB.add('up')
 def up_key(_: KeyPressEvent):
     LOG_VIEW.move_cursor_up()
-    update_commit_bar()
 
 
 @KB.add('pagedown')
 def pagedown_key(_: KeyPressEvent):
     line_number = LOG_VIEW.current_line + screen_height() * 2 - 1
     LOG_VIEW.goto_line(line_number)
-    update_commit_bar()
 
 
 @KB.add('pageup')
@@ -146,7 +143,6 @@ def pageup_key(_: KeyPressEvent):
     if line_number < 0:
         line_number = 0
     LOG_VIEW.goto_line(line_number)
-    update_commit_bar()
 
 
 @KB.add('l')
@@ -156,7 +152,6 @@ def fold(_: KeyPressEvent):
     if LOG_VIEW.is_link(line_number):
         LOG.debug("DRIN")
         LOG_VIEW.go_to_link(line_number)
-        update_commit_bar()
     elif LOG_VIEW.is_foldable(line_number):
         if LOG_VIEW.is_folded(line_number):
             LOG_VIEW.toggle_fold(line_number)
@@ -171,7 +166,6 @@ def unfold(_: KeyPressEvent):
         LOG_VIEW.toggle_fold(line_number)
     elif LOG_VIEW.is_child(line_number):
         LOG_VIEW.go_to_parent(line_number)
-        update_commit_bar()
 
 
 @KB.add('tab')
@@ -208,7 +202,6 @@ def search_next(_: KeyPressEvent):
     if search_state.text:
         search_state.direction = SearchDirection.FORWARD
         LOG_VIEW.content.apply_search(search_state, False)
-        update_commit_bar()
 
 
 @KB.add('p')
@@ -219,7 +212,6 @@ def search_prev(_: KeyPressEvent):
     if search_state.text:
         search_state.direction = SearchDirection.BACKWARD
         LOG_VIEW.content.apply_search(search_state, False)
-        update_commit_bar()
 
 
 @KB.add('?')
@@ -253,17 +245,11 @@ def _(_):
 @KB.add('home')
 def first(_):
     LOG_VIEW.goto_line(0)
-    update_commit_bar()
 
 
 @KB.add('end')
 def last(_):
     LOG_VIEW.goto_last()
-    update_commit_bar()
-
-
-def update_commit_bar() -> None:
-    pass
 
 
 def patched_style() -> Style:
@@ -298,7 +284,6 @@ def cli():
                       color_depth=ColorDepth.TRUE_COLOR,
                       key_bindings=KG)
     app.editing_mode = EditingMode.VI
-    update_commit_bar()
     app.run()
 
 
