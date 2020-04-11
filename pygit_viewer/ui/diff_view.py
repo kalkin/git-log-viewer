@@ -11,7 +11,9 @@ from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.margins import ScrollbarMargin
 from prompt_toolkit.widgets import Frame, SearchToolbar
 from pygit2 import Diff  # pylint: disable=no-name-in-module
+from pygit2 import GIT_DIFF_STATS_FULL  # pylint: disable=no-name-in-module
 from pygit2 import Signature  # pylint: disable=no-name-in-module
+from pygit_viewer.utils import screen_width
 
 from pygit_viewer.lexer import COMMIT_LEXER
 
@@ -133,6 +135,8 @@ class DiffView(ConditionalContainer):
         # pylint: disable=protected-access
         text += commit._commit.message
         text += "\n---\n\n"
+        text += diff.stats.format(GIT_DIFF_STATS_FULL, screen_width() - 10)
+        text += "\n"
         text += "\n\n".join([p.text for p in diff])
         doc = DiffDocument(text, cursor_position=0)
 
