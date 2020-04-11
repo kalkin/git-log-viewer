@@ -15,7 +15,6 @@ Options:
 import logging
 import os
 import re
-import subprocess
 import sys
 from threading import Thread
 from typing import Any, Iterable, List, Optional, Tuple, Union
@@ -281,11 +280,6 @@ class History(UIContent):
             self._unfold(line_number, commit)
         else:
             self._fold(line_number + 1, commit)
-
-    def show_diff(self) -> Any:
-        commit = self.commit_list[self.cursor_position.y]
-        command = "COLOR=1 vcs-show %s" % commit.oid
-        open_in_pager(command)
 
     def _fold(self, line_number: int, commit: Foldable) -> Any:
         if commit.is_folded:
@@ -615,18 +609,6 @@ def search_backward(_: KeyPressEvent):
                                ignore_case=False)
     SEARCH.control.searcher_search_state = search_state
     LAYOUT.focus(SEARCH.control)
-
-
-def open_in_pager(command: str) -> Any:
-    term = 'xterm'
-    if 'TILIX_ID' in os.environ:
-        term = 'tilix'
-    elif 'TERM' in os.environ:
-        term = os.environ['TERM'].split('-')[0]
-
-    cmd = [term, '-e', 'sh', '-c', command]
-
-    subprocess.Popen(cmd, stdin=False, stdout=False, stderr=False)
 
 
 @KG.add('q', is_global=True, eager=True)

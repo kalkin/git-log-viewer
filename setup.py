@@ -16,7 +16,6 @@ setuptools.setup(
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    scripts=['bin/vcs-show'],
     entry_points={
         'console_scripts': ['pygit-viewer=pygit_viewer.main:cli'],
         'pygit_viewer_plugins': [
