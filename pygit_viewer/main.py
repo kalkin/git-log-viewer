@@ -22,20 +22,18 @@ from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
-from prompt_toolkit.layout import HSplit, Layout, Window
+from prompt_toolkit.layout import HSplit, Layout
 from prompt_toolkit.layout.margins import (ConditionalMargin, Margin,
                                            ScrollbarMargin)
 from prompt_toolkit.output.color_depth import ColorDepth
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.styles import style_from_pygments_cls
-from prompt_toolkit.widgets import SearchToolbar
 from pygments.style import Style
 from pygments.styles.solarized import SolarizedDarkStyle
 
 from pygit_viewer import NoPathMatches, NoRevisionMatches
 from pygit_viewer.ui.diff_view import DiffView
-from pygit_viewer.ui.log import LogView
-from pygit_viewer.ui.status import STATUS_WINDOW
+from pygit_viewer.ui.log import HistoryContainer
 from pygit_viewer.utils import repo_from_args, screen_height
 
 ARGUMENTS = docopt(__doc__, version='v1.0.0', options_first=True)
@@ -70,10 +68,8 @@ if DEBUG:
 KB = KeyBindings()
 KG = KeyBindings()
 
-SEARCH = SearchToolbar(vi_mode=True)
 try:
     REPO = repo_from_args(**ARGUMENTS)
-    LOG_VIEW = LogView(SEARCH.control, key_bindings=KB, repo=REPO)
 except NoRevisionMatches:
     print('No revisions match the given arguments.', file=sys.stderr)
     sys.exit(1)
@@ -99,13 +95,13 @@ def diff_visible() -> bool:
     return DIFF_VIEW.is_visible()
 
 
-MAIN_VIEW = HSplit([
-    Window(content=LOG_VIEW,
-           right_margins=[
-               ScrollbarMargin(display_arrows=True),
-               ConditionalMargin(MyMargin(), filter=diff_visible)
-           ]), SEARCH, STATUS_WINDOW
-])
+MAIN_VIEW = HistoryContainer(KB,
+                             REPO,
+                             right_margins=[
+                                 ScrollbarMargin(display_arrows=True),
+                                 ConditionalMargin(MyMargin(),
+                                                   filter=diff_visible)
+                             ])
 LAYOUT = Layout(HSplit([MAIN_VIEW, DIFF_VIEW]), focused_element=MAIN_VIEW)
 
 
@@ -224,7 +220,7 @@ def search_backward(_: KeyPressEvent):
 def qkb(_):
     LOG.debug('Hidding DIFF_VIEW')
     DIFF_VIEW.hide()
-    LAYOUT.focus(LOG_VIEW)
+    LAYOUT.focus(MAIN_VIEW)
 
 
 @KG.add('c-c', is_global=True)

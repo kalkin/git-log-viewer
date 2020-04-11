@@ -8,12 +8,13 @@ from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.data_structures import Point
 from prompt_toolkit.formatted_text import StyleAndTextTuples
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout import BufferControl, UIContent
+from prompt_toolkit.layout import BufferControl, HSplit, UIContent, Window
 from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.search import SearchDirection, SearchState
+from prompt_toolkit.widgets import SearchToolbar
 
 from pygit_viewer import Commit, CommitLink, Foldable, Repo
-from pygit_viewer.ui.status import STATUS
+from pygit_viewer.ui.status import STATUS, STATUS_WINDOW
 
 LOG = logging.getLogger('pygit-viewer')
 
@@ -253,7 +254,7 @@ class History(UIContent):
         return result
 
 
-class LogView(BufferControl):
+class HistoryControl(BufferControl):
     def __init__(self, search_buffer_control: SearchBufferControl,
                  key_bindings: Optional[KeyBindings], repo: Repo) -> None:
         buffer = Buffer()
@@ -361,3 +362,13 @@ class LogView(BufferControl):
     @property
     def path(self) -> str:
         return self.path
+
+
+class HistoryContainer(HSplit):
+    def __init__(self, key_bindings, repo, right_margins=None):
+        search = SearchToolbar(vi_mode=True)
+        log_view = HistoryControl(search.control,
+                                  key_bindings=key_bindings,
+                                  repo=repo)
+        window = Window(content=log_view, right_margins=right_margins)
+        super().__init__([window, search, STATUS_WINDOW])
