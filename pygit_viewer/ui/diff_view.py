@@ -20,6 +20,10 @@ LOCAL_TZ = datetime.datetime.now(datetime.timezone(
 
 
 class DiffDocument(Document):
+    '''
+        A wrapper around `Document` which provides own paragraph definition, for
+        easy jumping with vi bindings '{' & '}'
+    '''
     def start_of_paragraph(self, count: int = 1, before: bool = False) -> int:
         """
         Return the start of the current paragraph. (Relative cursor position.)
