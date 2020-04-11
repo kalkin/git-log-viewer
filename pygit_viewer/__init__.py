@@ -78,19 +78,6 @@ class Commit:
         delta = datetime.now() - datetime.fromtimestamp(timestamp)
         return babel.dates.format_timedelta(delta, format='short').strip('.')
 
-    @property  # type: ignore
-    @functools.lru_cache()
-    def next(self) -> Optional['Commit']:
-        raw_commit: GitCommit = self.raw_commit
-        try:
-            if not raw_commit.parents:
-                return None
-        except:  # pylint: disable=bare-except
-            return None
-
-        next_raw_commit: GitCommit = raw_commit.parents[0]
-        return to_commit(self._repo, next_raw_commit, self)
-
     @functools.lru_cache()
     def __stgit(self) -> bool:
         for name in self.branches:
@@ -200,10 +187,6 @@ class Commit:
             # pylint: disable=protected-access
             return self._repo._repo.diff(a, b, None, GIT_DIFF_REVERSE)
         return self._commit.tree.diff_to_tree(flags=GIT_DIFF_REVERSE)
-
-    @property
-    def is_top(self) -> bool:
-        return self._parent is not None
 
 
 class LogEntry:
@@ -467,15 +450,6 @@ class Merge(Foldable):
 class Octopus(Foldable):
     # TODO Add support for ocotopus branch display
     pass
-
-
-def _calculate_level(parent: Commit) -> int:
-    level = 1
-    if parent is not None:
-        level = parent.level
-        if isinstance(parent, Foldable):
-            level += 1
-    return level
 
 
 # pylint: disable=too-many-return-statements
