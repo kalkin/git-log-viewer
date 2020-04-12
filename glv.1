@@ -2,12 +2,12 @@
 .\"     Title: glv
 .\"    Author: Bahtiar `kalkin` Gadimov
 .\" Generator: Asciidoctor 1.5.8
-.\"      Date: 2020-04-12
-.\"    Manual: \ \&
-.\"    Source: \ \&
+.\"      Date: 2020-04-13
+.\"    Manual: Git Log Viewer Manual
+.\"    Source: Git Log Viewer v1.1.0
 .\"  Language: English
 .\"
-.TH "GLV" "1" "2020-04-12" "\ \&" "\ \&"
+.TH "GLV" "1" "2020-04-13" "Git Log Viewer v1.1.0" "Git Log Viewer Manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -42,7 +42,7 @@ An alternative to \fBtig\fP(1)/\fBlazygit\fP(1) which supports folding the merge
 expandable via plugins. The application can resolve the default merge titles
 done by using GitHub or Bitbucket to the actual pull request names.
 .sp
-Use CTRL\0+\0C or q to exit the application.
+Use kbd:[CTRL+C] or kbd:[q] to exit the application.
 .SH "OPTIONS"
 .sp
 REVISION
@@ -81,49 +81,49 @@ Action
 T}
 T{
 .sp
-h
+kbd:[h]
 T}:T{
 .sp
 Show this help.
 T}
 T{
 .sp
-k, Up
+kbd:[k], kbd:[Up]
 T}:T{
 .sp
 Move cursor one line up.
 T}
 T{
 .sp
-j, Down
+kbd:[j], kbd:[Down]
 T}:T{
 .sp
 Move cursor one line down.
 T}
 T{
 .sp
-PgUp,
+kbd:[PgUp],
 T}:T{
 .sp
 Move cursor one page up.
 T}
 T{
 .sp
-PgDown, Space
+kbd:[PgDown], kbd:[Space]
 T}:T{
 .sp
 Move cursor one page down.
 T}
 T{
 .sp
-End
+kbd:[End]
 T}:T{
 .sp
 Jump to last line.
 T}
 T{
 .sp
-q
+kbd:[q]
 T}:T{
 .sp
 Close view, if multiple views are open it will
@@ -132,7 +132,7 @@ If it is the last open view it will quit.
 T}
 T{
 .sp
-Home
+kbd:[Home]
 T}:T{
 .sp
 Jump to first line.
@@ -157,28 +157,28 @@ Action
 T}
 T{
 .sp
-/
+kbd:[/]
 T}:T{
 .sp
 Search the view. Opens a prompt for entering search regexp to use.
 T}
 T{
 .sp
-?
+kbd:[?]
 T}:T{
 .sp
 Search backwards in the view. Also prompts for regexp.
 T}
 T{
 .sp
-n
+kbd:[n]
 T}:T{
 .sp
 Find next match for the current search regexp.
 T}
 T{
 .sp
-N
+kbd:[N]
 T}:T{
 .sp
 Find previous match for the current search regexp.
@@ -198,21 +198,21 @@ Action
 T}
 T{
 .sp
-Enter
+kbd:[Enter]
 T}:T{
 .sp
 Open selected commit in diff view
 T}
 T{
 .sp
-l
+kbd:[l]
 T}:T{
 .sp
 Unfold merge or follow the merge if unfolded
 T}
 T{
 .sp
-h
+kbd:[h]
 T}:T{
 .sp
 Fold merge or go up the tree if folded
@@ -232,21 +232,21 @@ Action
 T}
 T{
 .sp
-Enter
+kbd:[Enter]
 T}:T{
 .sp
 Open selected commit in diff view
 T}
 T{
 .sp
-{
+kbd:[{]
 T}:T{
 .sp
 Jump to previous hunk
 T}
 T{
 .sp
-}
+kbd:[}]
 T}:T{
 .sp
 Jump to next hunk
