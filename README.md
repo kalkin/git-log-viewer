@@ -2,7 +2,7 @@
 
 ## About
 
-An alternative to `tig(1)`/`gvc(1) which supports folding the merges and is
+An alternative to `tig(1)`/`lazygit(1) which supports folding merges and is
 expandable via plugins. The application can resolve the default merge titles
 done by using GitHub or Bitbucket to the actual pull request names.
 
@@ -32,13 +32,7 @@ done by using GitHub or Bitbucket to the actual pull request names.
 
 ### Current State
 
-This piece of software works for me and is pretty stable. The biggest issue with
-the current implementation is that it is not async. The following issues are
-arise from this and pull request for them are welcome:
-
-* Search will freeze the whole application until it matched something, even if
-  it has to iterate over a *whole* history.
-* Resolving merges to a pull request title can take some time.
+This piece of software works for me and is pretty stable.
 
 ### Debugging
 
