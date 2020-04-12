@@ -1,3 +1,3 @@
 [docs]
-	upstream = https://github.com/kalkin/pygit-viewer.wiki.git
+	origin = https://github.com/kalkin/pygit-viewer.wiki.git
 	follow = master
