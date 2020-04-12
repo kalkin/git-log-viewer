@@ -6,7 +6,7 @@ Bahtiar `kalkin` Gadimov
 
 == Name
 
-pygit-viewer - An alternative to tig(1) which supports folding the merges.
+pygit-viewer - An alternative to tig(1) which supports folding merges.
 
 == Synopsis
 
@@ -34,9 +34,11 @@ REVISION::
     Enable sending debugging output to man:journalctl[1] (`+journalctl --user -f+`)
 
 
-== Default Keybindingso
+== Default Keys
 
 === General Keys
+
+The keys listed in the next two tables are available in all views.
 
 .Movement
 |=============================================================================
