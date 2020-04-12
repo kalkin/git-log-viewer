@@ -13,10 +13,10 @@ from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.widgets import SearchToolbar
 
-from pygit_viewer import Commit, CommitLink, Foldable, Repo
-from pygit_viewer.ui.status import STATUS, STATUS_WINDOW
+from glv import Commit, CommitLink, Foldable, Repo
+from glv.ui.status import STATUS, STATUS_WINDOW
 
-LOG = logging.getLogger('pygit-viewer')
+LOG = logging.getLogger('glv')
 
 
 def highlight_substring(search: SearchState,

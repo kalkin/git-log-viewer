@@ -3,7 +3,7 @@ import os
 
 from aloe import after, before, step, world
 
-from pygit_viewer import Commit, Foldable, Repo
+from glv import Commit, Foldable, Repo
 
 
 @before.each_example

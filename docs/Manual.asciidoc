@@ -1,4 +1,4 @@
-= pygit-viewer(1)
+= glv(1)
 Bahtiar `kalkin` Gadimov
 :experimental:
 :version: v1.1.0
@@ -6,14 +6,14 @@ Bahtiar `kalkin` Gadimov
 
 == Name
 
-pygit-viewer - An alternative to tig(1) which supports folding merges.
+glv - Git Log Viewer a TUI application with support for folding merges
 
 == Synopsis
 
 [verse]
 _______________________________________________________________________
-*pygit_viewer* [--workdir=DIR] [REVISION] [-d | --debug] \[[--] <path>...]
-*pygit_viewer* --version
+*glv* [--workdir=DIR] [REVISION] [-d | --debug] \[[--] <path>...]
+*glv* --version
 _______________________________________________________________________
 
 == Description

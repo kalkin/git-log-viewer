@@ -14,8 +14,8 @@ from pygit2 import GIT_DIFF_STATS_FULL  # pylint: disable=no-name-in-module
 from pygit2 import Diff  # pylint: disable=no-name-in-module
 from pygit2 import Signature  # pylint: disable=no-name-in-module
 
-from pygit_viewer.lexer import COMMIT_LEXER
-from pygit_viewer.utils import screen_height, screen_width
+from glv.lexer import COMMIT_LEXER
+from glv.utils import screen_height, screen_width
 
 LOCAL_TZ = datetime.datetime.now(datetime.timezone(
     datetime.timedelta(0))).astimezone().tzinfo

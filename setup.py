@@ -1,4 +1,4 @@
-""" pygit-viewer package specification """
+""" git-log-viewer package specification """
 
 import setuptools
 
@@ -6,22 +6,22 @@ with open("README.md", "r") as fh:
     LONG_DESCRIPTION = fh.read()
 
 setuptools.setup(
-    name="pygit-viewer",
+    name="git-log-viewer",
     version="1.1.0",
     python_requires='>=3.6',
     author="Bahtiar `kalkin` Gadimov",
     author_email="bahtiar@gadimov.de",
-    description="A git log viewer with folding support",
-    url="git@github.com:monorepo.git:/pygit-viewer",
+    description="A git log viewer with folding merges support",
+    url="https://github.com/kalkin/git-log-viewer",
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    data_files=[('man/man1', ['docs/pygit-viewer.1'])],
+    data_files=[('man/man1', ['docs/glv.1'])],
     entry_points={
-        'console_scripts': ['pygit-viewer=pygit_viewer.main:cli'],
-        'pygit_viewer_plugins': [
-            'atlassian=pygit_viewer.providers:Atlassian',
-            'github=pygit_viewer.providers:GitHub',
+        'console_scripts': ['glv=glv.main:cli'],
+        'glv_providers': [
+            'atlassian=glv.providers:Atlassian',
+            'github=glv.providers:GitHub',
         ],
     },
     install_requires=[

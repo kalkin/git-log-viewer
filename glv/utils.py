@@ -6,7 +6,7 @@ from prompt_toolkit import __version__ as ptk_version
 from prompt_toolkit.data_structures import Size
 from prompt_toolkit.output.base import Output
 
-from pygit_viewer import Repo
+from glv import Repo
 
 if ptk_version.startswith('3.'):
     PTK_VERSION = 3

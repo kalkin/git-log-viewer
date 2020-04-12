@@ -11,7 +11,7 @@ from typing import Any, Optional, Tuple
 import certifi
 import urllib3  # type: ignore
 
-LOG = logging.getLogger('pygit-viewer')
+LOG = logging.getLogger('glv')
 
 
 class Cache:
@@ -24,9 +24,9 @@ class Cache:
             with open(file_path, encoding='utf-8') as data_file:
                 try:
                     self._storage = json.loads(data_file.read())
-                except json.decoder.JSONDecodeError as e:
+                except json.decoder.JSONDecodeError as exc:
                     LOG.warning('Failed to parse %s: %s', data_file.name,
-                                e.msg)
+                                exc.msg)
                     self._storage = {}
 
     def __getitem__(self, key) -> Any:
@@ -61,7 +61,7 @@ class Provider():
         try:
             auth_store = netrc.netrc()
             auth_tupple = auth_store.authenticators(self._url.host)
-        except (FileNotFoundError):
+        except FileNotFoundError:
             auth_tupple = None
 
         if auth_tupple:
@@ -82,7 +82,7 @@ class GitHub(Provider):
         if auth_tupple:
             basic_auth = '%s:%s' % auth_tupple
             self._headers = urllib3.make_headers(basic_auth=basic_auth,
-                                                 user_agent='pygit-viewer')
+                                                 user_agent='glv')
 
         parts = self._url.path.split('/')
         owner = parts[1]

@@ -1,5 +1,5 @@
 '\" t
-.\"     Title: pygit-viewer
+.\"     Title: glv
 .\"    Author: Bahtiar `kalkin` Gadimov
 .\" Generator: Asciidoctor 1.5.8
 .\"      Date: 2020-04-12
@@ -7,7 +7,7 @@
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "PYGIT\-VIEWER" "1" "2020-04-12" "\ \&" "\ \&"
+.TH "GLV" "1" "2020-04-12" "\ \&" "\ \&"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -28,12 +28,12 @@
 .  LINKSTYLE blue R < >
 .\}
 .SH "NAME"
-pygit\-viewer \- An alternative to tig(1) which supports folding the merges.
+glv \- Git Log Viewer a TUI application with support for folding merges
 .SH "SYNOPSIS"
 .sp
 .nf
-\fBpygit_viewer\fP [\-\-workdir=DIR] [REVISION] [\-d | \-\-debug] \(rs[[\-\-] <path>...]
-\fBpygit_viewer\fP \-\-version
+\fBglv\fP [\-\-workdir=DIR] [REVISION] [\-d | \-\-debug] \(rs[[\-\-] <path>...]
+\fBglv\fP \-\-version
 .fi
 .br
 .SH "DESCRIPTION"
@@ -59,8 +59,10 @@ Directory where the git repository is
 .RS 4
 Enable sending debugging output to \fBjournalctl\fP(1) (\f(CRjournalctl \-\-user \-f\fP)
 .RE
-.SH "DEFAULT KEYBINDINGSO"
+.SH "DEFAULT KEYS"
 .SS "General Keys"
+.sp
+The keys listed in the next two tables are available in all views.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1

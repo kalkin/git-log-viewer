@@ -19,9 +19,9 @@ from pygit2 import Commit as GitCommit  # pylint: disable=no-name-in-module
 from pygit2 import Repository as GitRepo  # pylint: disable=no-name-in-module
 from pykka import Future, Timeout
 
-import pygit_viewer.vcs as vcs
-from pygit_viewer.actors import ProviderActor
-from pygit_viewer.providers import Cache, Provider
+import glv.vcs as vcs
+from glv.actors import ProviderActor
+from glv.providers import Cache, Provider
 
 
 class NoPathMatches(Exception):
@@ -195,8 +195,8 @@ class Commit:
 
     def diff(self) -> Optional[Diff]:
         if self._commit.parents:
-            a = self._commit
-            b = self._commit.parents[0]
+            a = self._commit  # pylint: disable=invalid-name
+            b = self._commit.parents[0]  # pylint: disable=invalid-name
             # pylint: disable=protected-access
             return self._repo._repo.diff(a, b, None, GIT_DIFF_REVERSE)
         return self._commit.tree.diff_to_tree(flags=GIT_DIFF_REVERSE)
@@ -251,8 +251,7 @@ class LogEntry:
 
 def providers():
     named_objects = {}
-    for entry_point in pkg_resources.iter_entry_points(
-            group='pygit_viewer_plugins'):
+    for entry_point in pkg_resources.iter_entry_points(group='glv_providers'):
         named_objects.update({entry_point.name: entry_point.load()})
     return named_objects
 
@@ -273,7 +272,8 @@ class Repo:
             sys.exit(2)
         self._repo = GitRepo(repo_path)
         self.mailmap = Mailmap.from_repository(self._repo)
-        self.module_cache = Cache(repo_path + '/pygit-viewer/modules.json')
+        cache_path = self._repo.path + __name__ + '/modules.json'
+        self.module_cache = Cache(cache_path)
         self.has_modules = False
         if vcs.modules(self._repo):
             self.has_modules = True
@@ -289,7 +289,7 @@ class Repo:
 
         for provider in providers().values():
             if provider.enabled(self._repo):
-                cache_dir = self._repo.path + '/pygit-viewer/remotes/origin'
+                cache_dir = self._repo.path + 'glv/' + __name__ + '/remotes/origin'
                 self.provider = ProviderActor.start(
                     provider(self._repo, cache_dir))
                 break

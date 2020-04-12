@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""pygit-viewer
+"""glv - Git Log Viewer a TUI application with support for folding merges
 
 Usage:
-    pygit_viewer [--workdir=DIR] [REVISION] [-d | --debug] [[--] <path>...]
-    pygit_viewer --version
+    glv [--workdir=DIR] [REVISION] [-d | --debug] [[--] <path>...]
+    glv --version
 
 Options:
     REVISION        A branch, tag or commit [default: HEAD]
@@ -31,15 +31,15 @@ from prompt_toolkit.styles import style_from_pygments_cls
 from pygments.style import Style
 from pygments.styles.solarized import SolarizedDarkStyle
 
-from pygit_viewer import NoPathMatches, NoRevisionMatches
-from pygit_viewer.ui.diff_view import DiffView
-from pygit_viewer.ui.history import HistoryContainer
-from pygit_viewer.utils import repo_from_args, screen_height
+from glv import NoPathMatches, NoRevisionMatches
+from glv.ui.diff_view import DiffView
+from glv.ui.history import HistoryContainer
+from glv.utils import repo_from_args, screen_height
 
 ARGUMENTS = docopt(__doc__, version='v1.0.0', options_first=True)
 DEBUG = ARGUMENTS['--debug']
 
-LOG = logging.getLogger('pygit-viewer')
+LOG = logging.getLogger('glv')
 
 LOG.setLevel(logging.CRITICAL)
 if DEBUG:

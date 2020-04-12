@@ -8,20 +8,20 @@ done by using GitHub or Bitbucket to the actual pull request names.
 
 ## Installation
 
-* `git clone https://github.com/kalkin/pygit-viewer.git`
-* `cd pygit-viewer`
+* `git clone https://github.com/kalkin/git-log-viewer.git`
+* `cd git-log-viewer`
 * `pip3 install --user .`
 
 ## Update
 
-* `cd pygit-viewer`
+* `cd git-log-viewer`
 * `git pull --rebase`
 * `pip3 install --user --upgrade .`
 
 ## Usage
 
-    pygit_viewer [--workdir=DIR] [REVISION] [-d | --debug] [[--] <path>...]
-    pygit_viewer --version
+    glv [--workdir=DIR] [REVISION] [-d | --debug] [[--] <path>...]
+    glv --version
 
 ### Options
 

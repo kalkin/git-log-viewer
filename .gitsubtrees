@@ -1,3 +1,3 @@
 [docs]
-	origin = https://github.com/kalkin/pygit-viewer.wiki.git
+	origin = https://github.com/kalkin/git-log-viewer.wiki.git
 	follow = master

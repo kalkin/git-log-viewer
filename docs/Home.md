@@ -1,1 +1,1 @@
-Welcome to the pygit-viewer wiki!
+Welcome to the Git Log Viewer wiki!

@@ -1,7 +1,7 @@
 import pykka
 from prompt_toolkit.application import get_app
 
-from pygit_viewer.providers import Provider
+from glv.providers import Provider
 
 
 class ProviderActor(pykka.ThreadingActor):
