@@ -1,38 +1,59 @@
 ''' Helper functions for doing things vcs(1) does '''
-
 import configparser
+import functools
+import glob
+import logging
+import os
 import os.path
 import subprocess
 import sys
-from typing import List, Set
+from typing import Dict, List, Set
 
 from pygit2 import Commit  # pylint: disable=no-name-in-module
 from pygit2 import Repository  # pylint: disable=no-name-in-module
 
+LOG = logging.getLogger('glv')
 
-def modules(repo: Repository) -> List[str]:
+
+@functools.lru_cache()
+def subtree_config_files(repo: Repository) -> List[str]:
+    ''' Return all the `.gitsubtree` files from a repository using git(1)‼ '''
+    os.chdir(repo.workdir)
+    files = glob.glob('**/.gitsubtrees', recursive=True)
+    if os.path.exists('.gitsubtrees'):
+        files += ['.gitsubtrees']
+    return files
+
+
+@functools.lru_cache()
+def modules(repo: Repository) -> Dict[str, str]:
     ''' Return list of all .gitsubtrees modules in repository '''
-    def subtree_config_files() -> List[str]:
-        result = subprocess.run(  # pylint: disable=subprocess-run-check
-            ['git', 'ls-files', '*/.gitsubtrees', '.gitsubtrees'],
-            stdout=subprocess.PIPE,
-            cwd=repo.workdir)
-        if result.returncode != 0:
-            raise Exception("No gitsubtree files")
 
-        return result.stdout.decode('utf-8').splitlines()
-
-    files = subtree_config_files()
-    result: List[str] = []
+    files = subtree_config_files(repo)
+    LOG.debug("Found subtree config files: %s", files)
+    result: Dict[str] = {}
     for _file in files:
         conf = configparser.ConfigParser()
         conf.read(os.path.join(repo.workdir, _file))
         path = ''
         if '/' in _file:
             parts = _file.split('/')[:-1]
-            path = '/'.join(parts) + '/'
-        result += ["%s%s" % (path, key) for key in conf.sections()]
-    result.sort()
+            path = '/'.join(parts)
+        for key in conf.sections():
+            _path = os.path.join(path, key)
+            name = _path
+            result[_path] = name
+            if conf[key].get('previous'):
+                previous = [
+                    x.strip() for x in conf[key].get('previous').split(',')
+                ]
+                for sth in previous:
+                    if sth.startswith('/'):
+                        _path = sth.lstrip('/')
+                    else:
+                        _path = os.path.join(path, sth)
+                    result[_path] = name
+    LOG.debug("Found subprojects in : %s", result.keys())
     return result
 
 
@@ -56,14 +77,14 @@ def changed_files(commit: Commit) -> Set[str]:
 
 def changed_modules(repo: Repository, commit: Commit) -> Set[str]:
     ''' Return all .gisubtrees modules which were changed in the specified commit '''
-    dirs = modules(repo)
-    dirs.sort(reverse=True)
-    files = {name: True for name in changed_files(commit)}
+    _modules = modules(repo)
+    changed = changed_files(commit)
+    files = {name: True for name in changed}
     result: List[str] = []
-    for directory in dirs:
+    for directory in sorted(_modules, reverse=True):
         matches = [_file for _file in files if _file.startswith(directory)]
         if matches:
-            result.append(directory)
-            for _file in matches:
-                del files[_file]
+            result.append(_modules[directory])
+            files = {k: True for k in files if k not in matches}
+
     return set(result)
