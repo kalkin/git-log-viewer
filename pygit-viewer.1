@@ -1,0 +1,256 @@
+'\" t
+.\"     Title: pygit-viewer
+.\"    Author: Bahtiar `kalkin` Gadimov
+.\" Generator: Asciidoctor 1.5.8
+.\"      Date: 2020-04-12
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "PYGIT\-VIEWER" "1" "2020-04-12" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+pygit\-viewer \- An alternative to tig(1) which supports folding the merges.
+.SH "SYNOPSIS"
+.sp
+.nf
+\fBpygit_viewer\fP [\-\-workdir=DIR] [REVISION] [\-d | \-\-debug] \(rs[[\-\-] <path>...]
+\fBpygit_viewer\fP \-\-version
+.fi
+.br
+.SH "DESCRIPTION"
+.sp
+An alternative to \fBtig\fP(1)/\fBlazygit\fP(1) which supports folding the merges and is
+expandable via plugins. The application can resolve the default merge titles
+done by using GitHub or Bitbucket to the actual pull request names.
+.sp
+Use CTRL\0+\0C or q to exit the application.
+.SH "OPTIONS"
+.sp
+REVISION
+.RS 4
+A branch, tag or commit [default: HEAD]
+.RE
+.sp
+\-\-workdir=DIR
+.RS 4
+Directory where the git repository is
+.RE
+.sp
+\-d, \-\-debug
+.RS 4
+Enable sending debugging output to \fBjournalctl\fP(1) (\f(CRjournalctl \-\-user \-f\fP)
+.RE
+.SH "DEFAULT KEYBINDINGSO"
+.SS "General Keys"
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.B Table 1. Movement
+.TS
+allbox tab(:);
+lt lt.
+T{
+.sp
+Key
+T}:T{
+.sp
+Action
+T}
+T{
+.sp
+h
+T}:T{
+.sp
+Show this help.
+T}
+T{
+.sp
+k, Up
+T}:T{
+.sp
+Move cursor one line up.
+T}
+T{
+.sp
+j, Down
+T}:T{
+.sp
+Move cursor one line down.
+T}
+T{
+.sp
+PgUp,
+T}:T{
+.sp
+Move cursor one page up.
+T}
+T{
+.sp
+PgDown, Space
+T}:T{
+.sp
+Move cursor one page down.
+T}
+T{
+.sp
+End
+T}:T{
+.sp
+Jump to last line.
+T}
+T{
+.sp
+q
+T}:T{
+.sp
+Close view, if multiple views are open it will
+jump back to the previous view in the view stack.
+If it is the last open view it will quit.
+T}
+T{
+.sp
+Home
+T}:T{
+.sp
+Jump to first line.
+T}
+.TE
+.sp
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.B Table 2. Searching
+.TS
+allbox tab(:);
+lt lt.
+T{
+.sp
+Key
+T}:T{
+.sp
+Action
+T}
+T{
+.sp
+/
+T}:T{
+.sp
+Search the view. Opens a prompt for entering search regexp to use.
+T}
+T{
+.sp
+?
+T}:T{
+.sp
+Search backwards in the view. Also prompts for regexp.
+T}
+T{
+.sp
+n
+T}:T{
+.sp
+Find next match for the current search regexp.
+T}
+T{
+.sp
+N
+T}:T{
+.sp
+Find previous match for the current search regexp.
+T}
+.TE
+.sp
+.SS "Log View"
+.TS
+allbox tab(:);
+lt lt.
+T{
+.sp
+Key
+T}:T{
+.sp
+Action
+T}
+T{
+.sp
+Enter
+T}:T{
+.sp
+Open selected commit in diff view
+T}
+T{
+.sp
+l
+T}:T{
+.sp
+Unfold merge or follow the merge if unfolded
+T}
+T{
+.sp
+h
+T}:T{
+.sp
+Fold merge or go up the tree if folded
+T}
+.TE
+.sp
+.SS "Diff View"
+.TS
+allbox tab(:);
+lt lt.
+T{
+.sp
+Key
+T}:T{
+.sp
+Action
+T}
+T{
+.sp
+Enter
+T}:T{
+.sp
+Open selected commit in diff view
+T}
+T{
+.sp
+{
+T}:T{
+.sp
+Jump to previous hunk
+T}
+T{
+.sp
+}
+T}:T{
+.sp
+Jump to next hunk
+T}
+.TE
+.sp
+.SH "AUTHOR"
+.sp
+Bahtiar `kalkin` Gadimov
