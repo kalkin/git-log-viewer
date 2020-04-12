@@ -6,7 +6,7 @@ Bahtiar `kalkin` Gadimov
 
 == Name
 
-pygit-viewer - An alternative to tig(1) which supports folding the merges.
+pygit-viewer - An alternative to tig(1) which supports folding merges.
 
 == Synopsis
 
