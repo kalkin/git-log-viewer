@@ -5,10 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased - 2020-04-11
+
+## Unreleased - 2020-04-13
 
 ### Added
 
+- support for renamed subtrees
+- make install target
+- pygments >= 2.6.0 to the requirements
+- docs: Add manual `glv(1)` (#10, #11)
+- generate and install the manpage
 - bind 'CTRL-L' to repainting the app
 - bind 'n' & 'p' to next & previous search
 - bind 'q' to exit the app in history view
@@ -21,8 +27,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - use a statusbar for showing search progress
 - improvement: add own custom style
 
+
+### Changed
+
+- rename package to 'git-log-viewer'
+- rename application to 'glv'
+
 ### Fixed
 
+- tests #9 & disable subtree tests for now
 - crash when cache file has invalid json
 - CTRL-C exits anything
 - missing Refs line in diff view
@@ -30,6 +43,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Refactored
 
+- remove dependency on the DIFF_VIEW global
 - `Commit.branches()` return only branches pointing to itself
 - `Commit.__stgit` protected-access
 - get rid of asserts in code
