@@ -16,6 +16,7 @@ setuptools.setup(
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
+    data_files=[('man/man1', ['docs/pygit-viewer.1'])],
     entry_points={
         'console_scripts': ['pygit-viewer=pygit_viewer.main:cli'],
         'pygit_viewer_plugins': [
