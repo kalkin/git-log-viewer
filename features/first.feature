@@ -16,13 +16,13 @@ Feature: Repository Walker
         Then I should have iterated over 7 commits
 
     Scenario: Iterate over commits of the first parent
-        Given foldable commit ce537d3
+        Given foldable commit 67c65a8
         And a walker over commit children
         When I walk over commits
-        Then i should have iterated over 3 commits
+        Then i should have iterated over 6 commits
 
     Scenario: Find merge base
-        Given commit A (fc0f00a)
-        And commit B (5126d60)
+        Given commit A (b4ea5ef)
+        And commit B (79185f3)
         When I calculate merge base of A & B
-        Then the result commit should be 5126d60
+        Then the result commit should be 79185f3
