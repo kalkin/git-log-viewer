@@ -10,7 +10,7 @@ Options:
     --workdir=DIR   Directory where the git repository is
     -d --debug      Enable sending debuggin output to journalctl
                     (journalctl --user -f)
-"""  # pylint: disable=missing-docstring,fixme
+"""  # pylint: disable=missing-docstring,fixme,global-statement
 
 import logging
 import sys
@@ -22,7 +22,7 @@ from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
-from prompt_toolkit.layout import HSplit, Layout
+from prompt_toolkit.layout import ConditionalContainer, HSplit, Layout
 from prompt_toolkit.layout.margins import (ConditionalMargin, Margin,
                                            ScrollbarMargin)
 from prompt_toolkit.output.color_depth import ColorDepth
@@ -87,12 +87,16 @@ class MyMargin(Margin):
         return [('', ' ')]
 
 
-DIFF_VIEW = DiffView()
+WINDOW_VISIBILITY = {
+    'history': True,
+    'diff': False,
+}
 
 
 @Condition
 def diff_visible() -> bool:
-    return DIFF_VIEW.is_visible()
+    global WINDOW_VISIBILITY
+    return WINDOW_VISIBILITY['diff']
 
 
 MARGINS = [
@@ -101,7 +105,10 @@ MARGINS = [
 ]
 
 MAIN_VIEW = HistoryContainer(KB, REPO, right_margins=MARGINS)
-LAYOUT = Layout(HSplit([MAIN_VIEW, DIFF_VIEW]), focused_element=MAIN_VIEW)
+LAYOUT = Layout(HSplit(
+    [MAIN_VIEW,
+     ConditionalContainer(DiffView(), filter=diff_visible)]),
+                focused_element=MAIN_VIEW)
 
 
 @KB.add('j')
@@ -169,8 +176,11 @@ def enter(_: KeyPressEvent):
     control = LAYOUT.current_control
     commit = control.current()
     if commit:
-        DIFF_VIEW.show_diff(commit)
-        LAYOUT.focus(DIFF_VIEW)
+        global WINDOW_VISIBILITY
+        WINDOW_VISIBILITY['diff'] = True
+        buffer = LAYOUT.get_buffer_by_name('diff')
+        LAYOUT.focus(buffer)
+        LAYOUT.current_control.show_diff(commit)
 
 
 @KB.add('/')
@@ -217,9 +227,13 @@ def search_backward(_: KeyPressEvent):
 
 @KG.add('q', is_global=True, eager=True)
 def close(_):
-    LOG.debug('Hidding DIFF_VIEW')
-    if DIFF_VIEW.is_visible():
-        DIFF_VIEW.hide()
+    buffer = LAYOUT.current_buffer
+    LOG.debug('closing buffer %s', buffer.name)
+    if buffer.name == 'history':
+        get_app().exit(result=False)
+    elif buffer.name:
+        global WINDOW_VISIBILITY
+        WINDOW_VISIBILITY[buffer.name] = False
         LAYOUT.focus(MAIN_VIEW)
     else:
         get_app().exit(result=False)

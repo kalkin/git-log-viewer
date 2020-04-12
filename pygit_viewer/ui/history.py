@@ -257,7 +257,7 @@ class History(UIContent):
 class HistoryControl(BufferControl):
     def __init__(self, search_buffer_control: SearchBufferControl,
                  key_bindings: Optional[KeyBindings], repo: Repo) -> None:
-        buffer = Buffer()
+        buffer = Buffer(name='history')
         self.content = History(repo)
         buffer.apply_search = self.content.apply_search  # type: ignore
         super().__init__(buffer=buffer,

@@ -1,21 +1,21 @@
 ''' Diff View '''
 import datetime
+from typing import Optional
 
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.document import Document
-from prompt_toolkit.filters import Condition
-from prompt_toolkit.layout import (BufferControl, ConditionalContainer, HSplit,
-                                   Window)
+from prompt_toolkit.formatted_text import AnyFormattedText
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.layout import AnyDimension, BufferControl, HSplit, Window
 from prompt_toolkit.layout.controls import SearchBufferControl
-from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.margins import ScrollbarMargin
 from prompt_toolkit.widgets import Frame, SearchToolbar
-from pygit2 import Diff  # pylint: disable=no-name-in-module
 from pygit2 import GIT_DIFF_STATS_FULL  # pylint: disable=no-name-in-module
+from pygit2 import Diff  # pylint: disable=no-name-in-module
 from pygit2 import Signature  # pylint: disable=no-name-in-module
-from pygit_viewer.utils import screen_width
 
 from pygit_viewer.lexer import COMMIT_LEXER
+from pygit_viewer.utils import screen_height, screen_width
 
 LOCAL_TZ = datetime.datetime.now(datetime.timezone(
     datetime.timedelta(0))).astimezone().tzinfo
@@ -75,39 +75,6 @@ class DiffControl(BufferControl):
                          key_bindings=None,
                          search_buffer_control=search)
 
-
-class DiffView(ConditionalContainer):
-    ''' Represents the hideable view for diffs which provides a read only
-        buffer.
-    '''
-    def __init__(self):
-        self._visible = False
-
-        @Condition
-        def is_visible() -> bool:
-            return self._visible
-
-        buffer = Buffer(read_only=True)
-        self._search = SearchToolbar(vi_mode=True)
-        self.control = DiffControl(buffer, self._search.control)
-        body = HSplit([
-            Window(self.control,
-                   right_margins=[ScrollbarMargin(display_arrows=True)]),
-            self._search
-        ])
-        super().__init__(Frame(body), is_visible)
-
-    @staticmethod
-    def name_from_signature(sign: Signature) -> str:
-        ''' Returns: Author Name <email> '''
-        return "%s <%s>" % (sign.name, sign.email)
-
-    @staticmethod
-    def date_from_signature(sign: Signature) -> str:
-        ''' Returns date formatted to current local and timezone'''
-        date = datetime.datetime.fromtimestamp(sign.time, LOCAL_TZ)
-        return date.strftime('%c')
-
     def show_diff(self, commit):
         ''' Command diff view to show a diff '''
         diff: Diff = commit.diff()
@@ -140,21 +107,63 @@ class DiffView(ConditionalContainer):
         text += "\n\n".join([p.text for p in diff])
         doc = DiffDocument(text, cursor_position=0)
 
-        self.control.buffer.set_document(doc, bypass_readonly=True)
-        self._visible = True
+        self.buffer.set_document(doc, bypass_readonly=True)
 
-    def is_visible(self) -> bool:
-        ''' Return true if visible '''
-        return self._visible
+    @staticmethod
+    def name_from_signature(sign: Signature) -> str:
+        ''' Returns: Author Name <email> '''
+        return "%s <%s>" % (sign.name, sign.email)
 
-    def hide(self):
-        ''' Hide the view '''
-        self._visible = False
+    @staticmethod
+    def date_from_signature(sign: Signature) -> str:
+        ''' Returns date formatted to current local and timezone'''
+        date = datetime.datetime.fromtimestamp(sign.time, LOCAL_TZ)
+        return date.strftime('%c')
 
-    def preferred_height(self, width: int,
-                         max_available_height: int) -> Dimension:
-        dim = super().preferred_height(width, max_available_height)
-        if self._visible:
-            dim.preferred = max_available_height / 2
-            dim.max = max_available_height / 2
-        return dim
+    def preferred_width(self, max_available_width: int) -> Optional[int]:
+        """
+        This should return the preferred width.
+
+        Note: We don't specify a preferred width according to the content,
+              because it would be too expensive. Calculating the preferred
+              width can be done by calculating the longest line, but this would
+              require applying all the processors to each line. This is
+              unfeasible for a larger document, and doing it for small
+              documents only would result in inconsistent behaviour.
+        """
+        return max_available_width / 2
+
+    def preferred_height(self, width: int, max_available_height: int,
+                         wrap_lines: bool, get_line_prefix) -> Optional[int]:
+        return screen_height() / 2
+
+
+class DiffView(Frame):
+    ''' Represents the hideable view for diffs which provides a read only
+        buffer.
+    '''  # pylint: disable=too-few-public-methods
+
+    def __init__(  # pylint: disable=too-many-arguments
+            self,
+            title: AnyFormattedText = "",
+            style: str = "",
+            width: AnyDimension = None,
+            height: AnyDimension = None,
+            key_bindings: Optional[KeyBindings] = None,
+            modal: bool = False,
+    ):
+        buffer = Buffer(read_only=True, name='diff')
+        self._search = SearchToolbar(vi_mode=True)
+        self.control = DiffControl(buffer, self._search.control)
+        body = HSplit([
+            Window(self.control,
+                   right_margins=[ScrollbarMargin(display_arrows=True)]),
+            self._search
+        ])
+        super().__init__(body=body,
+                         title=title,
+                         style=style,
+                         width=width,
+                         height=height,
+                         key_bindings=key_bindings,
+                         modal=modal)
