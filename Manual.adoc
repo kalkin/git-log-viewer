@@ -1,0 +1,82 @@
+= pygit-viewer(1)
+Bahtiar `kalkin` Gadimov
+:experimental:
+:version: v1.1.0
+:doctype: manpage
+
+== Name
+
+pygit-viewer - An alternative to tig(1) which supports folding the merges.
+
+== Synopsis
+
+[verse]
+_______________________________________________________________________
+*pygit_viewer* [--workdir=DIR] [REVISION] [-d | --debug] \[[--] <path>...]
+*pygit_viewer* --version
+_______________________________________________________________________
+
+== Description
+
+An alternative to man:tig[1]/man:lazygit[1] which supports folding the merges and is
+expandable via plugins. The application can resolve the default merge titles
+done by using GitHub or Bitbucket to the actual pull request names.
+
+Use kbd:[CTRL+C] or kbd:[q] to exit the application.
+
+== Options
+REVISION::
+    A branch, tag or commit [default: HEAD]
+--workdir=DIR::
+    Directory where the git repository is
+-d::
+--debug::
+    Enable sending debugging output to man:journalctl[1] (`+journalctl --user -f+`)
+
+
+== Default Keybindingso
+
+=== General Keys
+
+.Movement
+|=============================================================================
+| Key	                    | Action
+| kbd:[h]	                | Show this help.
+| kbd:[k], kbd:[Up]	        | Move cursor one line up.
+| kbd:[j], kbd:[Down]       | Move cursor one line down.
+| kbd:[PgUp],	            | Move cursor one page up.
+| kbd:[PgDown], kbd:[Space] | Move cursor one page down.
+| kbd:[End]		            | Jump to last line.
+| kbd:[q]                   | Close view, if multiple views are open it will
+                              jump back to the previous view in the view stack.
+                              If it is the last open view it will quit.
+| kbd:[Home]                | Jump to first line.
+|=============================================================================
+
+.Searching
+
+|=============================================================================
+| Key	    |Action
+| kbd:[/]	|Search the view. Opens a prompt for entering search regexp to use.
+| kbd:[?]	|Search backwards in the view. Also prompts for regexp.
+| kbd:[n]	|Find next match for the current search regexp.
+| kbd:[N]	|Find previous match for the current search regexp.
+|=============================================================================
+
+=== Log View
+
+|=============================================================================
+| Key	        | Action
+| kbd:[Enter]   | Open selected commit in diff view
+| kbd:[l]       | Unfold merge or follow the merge if unfolded
+| kbd:[h]       | Fold merge or go up the tree if folded
+|=============================================================================
+
+=== Diff View
+
+|=============================================================================
+| Key	        | Action
+| kbd:[Enter]   | Open selected commit in diff view
+| kbd:[{]       | Jump to previous hunk
+| kbd:[}]       | Jump to next hunk
+|=============================================================================
