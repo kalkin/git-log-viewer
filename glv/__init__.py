@@ -2,6 +2,7 @@
 import functools
 import itertools
 import os
+import re
 import sys
 import time
 from datetime import datetime
@@ -234,8 +235,62 @@ class LogEntry:
         return ("ansimagenta", self.commit.short_id())
 
     @property
+    def cc_icon(self) -> Tuple[str, str]:
+        subject = self.commit.subject()
+        if re.match(r'^Revert:?\s*', subject, flags=re.I):
+            return ('bold', '⎌ ')
+        elif re.match(r'^refactor:?\s*', subject, flags=re.I):
+            return ('bold', '⮔ ')
+        elif re.match(r'^(bug)?fix[\/:\s]+', subject, flags=re.I):
+            return ('bold', '✔ ')
+        elif re.match(r'^docs:?\s*', subject, flags=re.I):
+            return ('bold', '✎ ')
+        elif re.match(r'^improvement:?\s*', subject, flags=re.I):
+            return ('bold', '✨')
+        elif re.match(r'^hotfix:?\s*', subject, flags=re.I):
+            return ('bold', '🔥')
+        elif re.match(r'^feat:?\s*', subject, flags=re.I):
+            return ('bold', '➕')
+        elif re.match(r'^add:?\s*', subject, flags=re.I):
+            return ('bold', '➕')
+        elif re.match(r'^(release|bump):?\s*', subject, flags=re.I):
+            return ('bold', '🔖')
+        elif re.match(r'^build:?\s*', subject, flags=re.I):
+            return ('bold', '🔨')
+        elif re.match(r'^.* Import .*', subject, flags=re.I):
+            return ('bold', '⮈ ')
+        elif re.match(r'^Split .*', subject, flags=re.I):
+            return ('bold', '⮊ ')
+        elif re.match(r'^Remove .*', subject, flags=re.I):
+            return ('bold', '␡ ')
+        elif re.match(r'^Update .*', subject, flags=re.I):
+            return ('bold', '⮉ ')
+        elif re.match(r'^style:?\s*', subject, flags=re.I):
+            return ('bold', '♥ ')
+        return ('', '  ')
+
+    @property
     def subject(self):
-        return ('', self.commit.subject())
+        subject = self.commit.subject()
+        if re.match(r'^Revert:?\s*', subject, flags=re.I):
+            subject = re.sub(r'^Revert:?\s*', '', subject, flags=re.I)
+        elif re.match(r'^refactor:?\s*', subject, flags=re.I):
+            subject = re.sub(r'^refactor:?\s*', '', subject, flags=re.I)
+        elif re.match(r'^(bug)?fix:?\s*', subject, flags=re.I):
+            subject = re.sub(r'^(bug)?fix[/:\s]+', '', subject, flags=re.I)
+        elif re.match(r'^improvement:?\s*', subject, flags=re.I):
+            subject = re.sub(r'^improvement:?\s*', '', subject, flags=re.I)
+        elif re.match(r'^docs:?\s*', subject, flags=re.I):
+            subject = re.sub(r'^docs:?\s*', '', subject, flags=re.I)
+        elif re.match(r'^add:?\s*', subject, flags=re.I):
+            subject = re.sub(r'^add:?\s*', '', subject, flags=re.I)
+        elif re.match(r'^hotfix:?\s*', subject, flags=re.I):
+            subject = re.sub(r'^hotfix:?\s*', '', subject, flags=re.I)
+        elif re.match(r'^log(ging)?:?\s*', subject, flags=re.I):
+            subject = re.sub(r'^log(ging)?:?\s*', '', subject, flags=re.I)
+        elif re.match(r'^feat:?\s*', subject, flags=re.I):
+            subject = re.sub(r'^feat:?\s*', '', subject, flags=re.I)
+        return ('', subject)
 
     @property
     def type(self):
