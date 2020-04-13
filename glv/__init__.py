@@ -166,20 +166,19 @@ class Commit:
             return self._first_subject_line()
 
     @functools.lru_cache()
-    def modules(self) -> str:
+    def modules(self) -> List[str]:
         if not self._repo.has_modules:
             return ''
         _id = str(self.oid)
         try:
-            modules = self._repo.module_cache[_id]
-            return ', '.join([':' + x for x in modules])
+            return self._repo.module_cache[_id]
         except KeyError:
             # pylint: disable=protected-access
             try:
                 modules = list(
                     vcs.changed_modules(self._repo._repo, self._commit))
                 self._repo.module_cache[_id] = modules
-                return ', '.join([':' + x for x in modules])
+                return self._repo.module_cache[_id]
             except KeyError:
                 pass
         return ''
@@ -239,10 +238,10 @@ class LogEntry:
     @property
     def modules(self) -> Tuple[str, str]:
         modules = self.commit.modules()
-        if modules != '':
-            return ('ansiyellow', modules)
+        if not modules:
+            modules = []
 
-        return ('', '')
+        return ('ansiyellow', ', '.join([':' + x for x in modules]))
 
     @property
     def author_name(self):
