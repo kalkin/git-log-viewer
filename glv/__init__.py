@@ -267,6 +267,7 @@ class LogEntry:
             return ('bold', '⮉ ')
         elif re.match(r'^style:?\s*', subject, flags=re.I):
             return ('bold', '♥ ')
+
         return ('', '  ')
 
     @property
