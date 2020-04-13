@@ -14,6 +14,13 @@ from pygit2 import Repository  # pylint: disable=no-name-in-module
 
 LOG = logging.getLogger('glv')
 
+__all__ = [
+    "changed_files",
+    "changed_modules",
+    "modules",
+    "subtree_config_files",
+]
+
 
 @functools.lru_cache()
 def subtree_config_files(repo: Repository) -> List[str]:
