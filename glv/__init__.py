@@ -238,35 +238,43 @@ class LogEntry:
     def cc_icon(self) -> Tuple[str, str]:
         subject = self.commit.subject()
         if re.match(r'^Revert:?\s*', subject, flags=re.I):
-            return ('bold', '⎌ ')
+            return ('bold', '\uf0e2 ')
+        elif re.match(r'^fixup!\s+', subject, flags=re.I):
+            return ('bold', '\uf0e3 ')
+        elif re.match(r'^ADD:3cf/[a-z0-9]+', subject, flags=re.I): # be
+            return ('bold', '\uf457 ')
         elif re.match(r'^refactor:?\s*', subject, flags=re.I):
             return ('bold', '⮔ ')
-        elif re.match(r'^(bug)?fix[\/:\s]+', subject, flags=re.I):
-            return ('bold', '✔ ')
+        elif re.match(r'^(bug)?fix(ed)?[\/:\s]+', subject, flags=re.I):
+            return ('bold', '\uf188 ')
         elif re.match(r'^docs:?\s*', subject, flags=re.I):
             return ('bold', '✎ ')
         elif re.match(r'^improvement:?\s*', subject, flags=re.I):
-            return ('bold', '✨')
+            return ('bold', '\ue370 ')
         elif re.match(r'^hotfix:?\s*', subject, flags=re.I):
-            return ('bold', '🔥')
+            return ('bold', '\uf490 ')
         elif re.match(r'^feat:?\s*', subject, flags=re.I):
             return ('bold', '➕')
         elif re.match(r'^add:?\s*', subject, flags=re.I):
             return ('bold', '➕')
         elif re.match(r'^(release|bump):?\s*', subject, flags=re.I):
-            return ('bold', '🔖')
+            return ('bold', '\uf412 ')
         elif re.match(r'^build:?\s*', subject, flags=re.I):
             return ('bold', '🔨')
         elif re.match(r'^.* Import .*', subject, flags=re.I):
             return ('bold', '⮈ ')
         elif re.match(r'^Split .*', subject, flags=re.I):
-            return ('bold', '⮊ ')
+            return ('bold', '\uf403 ')
         elif re.match(r'^Remove .*', subject, flags=re.I):
-            return ('bold', '␡ ')
-        elif re.match(r'^Update .*', subject, flags=re.I):
-            return ('bold', '⮉ ')
+            return ('bold', '\uf48e ')
+        elif re.match(r'^Update :\w+.*', subject, flags=re.I):
+            return ('bold', '\uf419 ')
         elif re.match(r'^style:?\s*', subject, flags=re.I):
             return ('bold', '♥ ')
+        elif re.match(r'^DONE:?[a-z0-9]+', subject, flags=re.I): # be
+            return ('bold', '\uf41d ')
+        elif re.match(r'^rename?\s*', subject, flags=re.I):
+            return ('bold', '\uf044 ')
 
         return ('', '  ')
 
