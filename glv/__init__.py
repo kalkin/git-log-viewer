@@ -285,8 +285,9 @@ class Repo:
             for r in self._repo.references.objects
             if not r.shorthand.endswith('/HEAD')
         }
+        self.revision = revision
         try:
-            self.__start: GitCommit = self._repo.revparse_single(revision)
+            self.__start: GitCommit = self._repo.revparse_single(self.revision)
         except KeyError:
             raise NoRevisionMatches
 
@@ -356,6 +357,13 @@ class Repo:
             if not self.files or _commit_changed_files(git_commit, self.files):
                 yield tmp
             parent = tmp
+
+    def __str__(self) -> str:
+        path = self._repo.workdir.replace(os.path.expanduser('~'), '~', 1)
+        revision = self.revision
+        if self.revision == 'HEAD':
+            revision = self._repo.head.shorthand
+        return '%s \uf418 %s' % (path.rstrip('/'), revision)
 
 
 def _commit_changed_files(commit: GitCommit, files: List[str]) -> bool:
