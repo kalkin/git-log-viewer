@@ -14,6 +14,7 @@ from pygit2 import GIT_DIFF_STATS_FULL  # pylint: disable=no-name-in-module
 from pygit2 import Diff  # pylint: disable=no-name-in-module
 from pygit2 import Signature  # pylint: disable=no-name-in-module
 
+from glv import Commit, vcs
 from glv.lexer import COMMIT_LEXER
 from glv.utils import screen_height, screen_width
 
@@ -75,7 +76,24 @@ class DiffControl(BufferControl):
                          key_bindings=None,
                          search_buffer_control=search)
 
-    def show_diff(self, commit):
+    @staticmethod
+    def _render_body(diff: Diff) -> Optional[str]:
+        '''
+            Renders diff stats and diff patches.
+
+            May fail if local repository is missing objects, will return None on
+            error.
+        '''
+        try:
+            text = ''
+            text += diff.stats.format(GIT_DIFF_STATS_FULL, screen_width() - 10)
+            text += "\n"
+            text += "\n\n".join([p.text for p in diff])
+            return text
+        except Exception:  # pylint: disable=broad-except
+            return None
+
+    def show_diff(self, commit: Commit):
         ''' Command diff view to show a diff '''
         diff: Diff = commit.diff()
         if diff is None:
@@ -102,9 +120,17 @@ class DiffControl(BufferControl):
         # pylint: disable=protected-access
         text += commit._commit.message
         text += "\n---\n\n"
-        text += diff.stats.format(GIT_DIFF_STATS_FULL, screen_width() - 10)
-        text += "\n"
-        text += "\n\n".join([p.text for p in diff])
+        body = DiffControl._render_body(diff)
+        if body is None:
+            success = vcs.fetch_missing_data(commit._commit,
+                                             commit._repo._repo)
+            if success:
+                body = DiffControl._render_body(diff)
+
+        if body is None:
+            body = "‼ Missing data for commit %s and failed to fetch it." % commit.oid
+
+        text += body
         doc = DiffDocument(text, cursor_position=0)
 
         self.buffer.set_document(doc, bypass_readonly=True)
