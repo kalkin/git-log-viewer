@@ -1,0 +1,4 @@
+[docs]
+	origin = https://github.com/kalkin/git-log-viewer.wiki.git
+	follow = master
+	previous = /pygit-viewer/docs
