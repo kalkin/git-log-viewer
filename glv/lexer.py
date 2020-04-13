@@ -23,6 +23,7 @@ def _get_lexer() -> PygmentsLexer:
     DiffLexer.tokens['diff_stats'] = [
         (r'^ \d+ files? changed.+\n', token.DiffSummary, 'old_root'),
         (r'^(.+)( \|\s*\d+\s*)', bygroups(token.FileName, Text)),
+        (r'^‼.*', Text),
         (r'[+]+', Generic.Inserted),
         (r'[-]+', Generic.Deleted),
         (r'.*\n', Text),
