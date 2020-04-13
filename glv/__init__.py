@@ -99,17 +99,20 @@ class Commit:
                 return True
         return False
 
-    @property  # type: ignore
-    @functools.lru_cache()
+    @property
     def icon(self) -> str:
         point = "●"
         if self.__stgit():
             point = "Ⓟ"
 
-        if self.is_fork_point():
-            return point + "─┘"
-
         return point
+
+    @property  # type: ignore
+    def arrows(self) -> str:
+        if self.is_fork_point():
+            return "─┘"
+
+        return ''
 
     def render(self):
         return LogEntry(self)
@@ -237,7 +240,7 @@ class LogEntry:
     @property
     def type(self):
         level = self.commit.level * '│ '
-        _type = level + self.commit.icon
+        _type = level + self.commit.icon + self.commit.arrows
         return ("bold", _type)
 
     @functools.lru_cache()
@@ -421,19 +424,18 @@ class Foldable(Commit):
             return False
 
     @property  # type: ignore
-    @functools.lru_cache()
-    def icon(self) -> str:
+    def arrows(self) -> str:
         if self.subject().startswith('Update :'):
             if isinstance(self.parent, Foldable) and self.parent.is_rebased():
-                return '●⇤┤'
+                return '⇤┤'
 
-            return '●⇤╮'
+            return '⇤╮'
 
         if isinstance(self.parent, Foldable) \
             and self.parent.is_rebased():
-            return "●─┤"
+            return "─┤"
 
-        return "●─┐"
+        return "─┐"
 
     @property
     def is_folded(self) -> bool:
@@ -448,15 +450,21 @@ class Foldable(Commit):
 
 class InitialCommit(Commit):
     @property  # type: ignore
-    @functools.lru_cache()
     def icon(self) -> str:
         return "◉"
+
+    @property  # type: ignore
+    def arrows(self) -> str:
+        return ""
 
 
 class CommitLink(Commit):
     @property  # type: ignore
-    @functools.lru_cache()
     def icon(self) -> str:
+        return ""
+
+    @property  # type: ignore
+    def arrows(self) -> str:
         return "↘"
 
 
