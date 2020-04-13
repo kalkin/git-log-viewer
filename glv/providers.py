@@ -83,6 +83,8 @@ class GitHub(Provider):
             basic_auth = '%s:%s' % auth_tupple
             self._headers = urllib3.make_headers(basic_auth=basic_auth,
                                                  user_agent='glv')
+        else:
+            self._headers = urllib3.make_headers(user_agent='glv')
 
         parts = self._url.path.split('/')
         owner = parts[1]
@@ -92,13 +94,15 @@ class GitHub(Provider):
 
     @staticmethod
     def enabled(repo) -> bool:
+        result = False
         try:
             if repo.remotes:
                 url = urllib3.util.parse_url(repo.remotes['origin'].url)
-                return url.hostname == 'github.com'
+                result = url.hostname == 'github.com'
         except Exception:  # pylint: disable=broad-except
             pass
-        return False
+        LOG.debug('github-api: enabled %s', result)
+        return result
 
     def has_match(self, subject: str) -> bool:
         return bool(self.pattern.search(subject))
@@ -143,6 +147,8 @@ class Atlassian(Provider):
         if auth_tupple:
             basic_auth = '%s:%s' % auth_tupple
             self._headers = urllib3.make_headers(basic_auth=basic_auth)
+        else:
+            self._headers = urllib3.make_headers(user_agent='glv')
 
         parts = self._url.path.split('/')
         name = parts[1].upper()
