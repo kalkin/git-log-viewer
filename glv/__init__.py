@@ -245,7 +245,13 @@ class LogEntry:
             return ('bold', '\uf457 ')
         elif re.match(r'^refactor:?\s*', subject, flags=re.I):
             return ('bold', '⮔ ')
-        elif re.match(r'^(bug)?fix(ed)?[\/:\s]+', subject, flags=re.I):
+        elif re.match(r'^test(\(.+\))?:?\s*', subject, flags=re.I):
+            return ('bold', '\uf45e ')
+        elif re.match(r'^ci(\(.+\))?:?\s*', subject, flags=re.I):
+            return ('bold', '\uf085 ')
+        elif re.match(r'^perf(\(.+\))?:?\s*', subject, flags=re.I):
+            return ('bold', '\uf9c4')
+        elif re.match(r'^(bug)?fix(ed)?(\(.+\))?[\/:\s]+', subject, flags=re.I):
             return ('bold', '\uf188 ')
         elif re.match(r'^docs:?\s*', subject, flags=re.I):
             return ('bold', '✎ ')
