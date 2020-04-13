@@ -239,7 +239,7 @@ class LogEntry:
 
     @property
     def type(self):
-        level = self.commit.level * '│ '
+        level = self.commit.level * '￨ '
         _type = level + self.commit.icon + self.commit.arrows
         return ("bold", _type)
 
