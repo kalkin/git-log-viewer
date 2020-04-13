@@ -17,6 +17,7 @@ LOG = logging.getLogger('glv')
 __all__ = [
     "changed_files",
     "changed_modules",
+    "fetch_missing_data",
     "modules",
     "subtree_config_files",
 ]
@@ -95,3 +96,31 @@ def changed_modules(repo: Repository, commit: Commit) -> Set[str]:
             files = {k: True for k in files if k not in matches}
 
     return set(result)
+
+
+def fetch_missing_data(commit: Commit, repo: Repository) -> bool:
+    '''
+        A workaround for fetching promisor data.
+
+        When working in a repository which is partially cloned, then there will
+        be commit objects, who are linking to localy non existing objects. By
+        using git-show(1) we fetch all missing data.
+    '''
+    workdir = repo.workdir
+    gitdir = repo.path
+    oid = str(commit.oid)
+    cmd = [
+        'git', '--no-pager', '--git-dir', gitdir, '--work-tree', workdir,
+        'show', oid
+    ]
+    LOG.info('Fetching missisng data for %s', oid)
+    LOG.debug('Executing %s', ' '.join(cmd))
+    try:
+        subprocess.run(cmd,
+                       capture_output=False,
+                       stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL,
+                       check=True)
+    except subprocess.CalledProcessError:
+        return False
+    return True
