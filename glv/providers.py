@@ -5,7 +5,7 @@ import netrc
 import os
 import pathlib
 import re
-import sys
+from datetime import datetime
 from time import time
 from typing import Any, Optional, Tuple
 
@@ -130,18 +130,22 @@ class GitHub(Provider):
                     headers=self._headers,
                 )
                 if request.status == 200:
-                    self._cache[subject] = json.loads(
-                        request.data.decode('utf-8'))['title'] + ' (#%s)' % _id
+                    LOG.debug('github-api: \ue27d #%s', _id)
+                    json_data = json.loads(request.data.decode('utf-8'))
+                    self._cache[subject] = json_data['title'] + ' (#%s)' % _id
                 elif request.status == 401:
-                    print('Failed to authenticate', file=sys.stderr)
+                    LOG.error('github-api: ⛔ authentication failure')
                     self.auth_failed = True
                     return subject
                 elif request.status == 403:
                     self._rate_limit = int(
                         request.headers['X-Ratelimit-Reset'])
+                    date = datetime.utcfromtimestamp(self._rate_limit)
+                    LOG.warning('github-api: ⚠ rate limited until %s', date)
                     return subject
                 else:
-                    print(request.data, file=sys.stderr)
+                    LOG.error('github-api ⛔ (%s) %s', request.status,
+                              request.data)
                     return subject
 
         return self._cache[subject]
@@ -205,7 +209,7 @@ class Atlassian(Provider):
                     self._cache[subject] = json.loads(
                         request.data.decode('utf-8'))['title'] + ' (#%s)' % _id
                 elif request.status == 401:
-                    print('Failed to authenticate', file=sys.stderr)
+                    LOG.error('Failed to authenticate')
                     self.auth_failed = True
                     return subject
                 else:
