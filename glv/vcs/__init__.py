@@ -31,7 +31,7 @@ def modules(repo: Repository) -> Dict[str, str]:
 
     files = subtree_config_files(repo)
     LOG.debug("Found subtree config files: %s", files)
-    result: Dict[str] = {}
+    result: Dict[str, str] = {}
     for _file in files:
         conf = configparser.ConfigParser()
         conf.read(os.path.join(repo.workdir, _file))
