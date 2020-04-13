@@ -293,7 +293,7 @@ class Repo:
 
         for provider in providers().values():
             if provider.enabled(self._repo):
-                cache_dir = self._repo.path + 'glv/' + __name__ + '/remotes/origin'
+                cache_dir = self._repo.path + __name__ + '/remotes/origin'
                 self.provider = ProviderActor.start(
                     provider(self._repo, cache_dir))
                 break
