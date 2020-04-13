@@ -16,7 +16,7 @@ import logging
 import sys
 
 from docopt import docopt
-from prompt_toolkit import Application
+from prompt_toolkit import Application, shortcuts
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.filters import Condition
@@ -70,6 +70,7 @@ KG = KeyBindings()
 
 try:
     REPO = repo_from_args(**ARGUMENTS)
+    shortcuts.set_title('%s - Git Log Viewer' % REPO)
 except NoRevisionMatches:
     print('No revisions match the given arguments.', file=sys.stderr)
     sys.exit(1)
@@ -230,17 +231,20 @@ def close(_):
     buffer = LAYOUT.current_buffer
     LOG.debug('closing buffer %s', buffer.name)
     if buffer.name == 'history':
+        shortcuts.clear_title()
         get_app().exit(result=False)
     elif buffer.name:
         global WINDOW_VISIBILITY
         WINDOW_VISIBILITY[buffer.name] = False
         LAYOUT.focus(MAIN_VIEW)
     else:
+        shortcuts.clear_title()
         get_app().exit(result=False)
 
 
 @KG.add('c-c', is_global=True)
 def _(_):
+    shortcuts.clear_title()
     get_app().exit(result=False)
 
 
@@ -296,6 +300,7 @@ def cli():
                       key_bindings=KG)
     app.editing_mode = EditingMode.VI
     app.run()
+    shortcuts.clear_title()
 
 
 if __name__ == '__main__':
