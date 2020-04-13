@@ -21,6 +21,7 @@
 import functools
 import itertools
 import os
+import re
 import sys
 import time
 from datetime import datetime
@@ -240,6 +241,12 @@ class LogEntry:
         modules = self.commit.modules()
         if not modules:
             modules = []
+
+        subject = self.commit.subject()
+        if re.match(r'^\w+\([\w\d_-]+\)[\s:]\s*.*', subject, flags=re.I):
+            tmp = re.findall(r'^\w+\(([\w\d_-]+)\):.*', subject)
+            if tmp:
+                modules.append(tmp[0])
 
         return ('ansiyellow', ', '.join([':' + x for x in modules]))
 
