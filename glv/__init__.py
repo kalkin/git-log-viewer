@@ -243,19 +243,31 @@ class LogEntry:
             return ('bold', '\uf0e3 ')
         elif re.match(r'^ADD:3cf/[a-z0-9]+', subject, flags=re.I): # be
             return ('bold', '\uf457 ')
-        elif re.match(r'^refactor:?\s*', subject, flags=re.I):
+        elif re.match(r'^ref(actor)?:?\s*', subject, flags=re.I):
             return ('bold', '⮔ ')
+        elif re.match(r'^lang:?\s*', subject, flags=re.I):
+            return ('bold', '\ufac9')
+        elif re.match(r'^deps(\(.+\))?:?\s*', subject, flags=re.I):
+            return ('bold', '\uf487 ')
+        elif re.match(r'^config:?\s*', subject, flags=re.I):
+            return ('bold', '\uf462 ')
         elif re.match(r'^test(\(.+\))?:?\s*', subject, flags=re.I):
             return ('bold', '\uf45e ')
         elif re.match(r'^ci(\(.+\))?:?\s*', subject, flags=re.I):
             return ('bold', '\uf085 ')
         elif re.match(r'^perf(\(.+\))?:?\s*', subject, flags=re.I):
             return ('bold', '\uf9c4')
-        elif re.match(r'^(bug)?fix(ed)?(\(.+\))?[\/:\s]+', subject, flags=re.I):
+        elif re.match(r'^(bug)?fix(ing|ed)?(\(.+\))?[\/:\s]+', subject, flags=re.I):
             return ('bold', '\uf188 ')
-        elif re.match(r'^docs:?\s*', subject, flags=re.I):
+        elif re.match(r'^docs?:?\s*', subject, flags=re.I):
             return ('bold', '✎ ')
-        elif re.match(r'^improvement:?\s*', subject, flags=re.I):
+        elif re.match(r'^debian:?\s*', subject, flags=re.I):
+            return ('bold', '\uf306 ')
+        elif re.match(r'^chore(\(.+\))?[\/:\s]+', subject, flags=re.I):
+            return ('bold', '\uf5e1 ')
+        elif re.match(r'^log(ging)?:?\s*', subject, flags=re.I):
+            return ('bold', '\uf869 ')
+        elif re.match(r'^improve(ment)?:?\s*', subject, flags=re.I):
             return ('bold', '\ue370 ')
         elif re.match(r'^hotfix:?\s*', subject, flags=re.I):
             return ('bold', '\uf490 ')
@@ -273,7 +285,7 @@ class LogEntry:
             return ('bold', '\uf403 ')
         elif re.match(r'^Remove .*', subject, flags=re.I):
             return ('bold', '\uf48e ')
-        elif re.match(r'^Update :\w+.*', subject, flags=re.I):
+        elif re.match(r'^Update :\w+.', subject, flags=re.I):
             return ('bold', '\uf419 ')
         elif re.match(r'^style:?\s*', subject, flags=re.I):
             return ('bold', '♥ ')
