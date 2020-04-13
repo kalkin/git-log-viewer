@@ -465,7 +465,7 @@ class CommitLink(Commit):
 
     @property  # type: ignore
     def arrows(self) -> str:
-        return "↘"
+        return "⭞"
 
 
 class Merge(Foldable):
