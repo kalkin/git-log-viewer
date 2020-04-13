@@ -6,6 +6,7 @@ import os
 import pathlib
 import re
 import sys
+from time import time
 from typing import Any, Optional, Tuple
 
 import certifi
@@ -74,6 +75,7 @@ class Provider():
 
 class GitHub(Provider):
     def __init__(self, repo, cache_dir: str) -> None:
+        self._rate_limit: Optional[int] = None
         file_path = os.path.join(cache_dir, 'github.json')
         super().__init__(repo, Cache(file_path))
 
@@ -111,8 +113,12 @@ class GitHub(Provider):
         try:
             return self._cache[subject]
         except KeyError:
-            if self.auth_failed:
+            if (self._rate_limit and self._rate_limit >= time()) \
+                    or self.auth_failed:
                 return subject
+
+            if self._rate_limit:
+                self._rate_limit = None
 
             results = self.pattern.search(subject)
             if results:
@@ -129,6 +135,10 @@ class GitHub(Provider):
                 elif request.status == 401:
                     print('Failed to authenticate', file=sys.stderr)
                     self.auth_failed = True
+                    return subject
+                elif request.status == 403:
+                    self._rate_limit = int(
+                        request.headers['X-Ratelimit-Reset'])
                     return subject
                 else:
                     print(request.data, file=sys.stderr)
