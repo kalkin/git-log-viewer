@@ -163,6 +163,7 @@ class History(UIContent):
 
         if isinstance(commit, CommitLink):
             if isinstance(subject, tuple):
+                module = ('italic ' + module[0], module[1])
                 subject = ('italic ' + subject[0], subject[1])
             else:
                 subject = ('italic', subject)
