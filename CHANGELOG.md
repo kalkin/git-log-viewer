@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [v1.3.0] - 2020-04-19
+
+### Added
+
+- set & clear terminal title
+- workaround for fetching promisor data
+- improvement: Add `Repo.__str__()` function
+- log: GitHub provider add some error/warning logging
+- style: Add `__all__` to `glv.vcs` module
+
+### Changed
+
+- improvement: change commit link icon to ⭞
+- improvement: change the horizontal line character
+
+### Fixed
+
+- fetching missing commit data in partial repos
+- GitHub provider handle rate limiting
+- lexer do not highlight missing commit data error in diff view
+- merge name resolution when no authentication is provided
+- typo in provider cache path
+- handle read only file system (f1c173b)
+- typo in provider cache path
+
+### Refactored
+
+- fix typing
+- split up commit type rendering in to icon & arrows
 
 ## [v1.2.0] - 2020-04-13
 
