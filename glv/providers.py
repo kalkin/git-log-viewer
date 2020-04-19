@@ -17,26 +17,30 @@ LOG = logging.getLogger('glv')
 
 class Cache:
     def __init__(self, file_path: str) -> None:
-        cache_dir = os.path.dirname(file_path)
-        pathlib.Path(cache_dir).mkdir(parents=True, exist_ok=True)
         self._storage: dict = {}
+        cache_dir = os.path.dirname(file_path)
         self._cache_file = file_path
-        if os.path.isfile(file_path):
-            with open(file_path, encoding='utf-8') as data_file:
-                try:
+        self._ro_backend = False
+
+        try:
+            pathlib.Path(cache_dir).mkdir(parents=True, exist_ok=True)
+            if os.path.isfile(file_path):  # restore cache
+                with open(file_path, encoding='utf-8') as data_file:
                     self._storage = json.loads(data_file.read())
-                except json.decoder.JSONDecodeError as exc:
-                    LOG.warning('Failed to parse %s: %s', data_file.name,
-                                exc.msg)
-                    self._storage = {}
+        except PermissionError:
+            LOG.warning('Read only git-dir, no data will be cached')
+            self._ro_backend = True
+        except json.decoder.JSONDecodeError as exc:
+            LOG.warning('Failed to parse %s: %s', data_file.name, exc.msg)
 
     def __getitem__(self, key) -> Any:
         return self._storage[key]
 
     def __setitem__(self, key, value):
         self._storage[key] = value
-        with open(self._cache_file, 'w') as outfile:
-            json.dump(self._storage, outfile)
+        if not self._ro_backend:
+            with open(self._cache_file, 'w') as outfile:
+                json.dump(self._storage, outfile)
 
 
 class Provider():
