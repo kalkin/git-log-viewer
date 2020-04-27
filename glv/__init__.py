@@ -304,8 +304,15 @@ class Repo:
             if not r.shorthand.endswith('/HEAD')
         }
         self.revision = revision
+        self.__end = None
         try:
-            self.__start: GitCommit = self._repo.revparse_single(self.revision)
+            if '..' in self.revision:
+                tmp = self.revision.split('..')
+                self.__end: GitCommit = self._repo.revparse_single(tmp[0])
+                self.__start: GitCommit = self._repo.revparse_single(tmp[1])
+            else:
+                self.__start: GitCommit = self._repo.revparse_single(
+                    self.revision)
         except KeyError:
             raise NoRevisionMatches
 
@@ -351,6 +358,8 @@ class Repo:
         end = None
         if end_c:
             end = end_c.oid or None
+        elif self.__end:
+            end = self.__end.oid
 
         git_commit = self._repo[start]
         try:
