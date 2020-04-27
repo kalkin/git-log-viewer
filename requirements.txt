@@ -5,3 +5,4 @@ certifi
 urllib3
 pykka >= 2.0.0
 pygments >= 2.6.0
+xdg >= 4.0.0

@@ -28,6 +28,7 @@ import subprocess
 import sys
 from typing import Dict, List, Set
 
+import xdg
 from pygit2 import Commit  # pylint: disable=no-name-in-module
 from pygit2 import Repository  # pylint: disable=no-name-in-module
 
@@ -36,6 +37,7 @@ LOG = logging.getLogger('glv')
 __all__ = [
     "changed_files",
     "changed_modules",
+    "CONFIG",
     "fetch_missing_data",
     "modules",
     "subtree_config_files",
@@ -143,3 +145,13 @@ def fetch_missing_data(commit: Commit, repo: Repository) -> bool:
     except subprocess.CalledProcessError:
         return False
     return True
+
+
+def _config() -> configparser.ConfigParser:
+    path = xdg.XDG_CONFIG_HOME.joinpath('glv', 'config')
+    conf = configparser.ConfigParser()
+    conf.read(path)
+    return conf
+
+
+CONFIG = _config()
