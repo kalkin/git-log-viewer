@@ -32,7 +32,7 @@ from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.widgets import SearchToolbar
 
-from glv import Commit, CommitLink, Foldable, Repo
+from glv import Commit, CommitLink, Foldable, Repo, utils
 from glv.ui.status import STATUS, STATUS_WINDOW
 
 LOG = logging.getLogger('glv')
@@ -80,7 +80,7 @@ class History(UIContent):
         super().__init__(line_count=self.line_count,
                          get_line=self.get_line,
                          show_cursor=False)
-        self.fill_up(100)
+        self.fill_up(utils.screen_height())
 
     def apply_search(self,
                      search_state: SearchState,
@@ -128,7 +128,7 @@ class History(UIContent):
                 try:
                     commit = self.commit_list[index]
                 except IndexError:
-                    if not self.fill_up(50):
+                    if not self.fill_up(utils.screen_height()):
                         break
 
                     commit = self.commit_list[index]
@@ -372,7 +372,7 @@ class HistoryControl(BufferControl):
             try:
                 candidat = self.content.commit_list[i]
             except IndexError:
-                self.content.fill_up(50)
+                self.content.fill_up(utils.screen_height())
 
             if candidat.short_id() == commit.short_id():
                 self.goto_line(i)
