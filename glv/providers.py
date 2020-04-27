@@ -114,6 +114,8 @@ class GitHub(Provider):
         parts = self._url.path.split('/')
         owner = parts[1]
         name = parts[2]
+        if name.endswith('.git'):
+            name = os.path.splitext(name)[0]
         self._api_url = 'https://api.github.com/repos/%s/%s/pulls/' % (owner,
                                                                        name)
 
