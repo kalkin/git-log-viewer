@@ -214,6 +214,8 @@ def search_forward(_: KeyPressEvent):
                                ignore_case=False)
     search_control.searcher_search_state = search_state
     LAYOUT.focus(search_control)
+    app = get_app()
+    app.vi_state.reset()
 
 
 @KB.add('n')
@@ -245,6 +247,8 @@ def search_backward(_: KeyPressEvent):
                                ignore_case=False)
     search_control.searcher_search_state = search_state
     LAYOUT.focus(search_control)
+    app = get_app()
+    app.vi_state.reset()
 
 
 @KB.add('q', eager=True)
