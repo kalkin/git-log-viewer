@@ -85,6 +85,7 @@ if DEBUG:
 # get an instance of the logger object this module will use
 
 KB = KeyBindings()
+KD = KeyBindings()
 KG = KeyBindings()
 
 try:
@@ -125,9 +126,10 @@ MARGINS = [
 ]
 
 MAIN_VIEW = HistoryContainer(KB, REPO, right_margins=MARGINS)
-LAYOUT = Layout(HSplit(
-    [MAIN_VIEW,
-     ConditionalContainer(DiffView(), filter=diff_visible)]),
+LAYOUT = Layout(HSplit([
+    MAIN_VIEW,
+    ConditionalContainer(DiffView(key_bindings=KD), filter=diff_visible)
+]),
                 focused_element=MAIN_VIEW)
 
 
@@ -245,20 +247,18 @@ def search_backward(_: KeyPressEvent):
     LAYOUT.focus(search_control)
 
 
-@KG.add('q', is_global=True, eager=True)
+@KB.add('q', eager=True)
 def close(_):
+    shortcuts.clear_title()
+    get_app().exit(result=False)
+
+
+@KD.add('q', eager=True)
+def close_diff(_):
     buffer = LAYOUT.current_buffer
-    LOG.debug('closing buffer %s', buffer.name)
-    if buffer.name == 'history':
-        shortcuts.clear_title()
-        get_app().exit(result=False)
-    elif buffer.name:
-        global WINDOW_VISIBILITY
-        WINDOW_VISIBILITY[buffer.name] = False
-        LAYOUT.focus(MAIN_VIEW)
-    else:
-        shortcuts.clear_title()
-        get_app().exit(result=False)
+    global WINDOW_VISIBILITY
+    WINDOW_VISIBILITY[buffer.name] = False
+    LAYOUT.focus(MAIN_VIEW)
 
 
 @KG.add('c-c', is_global=True)
