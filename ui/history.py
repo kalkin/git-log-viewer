@@ -175,8 +175,9 @@ class History(UIContent):
                        rendered.author_date[1].ljust(self.date_max_len, " "))
         author_name = (rendered.author_name[0],
                        rendered.author_name[1].ljust(self.name_max_len, " "))
-        icon = rendered.type
+        _type = rendered.type
         module = rendered.modules
+        icon = rendered.icon
         subject = rendered.subject
         branches = rendered.branches()
 
@@ -199,7 +200,7 @@ class History(UIContent):
         if self.search_state and self.search_state.text in subject[1]:
             subject = highlight_substring(self.search_state, subject)
 
-        tmp = [_id, author_date, author_name, icon, module, subject]
+        tmp = [_id, author_date, author_name, icon, _type, module, subject]
         result: List[tuple] = []
         for sth in tmp:
             if isinstance(sth, tuple):

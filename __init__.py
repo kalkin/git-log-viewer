@@ -20,6 +20,7 @@
 #
 import functools
 import itertools
+import logging
 import os
 import re
 import sys
@@ -41,7 +42,10 @@ from pykka import Future, Timeout
 
 import glv.vcs as vcs
 from glv.actors import ProviderActor
+from glv.icon import ASCII
 from glv.providers import Cache, Provider
+
+LOG = logging.getLogger('glv')
 
 
 class NoPathMatches(Exception):
@@ -259,6 +263,14 @@ class LogEntry:
         return ("ansimagenta", self.commit.short_id())
 
     @property
+    def icon(self) -> Tuple[str, str]:
+        subject = self.commit.subject()
+        for (regex, icon) in icon_collection():
+            if re.match(regex, subject, flags=re.I):
+                return ('bold', icon)
+        return ('', '  ')
+
+    @property
     def subject(self) -> Tuple[str, str]:
         return ('', self.commit.subject())
 
@@ -282,6 +294,21 @@ def providers():
     for entry_point in pkg_resources.iter_entry_points(group='glv_providers'):
         named_objects.update({entry_point.name: entry_point.load()})
     return named_objects
+
+
+def icon_collection():
+    name = vcs.CONFIG['history']['icon_set']
+    result = None
+    for entry_point in pkg_resources.iter_entry_points(group='glv_icons'):
+        if entry_point.name == name:
+            try:
+                result = entry_point.load()
+            except ModuleNotFoundError as exc:
+                LOG.error(exc)
+
+    if not result:
+        result = ASCII
+    return result
 
 
 class Repo:
