@@ -100,7 +100,7 @@ class History(UIContent):
                                      daemon=True)
         self._search_thread.start()
 
-    def current(self, index: int) -> Commit:
+    def current(self, index: int) -> Optional[Commit]:
         LOG.debug("Fetching current for index %d", index)
         try:
             commit = self.commit_list[index]
