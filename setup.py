@@ -25,6 +25,7 @@ setuptools.setup(
         ],
         'glv_icons': [
             'ascii=glv.icon:ASCII',
+            'nerdfont=glv.icon:NERDFONT',
         ],
     },
     install_requires=[
