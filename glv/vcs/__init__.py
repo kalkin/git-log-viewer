@@ -150,6 +150,7 @@ def fetch_missing_data(commit: Commit, repo: Repository) -> bool:
 def _config() -> configparser.ConfigParser:
     path = xdg.XDG_CONFIG_HOME.joinpath('glv', 'config')
     conf = configparser.ConfigParser()
+    conf['history'] = {'icon_set': 'ascii'}
     conf.read(path)
     return conf
 

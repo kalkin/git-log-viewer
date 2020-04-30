@@ -23,6 +23,9 @@ setuptools.setup(
             'atlassian=glv.providers:Atlassian',
             'github=glv.providers:GitHub',
         ],
+        'glv_icons': [
+            'ascii=glv.icon:ASCII',
+        ],
     },
     install_requires=[
         'pygit2 >= 0.28.0', 'prompt_toolkit >= 2.0, <4.0',
