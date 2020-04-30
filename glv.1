@@ -2,12 +2,12 @@
 .\"     Title: glv
 .\"    Author: Bahtiar `kalkin` Gadimov
 .\" Generator: Asciidoctor 1.5.8
-.\"      Date: 2020-04-13
+.\"      Date: 2020-05-01
 .\"    Manual: Git Log Viewer Manual
 .\"    Source: Git Log Viewer v1.2.0
 .\"  Language: English
 .\"
-.TH "GLV" "1" "2020-04-13" "Git Log Viewer v1.2.0" "Git Log Viewer Manual"
+.TH "GLV" "1" "2020-05-01" "Git Log Viewer v1.2.0" "Git Log Viewer Manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -59,6 +59,19 @@ Directory where the git repository is
 .RS 4
 Enable sending debugging output to \fBjournalctl\fP(1) (\f(CRjournalctl \-\-user \-f\fP)
 .RE
+.SH "CONFIGURATION"
+.sp
+The Git Log Viewer user configuration file is loaded in the following way. If
+\f(CR$XDG_CONFIG_HOME\fP is set, read user configuration from
+\f(CR$XDG_CONFIG_HOME/glv/config\fP. If \f(CR$XDG_CONFIG_HOME\fP is empty or undefined, read
+user configuration from \f(CR~/.config/glv/config\fP.
+.sp
+The configuration file consists of sections and variables. A section begins with
+the name of the section in square brackets and continues until the next section
+begins. Section names are case\-insensitive. Only alphanumeric characters, \- and
+\&. are allowed in section names. Each variable must belong to some section, which
+means that there must be a section header before the first setting of a
+variable.
 .SH "DEFAULT KEYS"
 .SS "General Keys"
 .sp

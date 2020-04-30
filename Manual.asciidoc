@@ -35,6 +35,19 @@ REVISION::
 --debug::
     Enable sending debugging output to man:journalctl[1] (`+journalctl --user -f+`)
 
+== Configuration
+
+The Git Log Viewer user configuration file is loaded in the following way. If
+`$XDG_CONFIG_HOME` is set, read user configuration from
+`$XDG_CONFIG_HOME/glv/config`. If `$XDG_CONFIG_HOME` is empty or undefined, read
+user configuration from `~/.config/glv/config`.
+
+The configuration file consists of sections and variables. A section begins with
+the name of the section in square brackets and continues until the next section
+begins. Section names are case-insensitive. Only alphanumeric characters, - and
+. are allowed in section names. Each variable must belong to some section, which
+means that there must be a section header before the first setting of a
+variable.
 
 == Default Keys
 
@@ -84,3 +97,5 @@ The keys listed in the next two tables are available in all views.
 | kbd:[{]       | Jump to previous hunk
 | kbd:[}]       | Jump to next hunk
 |=============================================================================
+
+
