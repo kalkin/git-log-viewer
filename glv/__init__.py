@@ -259,7 +259,7 @@ class LogEntry:
         return ("ansimagenta", self.commit.short_id())
 
     @property
-    def subject(self):
+    def subject(self) -> Tuple[str, str]:
         return ('', self.commit.subject())
 
     @property
