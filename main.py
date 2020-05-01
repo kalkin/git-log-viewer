@@ -43,6 +43,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.layout import (ConditionalContainer, DynamicContainer,
                                    HSplit, Layout, VSplit)
+from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.layout.margins import (ConditionalMargin, Margin,
                                            ScrollbarMargin)
 from prompt_toolkit.output.color_depth import ColorDepth
@@ -194,12 +195,13 @@ def unfold(_: KeyPressEvent):
         control.go_to_parent(line_number)
 
 
-@KB.add('tab')
+@KG.add('tab')
 def tab(_: KeyPressEvent):
-    control = LAYOUT.current_control
-    line_number = control.current_line
-    control.toggle_fold(line_number)
-    get_app().invalidate()
+    current = LAYOUT.current_control
+    if not isinstance(current, SearchBufferControl):
+        LAYOUT.focus_next()
+        _next = LAYOUT.current_control
+        LOG.debug("Changing from Container %r → %r", current, _next)
 
 
 @KB.add('enter')
