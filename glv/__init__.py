@@ -99,7 +99,8 @@ class Commit:
         # pylint: disable=invalid-name
         timestamp: int = self._commit.author.time
         delta = datetime.now() - datetime.fromtimestamp(timestamp)
-        return babel.dates.format_timedelta(delta, format='short').strip('.')
+        _format = vcs.CONFIG['history']['author_date_format']
+        return babel.dates.format_timedelta(delta, format=_format)
 
     @property  # type: ignore
     @functools.lru_cache()
