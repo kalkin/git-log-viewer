@@ -188,15 +188,14 @@ class DiffView(Frame):
         buffer.
     '''  # pylint: disable=too-few-public-methods
 
-    def __init__(  # pylint: disable=too-many-arguments
-            self,
-            title: AnyFormattedText = "",
-            style: str = "",
-            width: AnyDimension = None,
-            height: AnyDimension = None,
-            key_bindings: Optional[KeyBindings] = None,
-            modal: bool = False,
-    ):
+    # pylint: disable=too-many-arguments
+    def __init__(self,
+                 title: AnyFormattedText = "",
+                 style: str = "",
+                 width: AnyDimension = None,
+                 height: AnyDimension = None,
+                 key_bindings: Optional[KeyBindings] = None,
+                 modal: bool = False):
         buffer = Buffer(read_only=True, name='diff')
         self._search = SearchToolbar(vi_mode=True)
         self.control = DiffControl(buffer, self._search.control)
