@@ -455,11 +455,11 @@ class InitialCommit(Commit):
 class CommitLink(Commit):
     @property  # type: ignore
     def icon(self) -> str:
-        return ""
+        return "⭞"
 
     @property  # type: ignore
     def arrows(self) -> str:
-        return "⭞"
+        return ""
 
 
 class Merge(Foldable):
