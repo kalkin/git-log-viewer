@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [v1.4.0] - 2020-05-01
+
+### Added
+
+- config file support
+- documentation for the config file
+- commit type icon column
+- separate icon set using NerdFont icons for icon column
+- support ’..’ (two-dot) Range Notation as REVISION argument
+- Tab key switches focus between views
+- use vertical split if screen width ≥160
+
+### Fixed
+
+- assert insert-mode when search keybinding is triggered
+- diff view render modules joined by a ’,’
+- fetch pr & issues from GitHub for remotes ending with '.git'
+- search for a string containing char ’q’
+
+### Refactored
+
+- Move module string construction from `Commit` to `LogEntry`
+- container names in the layout
+
 ## [v1.3.0] - 2020-04-19
 
 ### Added
@@ -55,7 +79,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - show diff stats in the diff view
 - use a statusbar for showing search progress
 - improvement: add own custom style
-
 
 ### Changed
 

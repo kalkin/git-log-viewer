@@ -57,7 +57,7 @@ from glv.ui.diff_view import DiffView
 from glv.ui.history import HistoryContainer
 from glv.utils import repo_from_args, screen_height, screen_width
 
-ARGUMENTS = docopt(__doc__, version='v1.2.0', options_first=True)
+ARGUMENTS = docopt(__doc__, version='v1.4.0', options_first=True)
 DEBUG = ARGUMENTS['--debug']
 
 LOG = logging.getLogger('glv')
