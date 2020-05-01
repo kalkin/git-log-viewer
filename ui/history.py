@@ -27,7 +27,8 @@ from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.data_structures import Point
 from prompt_toolkit.formatted_text import StyleAndTextTuples
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout import BufferControl, HSplit, UIContent, Window
+from prompt_toolkit.layout import (BufferControl, Dimension, HSplit, UIContent,
+                                   Window)
 from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.widgets import SearchToolbar
@@ -393,3 +394,11 @@ class HistoryContainer(HSplit):
                                   repo=repo)
         window = Window(content=log_view, right_margins=right_margins)
         super().__init__([window, search, STATUS_WINDOW])
+
+    def preferred_width(self, max_available_width: int) -> Dimension:
+        _min = 40
+        preferred = 80
+        if max_available_width / 2 >= 80:
+            preferred = max_available_width / 2
+
+        return Dimension(min=_min, preferred=preferred)

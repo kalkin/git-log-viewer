@@ -41,7 +41,8 @@ from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
-from prompt_toolkit.layout import ConditionalContainer, HSplit, Layout
+from prompt_toolkit.layout import (ConditionalContainer, DynamicContainer,
+                                   HSplit, Layout, VSplit)
 from prompt_toolkit.layout.margins import (ConditionalMargin, Margin,
                                            ScrollbarMargin)
 from prompt_toolkit.output.color_depth import ColorDepth
@@ -53,7 +54,7 @@ from pygments.styles.solarized import SolarizedDarkStyle
 from glv import NoPathMatches, NoRevisionMatches
 from glv.ui.diff_view import DiffView
 from glv.ui.history import HistoryContainer
-from glv.utils import repo_from_args, screen_height
+from glv.utils import repo_from_args, screen_height, screen_width
 
 ARGUMENTS = docopt(__doc__, version='v1.2.0', options_first=True)
 DEBUG = ARGUMENTS['--debug']
@@ -128,8 +129,17 @@ DIFF_CONTAINER = ConditionalContainer(DiffView(key_bindings=KD),
                                       filter=diff_visible)
 
 HISTORY_CONTAINER = HistoryContainer(KB, REPO, right_margins=MARGINS)
-LAYOUT = Layout(HSplit([HISTORY_CONTAINER, DIFF_CONTAINER]),
-                focused_element=HISTORY_CONTAINER)
+
+
+def get_container():
+    width = screen_width()
+    if width >= 160:
+        return VSplit([HISTORY_CONTAINER, DIFF_CONTAINER])
+    return HSplit([HISTORY_CONTAINER, DIFF_CONTAINER])
+
+
+DYNAMIC_CONTAINER = DynamicContainer(get_container)
+LAYOUT = Layout(DYNAMIC_CONTAINER, focused_element=HISTORY_CONTAINER)
 
 
 @KB.add('j')
