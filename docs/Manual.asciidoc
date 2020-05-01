@@ -65,34 +65,34 @@ The keys listed in the next two tables are available in all views.
 
 .Movement
 |=============================================================================
-| Key	                    | Action
-| kbd:[h]	                | Show this help.
-| kbd:[k], kbd:[Up]	        | Move cursor one line up.
-| kbd:[j], kbd:[Down]       | Move cursor one line down.
-| kbd:[PgUp],	            | Move cursor one page up.
-| kbd:[PgDown], kbd:[Space] | Move cursor one page down.
-| kbd:[End]		            | Jump to last line.
-| kbd:[Tab]                 | Move focus to the next view
-| kbd:[q]                   | Close view, if multiple views are open it will
-                              jump back to the previous view in the view stack.
-                              If it is the last open view it will quit.
-| kbd:[Home]                | Jump to first line.
+| Key                        | Action
+| kbd:[h]                    | Show this help.
+| kbd:[k], kbd:[Up]          | Move cursor one line up.
+| kbd:[j], kbd:[Down]        | Move cursor one line down.
+| kbd:[PgUp],                | Move cursor one page up.
+| kbd:[PgDown], kbd:[Space]  | Move cursor one page down.
+| kbd:[End]                  | Jump to last line.
+| kbd:[Tab]                  | Move focus to the next view
+| kbd:[q]                    | Close view, if multiple views are open it will
+                               jump back to the previous view in the view stack.
+                               If it is the last open view it will quit.
+| kbd:[Home]                 | Jump to first line.
 |=============================================================================
 
 .Searching
 
 |=============================================================================
-| Key	    |Action
-| kbd:[/]	|Search the view. Opens a prompt for entering search regexp to use.
-| kbd:[?]	|Search backwards in the view. Also prompts for regexp.
-| kbd:[n]	|Find next match for the current search regexp.
-| kbd:[N]	|Find previous match for the current search regexp.
+| Key        |Action
+| kbd:[/]    |Search the view. Opens a prompt for entering search regexp to use.
+| kbd:[?]    |Search backwards in the view. Also prompts for regexp.
+| kbd:[n]    |Find next match for the current search regexp.
+| kbd:[N]    |Find previous match for the current search regexp.
 |=============================================================================
 
 === Log View
 
 |=============================================================================
-| Key	        | Action
+| Key           | Action
 | kbd:[Enter]   | Open selected commit in diff view
 | kbd:[l]       | Unfold merge or follow the merge if unfolded
 | kbd:[h]       | Fold merge or go up the tree if folded
@@ -101,7 +101,7 @@ The keys listed in the next two tables are available in all views.
 === Diff View
 
 |=============================================================================
-| Key	        | Action
+| Key           | Action
 | kbd:[Enter]   | Open selected commit in diff view
 | kbd:[{]       | Jump to previous hunk
 | kbd:[}]       | Jump to next hunk
