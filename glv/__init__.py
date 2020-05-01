@@ -42,7 +42,6 @@ from pykka import Future, Timeout
 
 import glv.vcs as vcs
 from glv.actors import ProviderActor
-from glv.icon import ASCII
 from glv.providers import Cache, Provider
 
 LOG = logging.getLogger('glv')
@@ -138,9 +137,6 @@ class Commit:
 
         return ''
 
-    def render(self):
-        return LogEntry(self)
-
     @property
     def raw_commit(self) -> GitCommit:
         return self._commit
@@ -232,83 +228,11 @@ class Commit:
         return self._parent is not None
 
 
-class LogEntry:
-    def __init__(self, commit: Commit) -> None:
-        self.commit = commit
-
-    @property
-    def author_date(self):
-        return ("ansiblue", self.commit.author_date())
-
-    @property
-    def modules(self) -> Tuple[str, str]:
-        modules = self.commit.modules()
-        if not modules:
-            modules = []
-
-        subject = self.commit.subject()
-        if re.match(r'^\w+\([\w\d_-]+\)[\s:]\s*.*', subject, flags=re.I):
-            tmp = re.findall(r'^\w+\(([\w\d_-]+)\):.*', subject)
-            if tmp:
-                modules.append(tmp[0])
-
-        return ('ansiyellow', ', '.join([':' + x for x in modules]))
-
-    @property
-    def author_name(self):
-        return ("ansigreen", self.commit.short_author_name())
-
-    @property
-    def short_id(self):
-        return ("ansimagenta", self.commit.short_id())
-
-    @property
-    def icon(self) -> Tuple[str, str]:
-        subject = self.commit.subject()
-        for (regex, icon) in icon_collection():
-            if re.match(regex, subject, flags=re.I):
-                return ('bold', icon)
-        return ('', '  ')
-
-    @property
-    def subject(self) -> Tuple[str, str]:
-        return ('', self.commit.subject())
-
-    @property
-    def type(self):
-        level = self.commit.level * '￨ '
-        _type = level + self.commit.icon + self.commit.arrows
-        return ("bold", _type)
-
-    @functools.lru_cache()
-    def branches(self) -> List[Tuple[str, str]]:
-        branches = self.commit.branches
-        branch_tupples = [[('', ' '), ('ansiyellow', '«%s»' % name)]
-                          for name in branches
-                          if not name.startswith('patches/')]
-        return list(itertools.chain(*branch_tupples))
-
-
 def providers():
     named_objects = {}
     for entry_point in pkg_resources.iter_entry_points(group='glv_providers'):
         named_objects.update({entry_point.name: entry_point.load()})
     return named_objects
-
-
-def icon_collection():
-    name = vcs.CONFIG['history']['icon_set']
-    result = None
-    for entry_point in pkg_resources.iter_entry_points(group='glv_icons'):
-        if entry_point.name == name:
-            try:
-                result = entry_point.load()
-            except ModuleNotFoundError as exc:
-                LOG.error(exc)
-
-    if not result:
-        result = ASCII
-    return result
 
 
 class Repo:
