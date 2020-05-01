@@ -24,6 +24,7 @@ import logging
 import os
 import re
 import sys
+import textwrap
 import time
 from datetime import datetime
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
@@ -190,10 +191,9 @@ class Commit:
         return str(self._commit.id)[0:max_len - 1]
 
     def short_author_name(self) -> str:
+        width = vcs.CONFIG['history'].getint('author_name_width')
         signature = self._repo.mailmap.resolve_signature(self._commit.author)
-        if signature.name == self._commit.author.name:
-            return signature.name.split(' ')[0]
-        return signature.name
+        return textwrap.shorten(signature.name, width=width, placeholder=" …")
 
     @property
     def author_signature(self) -> (str, str):
