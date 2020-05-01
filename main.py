@@ -124,13 +124,12 @@ MARGINS = [
     ScrollbarMargin(display_arrows=True),
     ConditionalMargin(MyMargin(), filter=diff_visible)
 ]
+DIFF_CONTAINER = ConditionalContainer(DiffView(key_bindings=KD),
+                                      filter=diff_visible)
 
-MAIN_VIEW = HistoryContainer(KB, REPO, right_margins=MARGINS)
-LAYOUT = Layout(HSplit([
-    MAIN_VIEW,
-    ConditionalContainer(DiffView(key_bindings=KD), filter=diff_visible)
-]),
-                focused_element=MAIN_VIEW)
+HISTORY_CONTAINER = HistoryContainer(KB, REPO, right_margins=MARGINS)
+LAYOUT = Layout(HSplit([HISTORY_CONTAINER, DIFF_CONTAINER]),
+                focused_element=HISTORY_CONTAINER)
 
 
 @KB.add('j')
@@ -262,7 +261,7 @@ def close_diff(_):
     buffer = LAYOUT.current_buffer
     global WINDOW_VISIBILITY
     WINDOW_VISIBILITY[buffer.name] = False
-    LAYOUT.focus(MAIN_VIEW)
+    LAYOUT.focus(HISTORY_CONTAINER)
 
 
 @KG.add('c-c', is_global=True)
