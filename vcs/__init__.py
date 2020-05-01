@@ -160,6 +160,7 @@ def _config() -> configparser.ConfigParser:
         'subject_color': '',
         'type_color': 'bold',
         'icon_set': 'ascii',
+        'author_date_format': 'short',
     }
     conf.read(path)
     return conf
