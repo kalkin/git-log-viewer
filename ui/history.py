@@ -266,13 +266,6 @@ class History(UIContent):
         subject = entry.subject
         branches = entry.branches()
 
-        if isinstance(commit, CommitLink):
-            if isinstance(subject, tuple):
-                module = ('italic ' + module[0], module[1])
-                subject = ('italic ' + subject[0], subject[1])
-            else:
-                subject = ('italic', subject)
-
         if self.search_state and self.search_state.text in _id[1]:
             _id = highlight_substring(self.search_state, _id)
 
@@ -284,6 +277,13 @@ class History(UIContent):
 
         if self.search_state and self.search_state.text in subject[1]:
             subject = highlight_substring(self.search_state, subject)
+
+        if isinstance(commit, CommitLink):
+            _id = ('italic ' + _id[0], _id[1])
+            module = ('italic ' + module[0], module[1])
+            subject = ('italic ' + subject[0], subject[1])
+            author_name = ('italic ' + author_name[0], author_name[1])
+            author_date = ('italic ' + author_date[0], author_date[1])
 
         tmp = [_id, author_date, author_name, icon, _type, module, subject]
         result: List[tuple] = []
