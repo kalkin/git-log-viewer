@@ -49,6 +49,14 @@ begins. Section names are case-insensitive. Only alphanumeric characters, - and
 means that there must be a section header before the first setting of a
 variable.
 
+=== Variables
+
+*history.icon_set* (string)::
+    The set of icons to use for the icon column. Currently only the following
+    are supported:
+    - +ascii+
+    - +nerdfont+ ← Install NerdFont to use this
+
 == Default Keys
 
 === General Keys
