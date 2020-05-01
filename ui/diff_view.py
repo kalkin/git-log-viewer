@@ -125,7 +125,7 @@ class DiffControl(BufferControl):
         text += "Author:     %s\n" % self.name_from_signature(author)
         text += "AuthorDate: %s\n" % self.date_from_signature(author)
         if commit.modules():
-            text += "Modules:    %s\n" % commit.modules()
+            text += "Modules:    %s\n" % ', '.join(commit.modules())
 
         refs = ["«%s»" % name for name in commit.branches]
         if refs:
