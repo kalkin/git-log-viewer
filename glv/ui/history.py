@@ -64,10 +64,12 @@ class LogEntry:
 
     @property
     def author_date(self):
-        return ("ansiblue", self.commit.author_date())
+        color = vcs.CONFIG['history']['author_date_color']
+        return (color, self.commit.author_date())
 
     @property
     def modules(self) -> Tuple[str, str]:
+        color = vcs.CONFIG['history']['modules_color']
         modules = self.commit.modules()
         if not modules:
             modules = []
@@ -78,38 +80,44 @@ class LogEntry:
             if tmp:
                 modules.append(tmp[0])
 
-        return ('ansiyellow', ', '.join([':' + x for x in modules]))
+        return (color, ', '.join([':' + x for x in modules]))
 
     @property
     def author_name(self):
-        return ("ansigreen", self.commit.short_author_name())
+        color = vcs.CONFIG['history']['author_name_color']
+        return (color, self.commit.short_author_name())
 
     @property
     def short_id(self):
-        return ("ansimagenta", self.commit.short_id())
+        color = vcs.CONFIG['history']['short_id_color']
+        return (color, self.commit.short_id())
 
     @property
     def icon(self) -> Tuple[str, str]:
+        color = vcs.CONFIG['history']['icon_color']
         subject = self.commit.subject()
         for (regex, icon) in icon_collection():
             if re.match(regex, subject, flags=re.I):
-                return ('bold', icon)
+                return (color, icon)
         return ('', '  ')
 
     @property
     def subject(self) -> Tuple[str, str]:
-        return ('', self.commit.subject())
+        color = vcs.CONFIG['history']['subject_color']
+        return (color, self.commit.subject())
 
     @property
     def type(self):
+        color = vcs.CONFIG['history']['type_color']
         level = self.commit.level * '￨ '
         _type = level + self.commit.icon + self.commit.arrows
-        return ("bold", _type)
+        return (color, _type)
 
     @functools.lru_cache()
     def branches(self) -> List[Tuple[str, str]]:
+        color = vcs.CONFIG['history']['branches_color']
         branches = self.commit.branches
-        branch_tupples = [[('', ' '), ('ansiyellow', '«%s»' % name)]
+        branch_tupples = [[('', ' '), (color, '«%s»' % name)]
                           for name in branches
                           if not name.startswith('patches/')]
         return list(itertools.chain(*branch_tupples))
