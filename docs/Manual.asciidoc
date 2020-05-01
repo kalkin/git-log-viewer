@@ -72,6 +72,7 @@ The keys listed in the next two tables are available in all views.
 | kbd:[PgUp],	            | Move cursor one page up.
 | kbd:[PgDown], kbd:[Space] | Move cursor one page down.
 | kbd:[End]		            | Jump to last line.
+| kbd:[Tab]                 | Move focus to the next view
 | kbd:[q]                   | Close view, if multiple views are open it will
                               jump back to the previous view in the view stack.
                               If it is the last open view it will quit.
