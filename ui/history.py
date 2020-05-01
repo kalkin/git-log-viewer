@@ -18,11 +18,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
+import functools
+import itertools
 import logging
 import re
 from threading import Thread
 from typing import Any, List, Optional, Tuple
 
+import pkg_resources
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.data_structures import Point
 from prompt_toolkit.formatted_text import StyleAndTextTuples
@@ -33,10 +36,83 @@ from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.widgets import SearchToolbar
 
-from glv import Commit, CommitLink, Foldable, Repo, utils
+from glv import Commit, CommitLink, Foldable, Repo, utils, vcs
+from glv.icon import ASCII
 from glv.ui.status import STATUS, STATUS_WINDOW
 
 LOG = logging.getLogger('glv')
+
+
+def icon_collection():
+    name = vcs.CONFIG['history']['icon_set']
+    result = None
+    for entry_point in pkg_resources.iter_entry_points(group='glv_icons'):
+        if entry_point.name == name:
+            try:
+                result = entry_point.load()
+            except ModuleNotFoundError as exc:
+                LOG.error(exc)
+
+    if not result:
+        result = ASCII
+    return result
+
+
+class LogEntry:
+    def __init__(self, commit: Commit) -> None:
+        self.commit = commit
+
+    @property
+    def author_date(self):
+        return ("ansiblue", self.commit.author_date())
+
+    @property
+    def modules(self) -> Tuple[str, str]:
+        modules = self.commit.modules()
+        if not modules:
+            modules = []
+
+        subject = self.commit.subject()
+        if re.match(r'^\w+\([\w\d_-]+\)[\s:]\s*.*', subject, flags=re.I):
+            tmp = re.findall(r'^\w+\(([\w\d_-]+)\):.*', subject)
+            if tmp:
+                modules.append(tmp[0])
+
+        return ('ansiyellow', ', '.join([':' + x for x in modules]))
+
+    @property
+    def author_name(self):
+        return ("ansigreen", self.commit.short_author_name())
+
+    @property
+    def short_id(self):
+        return ("ansimagenta", self.commit.short_id())
+
+    @property
+    def icon(self) -> Tuple[str, str]:
+        subject = self.commit.subject()
+        for (regex, icon) in icon_collection():
+            if re.match(regex, subject, flags=re.I):
+                return ('bold', icon)
+        return ('', '  ')
+
+    @property
+    def subject(self) -> Tuple[str, str]:
+        return ('', self.commit.subject())
+
+    @property
+    def type(self):
+        level = self.commit.level * '￨ '
+        _type = level + self.commit.icon + self.commit.arrows
+        return ("bold", _type)
+
+    @functools.lru_cache()
+    def branches(self) -> List[Tuple[str, str]]:
+        branches = self.commit.branches
+        branch_tupples = [[('', ' '), ('ansiyellow', '«%s»' % name)]
+                          for name in branches
+                          if not name.startswith('patches/')]
+        return list(itertools.chain(*branch_tupples))
 
 
 def highlight_substring(search: SearchState,
@@ -170,17 +246,17 @@ class History(UIContent):
         return self._render_commit(commit, line_number)
 
     def _render_commit(self, commit: Commit, line_number: int) -> List[tuple]:
-        rendered = commit.render()
-        _id = rendered.short_id
-        author_date = (rendered.author_date[0],
-                       rendered.author_date[1].ljust(self.date_max_len, " "))
-        author_name = (rendered.author_name[0],
-                       rendered.author_name[1].ljust(self.name_max_len, " "))
-        _type = rendered.type
-        module = rendered.modules
-        icon = rendered.icon
-        subject = rendered.subject
-        branches = rendered.branches()
+        entry = LogEntry(commit)
+        _id = entry.short_id
+        author_date = (entry.author_date[0],
+                       entry.author_date[1].ljust(self.date_max_len, " "))
+        author_name = (entry.author_name[0],
+                       entry.author_name[1].ljust(self.name_max_len, " "))
+        _type = entry.type
+        module = entry.modules
+        icon = entry.icon
+        subject = entry.subject
+        branches = entry.branches()
 
         if isinstance(commit, CommitLink):
             if isinstance(subject, tuple):
