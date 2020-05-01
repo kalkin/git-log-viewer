@@ -195,6 +195,14 @@ def unfold(_: KeyPressEvent):
         control.go_to_parent(line_number)
 
 
+@KB.add(' ')
+def toggle_fold(_: KeyPressEvent):
+    control = LAYOUT.current_control
+    line_number = control.current_line
+    control.toggle_fold(line_number)
+    get_app().invalidate()
+
+
 @KG.add('tab')
 def tab(_: KeyPressEvent):
     current = LAYOUT.current_control
