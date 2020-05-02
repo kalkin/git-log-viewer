@@ -21,14 +21,14 @@
 """glv - Git Log Viewer a TUI application with support for folding merges
 
 Usage:
-    glv [--workdir=DIR] [REVISION] [-d | --debug] [[--] <path>...]
+    glv [-w DIR|--workdir=DIR] [REVISION] [-d | --debug] [[--] <path>...]
     glv --version
 
 Options:
-    REVISION        A branch, tag or commit [default: HEAD]
-    --workdir=DIR   Directory where the git repository is
-    -d --debug      Enable sending debuggin output to journalctl
-                    (journalctl --user -f)
+    REVISION                A branch, tag or commit [default: HEAD]
+    -w DIR, --workdir=DIR   Directory where the git repository is
+    -d --debug              Enable sending debuggin output to journalctl
+                            (journalctl --user -f)
 """  # pylint: disable=missing-docstring,fixme,global-statement
 
 import logging
