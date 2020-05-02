@@ -50,13 +50,11 @@ class StatusContent(UIContent):
         self.text = ''
         self.width = 0
 
-    def get_height_for_line(
-        self,
-        lineno: int,
-        width: int,
-        get_line_prefix: Optional[GetLinePrefixCallable],
-        slice_stop: Optional[int] = None,
-    ) -> int:
+    def get_height_for_line(self,
+                            lineno: int,
+                            width: int,
+                            get_line_prefix: Optional[GetLinePrefixCallable],
+                            slice_stop: Optional[int] = None) -> int:
         return 1
 
 
