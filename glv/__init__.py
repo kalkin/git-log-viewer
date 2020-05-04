@@ -447,10 +447,6 @@ class InitialCommit(Commit):
     def icon(self) -> str:
         return "◉"
 
-    @property  # type: ignore
-    def arrows(self) -> str:
-        return ""
-
 
 class CommitLink(Commit):
     @property  # type: ignore
