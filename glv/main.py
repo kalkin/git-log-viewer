@@ -173,6 +173,7 @@ def pageup_key(_: KeyPressEvent):
 
 @KB.add('l')
 @KB.add('right')
+@KB.add('z', 'o')
 def fold(_: KeyPressEvent):
     control = LAYOUT.current_control
     line_number = control.current_line
@@ -185,6 +186,7 @@ def fold(_: KeyPressEvent):
 
 @KB.add('h')
 @KB.add('left')
+@KB.add('z', 'c')
 def unfold(_: KeyPressEvent):
     control = LAYOUT.current_control
     line_number = control.current_line
@@ -196,6 +198,7 @@ def unfold(_: KeyPressEvent):
 
 
 @KB.add(' ')
+@KB.add('z', 'a')
 def toggle_fold(_: KeyPressEvent):
     control = LAYOUT.current_control
     line_number = control.current_line
