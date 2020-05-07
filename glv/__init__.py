@@ -193,7 +193,10 @@ class Commit:
     def short_author_name(self) -> str:
         width = vcs.CONFIG['history'].getint('author_name_width')
         signature = self._repo.mailmap.resolve_signature(self._commit.author)
-        return textwrap.shorten(signature.name, width=width, placeholder=" …")
+        tmp = textwrap.shorten(signature.name, width=width, placeholder="…")
+        if tmp == '…':
+            return signature.name[0:width - 1] + '…'
+        return tmp
 
     @property
     def author_signature(self) -> (str, str):
