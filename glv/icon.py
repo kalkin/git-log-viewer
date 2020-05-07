@@ -14,6 +14,7 @@ ASCII = [
 
 NERDFONT = [
     (r'^Revert:?\s*', ' '),
+    (r'^BREAKING CHANGE:?\s*', '⚠ '),
     (r'^fixup!\s+', '\uf0e3 '),
     (r'^ADD:\s?[a-z0-9]+', ' '),
     (r'^ref(actor)?:?\s*', '⮔ '),
