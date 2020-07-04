@@ -14,7 +14,7 @@ glv - Git Log Viewer a TUI application with support for folding merges
 
 [verse]
 _______________________________________________________________________
-*glv* [--workdir=DIR] [REVISION] [-d | --debug] \[[--] <path>...]
+*glv* [-w DIR | --workdir=DIR] [REVISION] [-d | --debug] \[[--] <path>...]
 *glv* --version
 _______________________________________________________________________
 
@@ -29,6 +29,7 @@ Use kbd:[CTRL+C] or kbd:[q] to exit the application.
 == Options
 REVISION::
     A branch, tag or commit [default: HEAD]
+-w DIR::
 --workdir=DIR::
     Directory where the git repository is
 -d::
