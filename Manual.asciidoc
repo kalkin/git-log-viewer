@@ -57,6 +57,22 @@ variable.
     - +ascii+
     - +nerdfont+ ← Install NerdFont to use this
 
+*history.author_date_color* (string)::
+*history.modules_color* (string)::
+*history.author_name_color* (string)::
+*history.short_id_color* (string)::
+*history.icon_color* (string)::
+*history.subject_color* (string)::
+*history.type_color* (string)::
+*history.branches_color* (string)::
+    +prompt_toolkit+ style string https://python-prompt-toolkit.readthedocs.io/en/master/pages/advanced_topics/styling.html
+
+*history.author_date_format* (string)::
+    One of “full”, “long”, “medium”, or “short”.
+
+*history.author_name_width* (string)::
+    The width of the author name column. Default is set to “10”.
+
 == Default Keys
 
 === General Keys
