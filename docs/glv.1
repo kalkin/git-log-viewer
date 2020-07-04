@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: glv
 .\"    Author: Bahtiar `kalkin` Gadimov
-.\" Generator: Asciidoctor 1.5.8
-.\"      Date: 2020-05-01
+.\" Generator: Asciidoctor 2.0.10
+.\"      Date: 2020-07-04
 .\"    Manual: Git Log Viewer Manual
-.\"    Source: Git Log Viewer v1.4.0
+.\"    Source: Git Log Viewer v1.5.0
 .\"  Language: English
 .\"
-.TH "GLV" "1" "2020-05-01" "Git Log Viewer v1.4.0" "Git Log Viewer Manual"
+.TH "GLV" "1" "2020-07-04" "Git Log Viewer v1.5.0" "Git Log Viewer Manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -31,8 +31,9 @@
 glv \- Git Log Viewer a TUI application with support for folding merges
 .SH "SYNOPSIS"
 .sp
+.sp
 .nf
-\fBglv\fP [\-\-workdir=DIR] [REVISION] [\-d | \-\-debug] \(rs[[\-\-] <path>...]
+\fBglv\fP [\-w DIR | \-\-workdir=DIR] [REVISION] [\-d | \-\-debug] \(rs[[\-\-] <path>...]
 \fBglv\fP \-\-version
 .fi
 .br
@@ -50,7 +51,7 @@ REVISION
 A branch, tag or commit [default: HEAD]
 .RE
 .sp
-\-\-workdir=DIR
+\-w DIR, \-\-workdir=DIR
 .RS 4
 Directory where the git repository is
 .RE
@@ -100,6 +101,22 @@ ascii
 .\}
 nerdfont ← Install NerdFont to use this
 .RE
+.RE
+.sp
+\fBhistory.author_date_color\fP (string), \fBhistory.modules_color\fP (string), \fBhistory.author_name_color\fP (string), \fBhistory.short_id_color\fP (string), \fBhistory.icon_color\fP (string), \fBhistory.subject_color\fP (string), \fBhistory.type_color\fP (string), \fBhistory.branches_color\fP (string)
+.RS 4
+prompt_toolkit style string \c
+.URL "https://python\-prompt\-toolkit.readthedocs.io/en/master/pages/advanced_topics/styling.html" "" ""
+.RE
+.sp
+\fBhistory.author_date_format\fP (string)
+.RS 4
+One of “full”, “long”, “medium”, or “short”.
+.RE
+.sp
+\fBhistory.author_name_width\fP (string)
+.RS 4
+The width of the author name column. Default is set to “10”.
 .RE
 .SH "DEFAULT KEYS"
 .SS "General Keys"
@@ -269,6 +286,27 @@ T}
 T{
 .sp
 kbd:[Space]
+T}:T{
+.sp
+Toggle fold/unfold on selected commit
+T}
+T{
+.sp
+kbd:[zo]
+T}:T{
+.sp
+Unfold merge or follow the merge if unfolded
+T}
+T{
+.sp
+kbd:[zc]
+T}:T{
+.sp
+Fold merge or go up the tree if folded
+T}
+T{
+.sp
+kbd:[za]
 T}:T{
 .sp
 Toggle fold/unfold on selected commit

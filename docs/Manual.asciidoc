@@ -1,7 +1,7 @@
 = glv(1)
 Bahtiar `kalkin` Gadimov
 :doctype: manpage
-:version: v1.4.0
+:version: v1.5.0
 :fullname: Git Log Viewer
 :man source: {fullname} {version}
 :man manual: {fullname} Manual
@@ -14,7 +14,7 @@ glv - Git Log Viewer a TUI application with support for folding merges
 
 [verse]
 _______________________________________________________________________
-*glv* [--workdir=DIR] [REVISION] [-d | --debug] \[[--] <path>...]
+*glv* [-w DIR | --workdir=DIR] [REVISION] [-d | --debug] \[[--] <path>...]
 *glv* --version
 _______________________________________________________________________
 
@@ -29,6 +29,7 @@ Use kbd:[CTRL+C] or kbd:[q] to exit the application.
 == Options
 REVISION::
     A branch, tag or commit [default: HEAD]
+-w DIR::
 --workdir=DIR::
     Directory where the git repository is
 -d::
@@ -56,6 +57,22 @@ variable.
     are supported:
     - +ascii+
     - +nerdfont+ ← Install NerdFont to use this
+
+*history.author_date_color* (string)::
+*history.modules_color* (string)::
+*history.author_name_color* (string)::
+*history.short_id_color* (string)::
+*history.icon_color* (string)::
+*history.subject_color* (string)::
+*history.type_color* (string)::
+*history.branches_color* (string)::
+    +prompt_toolkit+ style string https://python-prompt-toolkit.readthedocs.io/en/master/pages/advanced_topics/styling.html
+
+*history.author_date_format* (string)::
+    One of “full”, “long”, “medium”, or “short”.
+
+*history.author_name_width* (string)::
+    The width of the author name column. Default is set to “10”.
 
 == Default Keys
 
@@ -97,6 +114,9 @@ The keys listed in the next two tables are available in all views.
 | kbd:[l]       | Unfold merge or follow the merge if unfolded
 | kbd:[h]       | Fold merge or go up the tree if folded
 | kbd:[Space]   | Toggle fold/unfold on selected commit
+| kbd:[zo]      | Unfold merge or follow the merge if unfolded
+| kbd:[zc]      | Fold merge or go up the tree if folded
+| kbd:[za]      | Toggle fold/unfold on selected commit
 |=============================================================================
 
 === Diff View
