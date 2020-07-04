@@ -139,8 +139,12 @@ class DiffControl(BufferControl):
         text += "\n"
         body_lines = commit._commit.message.replace('\r', '').split("\n")
         text += " " + body_lines[0] + "\n"
-        text += "\n".join([" " + l for l in body_lines[1:]])
-        text += "\n\n---\n\n"
+        body_lines = body_lines[1:]
+        if body_lines[0] == '' and len(body_lines) == 1:
+            body_lines = body_lines[1:]
+        if body_lines:
+            text += "\n".join([" " + l for l in body_lines]) + "\n"
+        text += "\n---\n\n"
         body = DiffControl._render_body(diff)
         if body is None:
             success = vcs.fetch_missing_data(commit._commit,
