@@ -97,6 +97,9 @@ The keys listed in the next two tables are available in all views.
 | kbd:[l]       | Unfold merge or follow the merge if unfolded
 | kbd:[h]       | Fold merge or go up the tree if folded
 | kbd:[Space]   | Toggle fold/unfold on selected commit
+| kbd:[zo]      | Unfold merge or follow the merge if unfolded
+| kbd:[zc]      | Fold merge or go up the tree if folded
+| kbd:[za]      | Toggle fold/unfold on selected commit
 |=============================================================================
 
 === Diff View
