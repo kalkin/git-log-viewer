@@ -135,10 +135,12 @@ class DiffControl(BufferControl):
             text += "Committer:     %s\n" % self.name_from_signature(committer)
         if committer.time != author.time:
             text += "CommitDate: %s\n" % self.date_from_signature(committer)
-        text += "\n"
         # pylint: disable=protected-access
-        text += commit._commit.message.replace('\r', '')
-        text += "\n---\n\n"
+        text += "\n"
+        body_lines = commit._commit.message.replace('\r', '').split("\n")
+        text += " " + body_lines[0] + "\n"
+        text += "\n".join([" " + l for l in body_lines[1:]])
+        text += "\n\n---\n\n"
         body = DiffControl._render_body(diff)
         if body is None:
             success = vcs.fetch_missing_data(commit._commit,
