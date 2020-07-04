@@ -35,7 +35,7 @@ def _get_lexer() -> PygmentsLexer:
         (r'CommitDate:\s+.*', token.CommitDate),
         (r'Modules:\s+.*', token.Modules),
         (r'Refs:\s+.*', token.Refs),
-        (r'^---$', token.End, 'diff_stats'),
+        (r'^---$', token.Diffstart, 'diff_stats'),
         (r'.*\n', Text),
     ]
 
