@@ -332,6 +332,7 @@ def patched_style() -> Style:
         ('pygments.commit.filename', 'ansiblue'),
         ('pygments.commit.refs', 'ansiyellow'),
         ('pygments.commit.modules', 'ansiyellow'),
+        ('pygments.commit.subject', 'bold'),
         ('pygments.commit.diffstart', 'bold'),
     ]
     return style
