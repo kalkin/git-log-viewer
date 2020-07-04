@@ -137,7 +137,7 @@ class DiffControl(BufferControl):
             text += "CommitDate: %s\n" % self.date_from_signature(committer)
         text += "\n"
         # pylint: disable=protected-access
-        text += commit._commit.message
+        text += commit._commit.message.replace('\r', '')
         text += "\n---\n\n"
         body = DiffControl._render_body(diff)
         if body is None:
