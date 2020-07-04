@@ -1,7 +1,7 @@
 = glv(1)
 Bahtiar `kalkin` Gadimov
 :doctype: manpage
-:version: v1.4.0
+:version: v1.5.0
 :fullname: Git Log Viewer
 :man source: {fullname} {version}
 :man manual: {fullname} Manual

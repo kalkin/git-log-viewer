@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2020-07-04
+
+### Added
+
+- folding manipulation via vi keybindings za, zc & zo
+- make author name column width in history view configurable
+- make relative date format in history view configurable
+- read colors for history view columns from configuration file
+- Space toggles folding in log view
+- BREAKING CHANGE to NERDFONT icon regex
+- '-w' switch as alias for '--workdir'
+- style: Add missing copyright header to icon module
+
+### Fixed
+
+- Highlighting in diff view
+- Long names displayed as '…'
+- Rendering merges based on initial commit
+- Strip ^M from commit message in the diff view
+
+### Refactored
+
+- Move LogEntry to glv.ui.history module
+
+### Removed
+
+- style: remove copyright from empty file
+
 ## [v1.4.0] - 2020-05-01
 
 ### Added
