@@ -144,7 +144,9 @@ class DiffControl(BufferControl):
             body_lines = body_lines[1:]
         if body_lines:
             text += "\n".join([" " + l for l in body_lines]) + "\n"
-        text += "\n---\n\n"
+
+        text += "\n " + 26 * ' ' + "❦ ❦ ❦ ❦ \n\n"
+
         body = DiffControl._render_body(diff)
         if body is None:
             success = vcs.fetch_missing_data(commit._commit,

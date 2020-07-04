@@ -40,7 +40,7 @@ def _get_lexer() -> PygmentsLexer:
     ]
 
     DiffLexer.tokens['body'] = [
-        (r'^---$', token.Diffstart, 'diff_stats'),
+        (r'^\s+❦ ❦ ❦ ❦ $', token.Diffstart, 'diff_stats'),
         (r'.*\n', Text),
     ]
 
