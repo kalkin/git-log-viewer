@@ -24,6 +24,7 @@ import netrc
 import os
 import pathlib
 import re
+import sys
 from datetime import datetime
 from time import time
 from typing import Any, Optional, Tuple
@@ -85,6 +86,9 @@ class Provider():
         try:
             auth_store = netrc.netrc()
             auth_tupple = auth_store.authenticators(self._url.host)
+        except netrc.NetrcParseError as e:
+            print(str(e), file=sys.stderr)
+            auth_tupple = None
         except FileNotFoundError:
             auth_tupple = None
 
