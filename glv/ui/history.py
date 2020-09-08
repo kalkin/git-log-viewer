@@ -77,7 +77,7 @@ class LogEntry:
         subject = self.commit.subject()
         if re.match(r'^\w+\([\w\d_-]+\)[\s:]\s*.*', subject, flags=re.I):
             tmp = re.findall(r'^\w+\(([\w\d_-]+)\):.*', subject)
-            if tmp:
+            if tmp and tmp[0] not in modules:
                 modules.append(tmp[0])
 
         return (color, ', '.join([':' + x for x in modules]))
