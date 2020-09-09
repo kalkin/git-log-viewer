@@ -32,6 +32,7 @@ ASCII = [
 
 NERDFONT = [
     (r'^Revert:?\s*', ' '),
+    (r'^issue:?\s*', '\uf145 '),
     (r'^BREAKING CHANGE:?\s*', '⚠ '),
     (r'^fixup!\s+', '\uf0e3 '),
     (r'^ADD:\s?[a-z0-9]+', ' '),
