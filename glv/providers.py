@@ -66,8 +66,12 @@ class Cache:
 class Provider():
     def __init__(self, repo, cache: Cache) -> None:
         self._cache = cache
-        self._repo = repo
-        self._url = urllib3.util.parse_url(self._repo.remotes['origin'].url)
+        if isinstance(repo, str):
+            url = repo
+        else:
+            url = repo.remotes['origin'].url
+
+        self._url = urllib3.util.parse_url(url)
         self.auth_failed = False
         self._http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED',
                                          ca_certs=certifi.where())
@@ -127,9 +131,12 @@ class GitHub(Provider):
     def enabled(repo) -> bool:
         result = False
         try:
-            if repo.remotes:
-                url = urllib3.util.parse_url(repo.remotes['origin'].url)
-                result = url.hostname == 'github.com'
+            if isinstance(repo, str):
+                _url = repo
+            elif repo.remotes:
+                _url = repo.remotes['origin'].url
+            url = urllib3.util.parse_url(_url)
+            result = url.hostname == 'github.com'
         except Exception:  # pylint: disable=broad-except
             pass
         LOG.debug('github-api: enabled %s', result)
