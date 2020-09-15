@@ -101,7 +101,12 @@ class Commit:
         timestamp: int = self._commit.author.time
         delta = datetime.now() - datetime.fromtimestamp(timestamp)
         _format = vcs.CONFIG['history']['author_date_format']
-        return babel.dates.format_timedelta(delta, format=_format)
+        try:
+            return babel.dates.format_timedelta(delta, format=_format)
+        except KeyError as e:
+            if delta.total_seconds() < 60:
+                return f'{round(delta.total_seconds())} s'
+            raise e
 
     @property  # type: ignore
     @functools.lru_cache()
