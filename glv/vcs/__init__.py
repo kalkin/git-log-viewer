@@ -124,7 +124,7 @@ def fetch_missing_data(commit: Commit, repo: Repository) -> bool:
         A workaround for fetching promisor data.
 
         When working in a repository which is partially cloned, then there will
-        be commit objects, who are linking to localy non existing objects. By
+        be commit objects, who are linking to locally non existing objects. By
         using git-show(1) we fetch all missing data.
     '''
     workdir = repo.workdir
