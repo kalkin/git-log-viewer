@@ -70,7 +70,7 @@ class LogEntry:
     @property
     def modules(self) -> Tuple[str, str]:
         color = vcs.CONFIG['history']['modules_color']
-        modules = self.commit.modules()
+        modules = self.commit.monorepo_modules()
         if not modules:
             modules = []
 
@@ -219,7 +219,7 @@ class History(UIContent):
                     commit = self.commit_list[index]
 
                 if needle in commit.short_id() or needle in commit.subject() \
-                        or needle in commit.short_author_name() or needle in commit.modules():
+                        or needle in commit.short_author_name() or needle in commit.monorepo_modules():
                     new_position = index
                     break
 
@@ -230,7 +230,7 @@ class History(UIContent):
             while index >= 0:
                 commit = self.commit_list[index]
                 if needle in commit.short_id() or needle in commit.subject() \
-                        or needle in commit.short_author_name() or needle in commit.modules():
+                        or needle in commit.short_author_name() or needle in commit.monorepo_modules():
                     new_position = index
                     break
 

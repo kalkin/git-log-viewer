@@ -124,8 +124,8 @@ class DiffControl(BufferControl):
         text += "Commit:     %s\n" % commit.raw_commit.oid
         text += "Author:     %s\n" % self.name_from_signature(author)
         text += "AuthorDate: %s\n" % self.date_from_signature(author)
-        if commit.modules():
-            text += "Modules:    %s\n" % ', '.join(commit.modules())
+        if commit.monorepo_modules():
+            text += "Modules:    %s\n" % ', '.join(commit.monorepo_modules())
 
         refs = ["«%s»" % name for name in commit.branches]
         if refs:

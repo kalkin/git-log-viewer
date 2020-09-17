@@ -26,6 +26,7 @@ import re
 import sys
 import textwrap
 import time
+import warnings
 from datetime import datetime
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
@@ -173,8 +174,16 @@ class Commit:
         except Timeout:
             return self._first_subject_line()
 
-    @functools.lru_cache()
     def modules(self) -> List[str]:
+        warnings.warn("Use monorepo_modules instead", DeprecationWarning)
+        return self.monorepo_modules()
+
+    @functools.lru_cache()
+    def monorepo_modules(self) -> List[str]:
+        '''
+            Return a list of monorepo modules touched by this commit.
+            See vcs(1)
+        '''
         if not self._repo.has_modules:
             return ''
         _id = str(self.oid)
