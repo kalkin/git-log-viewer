@@ -58,6 +58,29 @@ def icon_collection():
     return result
 
 
+def has_component(subject: str) -> bool:
+    return re.match(r'^\w+\([\w\d_-]+\)[\s:]\s*.*', subject, flags=re.I)
+
+
+def parse_component(subject: str) -> Optional[str]:
+    tmp = re.findall(r'^\w+\(([\w\d_-]+)\):.*', subject)
+    if tmp:
+        return tmp[0]
+    return None
+
+
+def is_hex(subject: str) -> bool:
+    return re.match(r'^[0-9a-f]+$', subject, flags=re.I)
+
+
+def remove_component(subject: str) -> bool:
+    return re.sub(r'^(\w+)\([\w\d_-]+\)', '\\1', subject, flags=re.I, count=1)
+
+
+def remove_verb(subject: str) -> bool:
+    return re.sub(r'^\w+\s*:', '', subject, flags=re.I, count=1)
+
+
 class LogEntry:
     def __init__(self, commit: Commit) -> None:
         self.commit = commit
@@ -69,20 +92,30 @@ class LogEntry:
 
     @property
     def modules(self) -> Tuple[str, str]:
+        try:
+            config = vcs.CONFIG['history']['modules_content']
+        except KeyError:
+            config = 'modules-component'
+
         color = vcs.CONFIG['history']['modules_color']
         modules = self.commit.monorepo_modules()
-        if not modules:
-            modules = []
 
-        # There are no modules because it's not a vcs(1) style monorepo, so
-        # parse a component name from subject and use it as a module
-        # decoration.
-        if not modules:
-            subject = self.commit.subject()
-            if re.match(r'^\w+\([\w\d_-]+\)[\s:]\s*.*', subject, flags=re.I):
-                tmp = re.findall(r'^\w+\(([\w\d_-]+)\):.*', subject)
-                if tmp and tmp[0] not in modules:
-                    modules.append(tmp[0])
+        subject = self.commit.subject()
+
+        if config == 'modules-component' and not modules \
+                and has_component(subject):
+            parsed_module = parse_component(subject)
+            if parsed_module and parsed_module not in modules and not is_hex(
+                    parsed_module):
+                LOG.debug('MOD %s\t%s', parsed_module, subject)
+                modules.append(parsed_module)
+
+        if config == 'component':
+            modules = []
+            if has_component(subject):
+                parsed_module = parse_component(subject)
+                if parsed_module:
+                    modules = [parsed_module]
 
         return (color, ', '.join([':' + x for x in modules]))
 
@@ -108,7 +141,27 @@ class LogEntry:
     @property
     def subject(self) -> Tuple[str, str]:
         color = vcs.CONFIG['history']['subject_color']
-        return (color, self.commit.subject())
+        try:
+            parts = vcs.CONFIG['history']['subject_parts'].split()
+        except KeyError:
+            parts = ['component', 'verb']
+
+        subject = self.commit.subject()
+        if has_component(subject):
+            component = parse_component(subject)
+            if component and not is_hex(component):
+                if 'modules-component' in parts:
+                    modules = self.commit.monorepo_modules()
+                    LOG.info('COMP: %s ⇒ %s %s', component, modules, subject)
+                    if not modules or component in modules:
+                        subject = remove_component(subject)
+                elif 'component' not in parts:
+                    subject = remove_component(subject)
+
+        if 'verb' not in parts:
+            subject = remove_verb(subject)
+
+        return (color, subject)
 
     @property
     def type(self):
@@ -223,7 +276,8 @@ class History(UIContent):
                     commit = self.commit_list[index]
 
                 if needle in commit.short_id() or needle in commit.subject() \
-                        or needle in commit.short_author_name() or needle in commit.monorepo_modules():
+                        or needle in commit.short_author_name() \
+                        or needle in commit.monorepo_modules():
                     new_position = index
                     break
 
@@ -234,7 +288,8 @@ class History(UIContent):
             while index >= 0:
                 commit = self.commit_list[index]
                 if needle in commit.short_id() or needle in commit.subject() \
-                        or needle in commit.short_author_name() or needle in commit.monorepo_modules():
+                        or needle in commit.short_author_name() \
+                        or needle in commit.monorepo_modules():
                     new_position = index
                     break
 
