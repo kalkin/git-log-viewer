@@ -126,6 +126,11 @@ class DiffControl(BufferControl):
         text += "Author:     %s\n" % self.name_from_signature(author)
         text += "AuthorDate: %s\n" % self.date_from_signature(author)
 
+        if committer.name != author.name:
+            text += "Committer:     %s\n" % self.name_from_signature(committer)
+        if committer.time != author.time:
+            text += "CommitDate: %s\n" % self.date_from_signature(committer)
+
         if commit.monorepo_modules():
             modules = ', '.join(commit.modules())
             width = 70
@@ -141,11 +146,6 @@ class DiffControl(BufferControl):
         refs = ["«%s»" % name for name in commit.branches]
         if refs:
             text += "Refs:       %s\n" % ", ".join(refs)
-
-        if committer.name != author.name:
-            text += "Committer:     %s\n" % self.name_from_signature(committer)
-        if committer.time != author.time:
-            text += "CommitDate: %s\n" % self.date_from_signature(committer)
         # pylint: disable=protected-access
         text += "\n"
         body_lines = commit._commit.message.replace('\r', '').split("\n")
