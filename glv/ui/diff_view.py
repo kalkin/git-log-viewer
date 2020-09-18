@@ -19,6 +19,7 @@
 #
 ''' Diff View '''
 import datetime
+import textwrap
 from typing import Optional
 
 from prompt_toolkit.buffer import Buffer
@@ -124,8 +125,18 @@ class DiffControl(BufferControl):
         text += "Commit:     %s\n" % commit.raw_commit.oid
         text += "Author:     %s\n" % self.name_from_signature(author)
         text += "AuthorDate: %s\n" % self.date_from_signature(author)
+
         if commit.monorepo_modules():
-            text += "Modules:    %s\n" % ', '.join(commit.monorepo_modules())
+            modules = ', '.join(commit.modules())
+            width = 70
+            if screen_width() < width:
+                width = screen_width()
+            wrapped = textwrap.wrap("Modules:    %s" % modules,
+                                    break_long_words=False,
+                                    break_on_hyphens=False,
+                                    subsequent_indent='Modules:    ',
+                                    width=width)
+            text += '\n'.join(wrapped) + '\n'
 
         refs = ["«%s»" % name for name in commit.branches]
         if refs:
