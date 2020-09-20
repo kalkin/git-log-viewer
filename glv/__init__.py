@@ -185,7 +185,7 @@ class Commit:
             See vcs(1)
         '''
         if not self._repo.has_modules:
-            return ''
+            return []
         _id = str(self.oid)
         try:
             return self._repo.module_cache[_id]
