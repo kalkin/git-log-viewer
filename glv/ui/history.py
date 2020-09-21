@@ -107,7 +107,6 @@ class LogEntry:
             parsed_module = parse_component(subject)
             if parsed_module and parsed_module not in modules and not is_hex(
                     parsed_module):
-                LOG.debug('MOD %s\t%s', parsed_module, subject)
                 modules.append(parsed_module)
 
         if config == 'component':
@@ -152,7 +151,6 @@ class LogEntry:
             if component and not is_hex(component):
                 if 'modules-component' in parts:
                     modules = self.commit.monorepo_modules()
-                    LOG.info('COMP: %s ⇒ %s %s', component, modules, subject)
                     if not modules or component in modules:
                         subject = remove_component(subject)
                 elif 'component' not in parts:
