@@ -275,7 +275,8 @@ class History(UIContent):
 
                 if needle in commit.short_id() or needle in commit.subject() \
                         or needle in commit.short_author_name() \
-                        or needle in commit.monorepo_modules():
+                        or needle in commit.monorepo_modules() \
+                        or any(needle in haystack for haystack in commit.branches):
                     new_position = index
                     break
 
