@@ -42,8 +42,10 @@ else:
 
 def repo_from_args(**kwargs) -> Repo:
     ''' Parse cli arguments to get the `Repo` object '''
-    if kwargs['REVISION'] and kwargs['REVISION'] != '--':
-        revision = kwargs['REVISION']
+    if '--all' in kwargs['<REVISION>']:
+        revision = '*'
+    elif kwargs['<REVISION>'] and kwargs['<REVISION>'] != '--':
+        revision = kwargs['<REVISION>']
     else:
         revision = 'HEAD'
     path = kwargs['--workdir'] or '.'

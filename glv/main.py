@@ -21,14 +21,16 @@
 """glv - Git Log Viewer a TUI application with support for folding merges
 
 Usage:
-    glv [-w DIR|--workdir=DIR] [REVISION] [-d | --debug] [[--] <path>...]
+    glv [-w DIR|--workdir=DIR] [-d | --debug] [(--all|<REVISION>)...] [--] [<path>...]
     glv --version
 
 Options:
-    REVISION                A branch, tag or commit [default: HEAD]
     -w DIR, --workdir=DIR   Directory where the git repository is
     -d --debug              Enable sending debuggin output to journalctl
                             (journalctl --user -f)
+    --all                   show all branches
+Arguments:
+    REVISION                A branch, tag or commit [default: HEAD]
 """  # pylint: disable=missing-docstring,fixme,global-statement
 
 import logging
@@ -57,7 +59,27 @@ from glv.ui.diff_view import DiffView
 from glv.ui.history import HistoryContainer
 from glv.utils import repo_from_args, screen_height, screen_width
 
-ARGUMENTS = docopt(__doc__, version='v1.4.0', options_first=True)
+
+def parse_args() -> dict:
+    args = sys.argv[1:]
+
+    paths = []
+    try:
+        dash_dash_idx = args.index('--')
+        try:
+            paths = args[dash_dash_idx + 1:]
+        except IndexError:
+            pass
+        args = args[:dash_dash_idx]
+    except ValueError:
+        pass
+
+    result = docopt(__doc__, argv=args, version='v1.4.0', options_first=True)
+    result['<path>'] += paths
+    return result
+
+
+ARGUMENTS = parse_args()
 DEBUG = ARGUMENTS['--debug']
 
 LOG = logging.getLogger('glv')

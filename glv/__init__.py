@@ -259,7 +259,7 @@ class Repo:
     # pylint: disable=too-many-instance-attributes
     def __init__(self,
                  path: str,
-                 revision: str = 'HEAD',
+                 revision: Union[str, List[str]] = 'HEAD',
                  files: List[str] = None) -> None:
         self.provider: Optional[ProviderActor] = None
         self.files = files or []
@@ -279,18 +279,24 @@ class Repo:
             for r in self._repo.references.objects
             if not r.shorthand.endswith('/HEAD')
         }
-        self.revision = revision
-        self.__end = None
-        try:
-            if '..' in self.revision:
-                tmp = self.revision.split('..')
-                self.__end: GitCommit = self._repo.revparse_single(tmp[0])
-                self.__start: GitCommit = self._repo.revparse_single(tmp[1])
-            else:
-                self.__start: GitCommit = self._repo.revparse_single(
-                    self.revision)
-        except KeyError:
-            raise NoRevisionMatches
+        if isinstance(revision, str):
+            if revision == '*':
+                raise NotImplementedError('--all switch NYI')
+            self.revision = revision
+            self.__end = None
+            try:
+                if '..' in self.revision:
+                    tmp = self.revision.split('..')
+                    self.__end: GitCommit = self._repo.revparse_single(tmp[0])
+                    self.__start: GitCommit = self._repo.revparse_single(
+                        tmp[1])
+                else:
+                    self.__start: GitCommit = self._repo.revparse_single(
+                        self.revision)
+            except KeyError:
+                raise NoRevisionMatches
+        else:
+            raise NotImplementedError('Multi branch support NYI')
 
         for provider in providers().values():
             if provider.enabled(self._repo):
