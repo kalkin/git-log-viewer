@@ -97,6 +97,11 @@ class LogEntry:
         except KeyError:
             config = 'modules-component'
 
+        try:
+            modules_max_width = vcs.CONFIG['history']['modules_max_width']
+        except KeyError:
+            modules_max_width = 35
+
         color = vcs.CONFIG['history']['modules_color']
         modules = self.commit.monorepo_modules()
 
@@ -116,7 +121,10 @@ class LogEntry:
                 if parsed_module:
                     modules = [parsed_module]
 
-        return (color, ', '.join([':' + x for x in modules]))
+        text = ', '.join([':' + x for x in modules])
+        if len(text) > modules_max_width:
+            text = ':(%d modules)' % len(modules)
+        return (color, text)
 
     @property
     def author_name(self):
