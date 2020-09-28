@@ -77,6 +77,13 @@ def remove_component(subject: str) -> bool:
     return re.sub(r'^(\w+)\([\w\d_-]+\)', '\\1', subject, flags=re.I, count=1)
 
 
+def parse_verb(subject: str) -> Optional[str]:
+    tmp = re.findall(r'^(\w+)(?:\([\w\d_-]+\)\s*:)?', subject, re.I)
+    if tmp:
+        return tmp[0]
+    return None
+
+
 def remove_verb(subject: str) -> bool:
     return re.sub(r'^\w+\s*:', '', subject, flags=re.I, count=1)
 
@@ -164,7 +171,10 @@ class LogEntry:
                 elif 'component' not in parts:
                     subject = remove_component(subject)
 
-        if 'verb' not in parts:
+        if 'icon-or-verb' in parts:
+            if self.icon[1] != '  ':
+                subject = remove_verb(subject)
+        elif 'verb' not in parts:
             subject = remove_verb(subject)
 
         return (color, subject)
