@@ -47,7 +47,7 @@ def repo_from_args(**kwargs) -> Repo:
     elif kwargs['<REVISION>'] and kwargs['<REVISION>'] != '--':
         revision = kwargs['<REVISION>']
     else:
-        revision = 'HEAD'
+        revision = ['HEAD']
     path = kwargs['--workdir'] or '.'
     path = os.path.abspath(os.path.expanduser(path))
     return Repo(path, revision, kwargs['<path>'])

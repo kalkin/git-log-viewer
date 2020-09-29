@@ -259,7 +259,7 @@ class Repo:
     # pylint: disable=too-many-instance-attributes
     def __init__(self,
                  path: str,
-                 revision: Union[str, List[str]] = 'HEAD',
+                 revision: List[str] = None,
                  files: List[str] = None) -> None:
         self.provider: Optional[ProviderActor] = None
         self.files = files or []
@@ -279,10 +279,11 @@ class Repo:
             for r in self._repo.references.objects
             if not r.shorthand.endswith('/HEAD')
         }
-        if isinstance(revision, str):
+        revision = revision or ['HEAD']
+        if revision and isinstance(revision[0], str):
             if revision == '*':
                 raise NotImplementedError('--all switch NYI')
-            self.revision = revision
+            self.revision = revision[0]
             self.__end = None
             try:
                 if '..' in self.revision:
