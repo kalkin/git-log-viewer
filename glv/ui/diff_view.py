@@ -151,7 +151,7 @@ class DiffControl(BufferControl):
         body_lines = commit._commit.message.replace('\r', '').split("\n")
         text += " " + body_lines[0] + "\n"
         body_lines = body_lines[1:]
-        if body_lines[0] == '' and len(body_lines) == 1:
+        if body_lines and body_lines[0] == '' and len(body_lines) == 1:
             body_lines = body_lines[1:]
         if body_lines:
             text += "\n".join([" " + l for l in body_lines]) + "\n"
