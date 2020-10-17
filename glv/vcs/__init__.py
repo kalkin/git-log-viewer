@@ -47,11 +47,16 @@ __all__ = [
 @functools.lru_cache()
 def subtree_config_files(repo: Repository) -> List[str]:
     ''' Return all the `.gitsubtree` files from a repository using git(1)‼ '''
-    os.chdir(repo.workdir)
-    files = glob.glob('**/.gitsubtrees', recursive=True)
-    if os.path.exists('.gitsubtrees'):
-        files += ['.gitsubtrees']
-    return files
+    index = repo.index
+    result = []
+    for i in range(0, len(index)):
+        try:
+            entry = index[i]
+            if entry.path.endswith('.gitsubtrees') and os.path.isfile(entry.path):
+                result.append(entry.path)
+        except UnicodeDecodeError:
+            continue
+    return result
 
 
 @functools.lru_cache()
