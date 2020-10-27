@@ -85,7 +85,11 @@ def parse_verb(subject: str) -> Optional[str]:
 
 
 def remove_verb(subject: str) -> bool:
-    return re.sub(r'^(\w+)((?=\()|\s*:)?\s*', '', subject, flags=re.I, count=1)
+    return re.sub(r'^(\w+)((?=\()|\s*:|\s)\s*',
+                  '',
+                  subject,
+                  flags=re.I,
+                  count=1)
 
 
 class LogEntry:
