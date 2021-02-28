@@ -20,12 +20,10 @@
 ''' Helper functions for doing things vcs(1) does '''
 import configparser
 import functools
-import glob
 import logging
 import os
 import os.path
 import subprocess
-import sys
 from typing import Dict, List, Set
 
 import xdg
