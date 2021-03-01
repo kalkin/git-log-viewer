@@ -248,7 +248,7 @@ class History(UIContent):
                      search_state: SearchState,
                      include_current_position=True,
                      count=1):
-        if self._search_thread is not None and self._search_thread.isAlive():
+        if self._search_thread is not None and self._search_thread.is_alive():
             try:
                 self._search_thread._stop()  # pylint: disable=protected-access
             except Exception:  # pylint: disable=broad-except
