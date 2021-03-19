@@ -103,7 +103,7 @@ class LogEntry:
     @property
     def author_date(self):
         color = vcs.CONFIG['history']['author_date_color']
-        return (color, self.commit.author_date)
+        return (color, self.commit.short_author_date)
 
     @property
     def modules(self) -> Tuple[str, str]:
@@ -430,8 +430,8 @@ class History(UIContent):
         commit.unfold()
         index = 1
         for _ in commit.child_log():
-            if len(_.author_date()) > self.date_max_len:
-                self.date_max_len = len(_.author_date())
+            if len(_.short_author_date()) > self.date_max_len:
+                self.date_max_len = len(_.short_author_date())
             if len(_.short_author_name()) > self.name_max_len:
                 self.name_max_len = len(_.short_author_name())
             self.commit_list.insert(line_number + index, _)
@@ -454,8 +454,8 @@ class History(UIContent):
 
             self.commit_list.append(commit)
             result += 1
-            if len(commit.author_date()) > self.date_max_len:
-                self.date_max_len = len(commit.author_date())
+            if len(commit.short_author_date()) > self.date_max_len:
+                self.date_max_len = len(commit.short_author_date())
             if len(commit.short_author_name()) > self.name_max_len:
                 self.name_max_len = len(commit.short_author_name())
         return result

@@ -94,7 +94,7 @@ class Commit:
         return bool(self._fork_point)
 
     @functools.lru_cache()
-    def author_date(self) -> str:
+    def short_author_date(self) -> str:
         ''' Returns relative commiter date '''
         # pylint: disable=invalid-name
         timestamp: int = self._commit.authored_date
@@ -108,7 +108,15 @@ class Commit:
             raise e
 
     @functools.lru_cache()
+    def author_date(self) -> str:
+        return str(self._commit.authored_datetime)
+
+    @functools.lru_cache()
     def committer_date(self) -> str:
+        return str(self._commit.committed_datetime)
+
+    @functools.lru_cache()
+    def short_committer_date(self) -> str:
         ''' Returns relative commiter date '''
         # pylint: disable=invalid-name
         timestamp: int = self._commit.committed_date
