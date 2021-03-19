@@ -67,6 +67,7 @@ class Commit:
         self._repo = repo
 
     @property
+    @functools.lru_cache
     def branches(self) -> List[str]:
         return self._repo.branches_for_commit(self)
 
@@ -174,7 +175,23 @@ class Commit:
             See vcs(1)
         '''
         # XXX Port to GitPython
-        return []
+        if not self._repo.has_modules:
+            return []
+
+        _id = str(self.oid)
+        try:
+            return self._repo.module_cache[_id]
+        except KeyError:
+            # pylint: disable=protected-access
+            try:
+                modules = list(
+                    vcs.changed_modules(self._repo._nrepo, self._commit))
+                self._repo.module_cache[_id] = modules
+                return self._repo.module_cache[_id]
+            except KeyError:
+                pass
+
+        return ''
 
     def short_id(self, max_len: int = 8) -> str:
         ''' Returns a shortend commit id. '''
