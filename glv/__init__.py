@@ -429,7 +429,7 @@ class Foldable(Commit):
         try:
             if self._rebased is None:
                 self._rebased = len(self._commit.parents) >= 2 and \
-                        descendant_of(self._commit.parents[1], self._commit.parents[0])
+                        self._repo._nrepo.is_ancestor(self._commit.parents[0], self._commit.parents[1])
             return self._rebased
         except:  # pylint: disable=bare-except
             return False
