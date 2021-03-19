@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2021-03-19
+
+### Added
+
+- (history): Remove verb from subject if icon specified
+- (history): Replace module string with module count when too long
+- (history): Search in branchnames too
+
+### Changed
+
+- (diff-view): Committer & ComitDate moved below AuthorDate
+- Show only monorepo modules if in monorepo
+- (diff-view): Wrap long module lines
+- (history): Strip whitespace when removing verb from subject
+- (history-view): Make removing verb, component and module configurable
+- (icons): Add icon for archive
+- (icons): Extend ASCII icons
+- (providers): Allow to pass str to the constructor
+- Diff view save a line if body is one line only
+- Nerdfont icons add issue (  ) icon
+- Remove obsolete debug statements
+- use fleurons instead of '-' to separate message and diff
+
+### Fixed
+
+- (diff_view): List index out of range exception
+- (glv): Handle duplicate module names in history view
+- (history): Removing verb from subject
+- (requirements.txt): Add missing docopt requirement
+- Handle missing de translations in babel for seconds (#13)
+- Handling single ref argument
+- Python 3.9 removed `Thread.isAlive()` use `is_alive()`
+- Write error msg to `STDERR` when parsing netrc(5) fails
+
+### Refactored
+
+- parsing revision arguments
+- Rename Commit.modules → `monorepo_modules`
+
+### Removed
+
+- style: Remove unused imports
+
 ## [1.5.0] - 2020-07-04
 
 ### Added
