@@ -201,13 +201,11 @@ class Commit:
     def short_author_name(self) -> str:
         # XXX Port to GitPython
         width = vcs.CONFIG['history'].getint('author_name_width')
-        # signature = self._repo.mailmap.resolve_signature(self._commit.author)
-        # tmp = textwrap.shorten(signature.name, width=width, placeholder="…")
-        # if tmp == '…':
-        # return signature.name[0:width - 1] + '…'
-        # return tmp
-        tmp = self.author_name()
-        return tmp[:width]
+        name = self._repo.mailmap_name(self.author_name())
+        tmp = textwrap.shorten(name, width=width, placeholder="…")
+        if tmp == '…':
+            return name[0:width - 1] + '…'
+        return tmp
 
     def __repr__(self) -> str:
         return str(self._commit.hexsha)
@@ -314,6 +312,11 @@ class Repo:
             return to_commit(self, result)
         except git.BadName:
             return None
+
+    @functools.lru_cache()
+    def mailmap_name(self, name: str) -> str:
+        git_cmd = git.cmd.Git(working_dir=self._nrepo.working_dir)
+        return git_cmd.check_mailmap(name).partition('<')[0]
 
     @functools.lru_cache()
     def branches(self) -> Dict[str, str]:
