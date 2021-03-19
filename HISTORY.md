@@ -2,6 +2,10 @@
 
 Old history and notes.
 
+## 2021-03-10
+
+Port to GitPython, to get rid of buggy libgit wrapper
+
 ## 2018-10-05
 
 The interesting property of tig(1) is that it internally uses git. This means
