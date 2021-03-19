@@ -28,8 +28,6 @@ from typing import Dict, List, Set
 
 import git
 import xdg
-from pygit2 import Commit  # pylint: disable=no-name-in-module
-from pygit2 import Repository  # pylint: disable=no-name-in-module
 
 LOG = logging.getLogger('glv')
 
@@ -55,25 +53,13 @@ def find_subtrees(items):
 
 
 @functools.lru_cache()
-def subtree_config_files(repo) -> List[str]:
+def subtree_config_files(repo: git.Repo) -> List[str]:
     ''' Return all the `.gitsubtree` files from a repository using git(1)‼ '''
-    if isinstance(repo, Repository):
-        index = repo.index
-        result = []
-        for i in range(0, len(index)):  # pylint: disable=consider-using-enumerate
-            try:
-                entry = index[i]
-                if entry.path.endswith('.gitsubtrees') and os.path.isfile(
-                        entry.path):
-                    result.append(entry.path)
-            except UnicodeDecodeError:
-                continue
-        return result
     return [x.path for x in find_subtrees(repo.head.commit.tree)]
 
 
 @functools.lru_cache()
-def modules(repo: Repository) -> Dict[str, str]:
+def modules(repo: git.Repo) -> Dict[str, str]:
     ''' Return list of all .gitsubtrees modules in repository '''
 
     files = subtree_config_files(repo)
@@ -81,10 +67,7 @@ def modules(repo: Repository) -> Dict[str, str]:
     result: Dict[str, str] = {}
     for _file in files:
         conf = configparser.ConfigParser()
-        if isinstance(repo, Repository):
-            workdir = repo.workdir
-        else:
-            workdir = repo.working_dir
+        workdir = repo.working_dir
         conf.read(os.path.join(workdir, _file))
         path = ''
         if '/' in _file:
@@ -108,25 +91,22 @@ def modules(repo: Repository) -> Dict[str, str]:
     return result
 
 
-def changed_files(commit: Commit) -> Set[str]:
+def changed_files(commit: git.Commit) -> Set[str]:
     ''' Return all files which were changed in the specified commit '''
     try:
         parent1 = commit.parents[0]
     except IndexError:
         return set()
 
-    deltas = commit.tree.diff_to_tree(parent1.tree).deltas
+    diffs: list[git.Diff] = commit.tree.diff(parent1.tree)
     result: List[str] = []
-    for delta in deltas:
-        try:
-            result += [delta.old_file.path, delta.new_file.path]
-        except UnicodeDecodeError:
-            pass
+    for diff in diffs:
+        result += [diff.a_path, diff.b_path]
 
     return set(result)
 
 
-def changed_modules(repo: Repository, commit: Commit) -> Set[str]:
+def changed_modules(repo: git.Repo, commit: git.Commit) -> Set[str]:
     ''' Return all .gisubtrees modules which were changed in the specified commit '''
     _modules = modules(repo)
     changed = changed_files(commit)
@@ -141,7 +121,7 @@ def changed_modules(repo: Repository, commit: Commit) -> Set[str]:
     return set(result)
 
 
-def fetch_missing_data(commit: Commit, repo: Repository) -> bool:
+def fetch_missing_data(commit: git.Commit, repo: git.Repo) -> bool:
     '''
         A workaround for fetching promisor data.
 
@@ -149,8 +129,8 @@ def fetch_missing_data(commit: Commit, repo: Repository) -> bool:
         be commit objects, who are linking to locally non existing objects. By
         using git-show(1) we fetch all missing data.
     '''
-    workdir = repo.workdir
-    gitdir = repo.path
+    workdir = repo.working_dir
+    gitdir = repo.git_dir
     oid = str(commit.oid)
     cmd = [
         'git', '--no-pager', '--git-dir', gitdir, '--work-tree', workdir,
