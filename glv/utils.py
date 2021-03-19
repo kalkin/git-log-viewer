@@ -40,7 +40,7 @@ else:
     sys.exit(1)
 
 
-def repo_from_args(**kwargs) -> Repo:
+def parse_args(**kwargs) -> Repo:
     ''' Parse cli arguments to get the `Repo` object '''
     if '--all' in kwargs['<REVISION>']:
         revision = '*'
@@ -50,7 +50,7 @@ def repo_from_args(**kwargs) -> Repo:
         revision = ['HEAD']
     path = kwargs['--workdir'] or '.'
     path = os.path.abspath(os.path.expanduser(path))
-    return Repo(path, revision, kwargs['<path>'])
+    return (path, revision, kwargs['<path>'])
 
 
 def screen_height() -> int:

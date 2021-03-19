@@ -245,13 +245,10 @@ class Repo:
     ''' A wrapper around `git.Repo`. '''
 
     # pylint: disable=too-many-instance-attributes
-    def __init__(self,
-                 path: str,
-                 revision: List[str] = None,
-                 files: List[str] = None) -> None:
+    def __init__(self, path: Optional[str] = None) -> None:
         self.provider: Optional[ProviderActor] = None
-        self.files = files or []
-        self._nrepo = git.Repo(odbt=git.GitCmdObjectDB,
+        self._nrepo = git.Repo(path=path,
+                               odbt=git.GitCmdObjectDB,
                                search_parent_directories=True)
         cache_path = os.path.join(self._nrepo.git_dir, __name__,
                                   'modules.json')
@@ -260,28 +257,6 @@ class Repo:
         if vcs.modules(self._nrepo):
             self.has_modules = True
 
-        parsed_results = parse_revisions(revision)
-        if len(parsed_results) == 0:
-            raise NoRevisionMatches
-        if len(parsed_results) > 1:
-            raise NotImplementedError('Multi branch support NYI')
-
-        first_revision_result = parsed_results[0]
-        self.revision = first_revision_result.input
-        try:
-            # XXX Port to GitPython
-            self.__start: git.Commit = self._nrepo.commit(
-                first_revision_result.start)
-
-            if first_revision_result.end:
-                # XXX Port to GitPython
-                self.__end: git.Commit = self._nrepo.commit(
-                    first_revision_result.end)
-            else:
-                self.__end = None
-        except KeyError as exc:
-            raise NoRevisionMatches from exc
-
         # for provider in providers().values():
         # if provider.enabled(self._nrepo):
         # cache_dir = os.path.join(self._nrepo.git_dir, __name__,
@@ -289,6 +264,7 @@ class Repo:
         # self.provider = ProviderActor.start(
         # provider(self._nrepo, cache_dir))
         # break
+
     def branches_for_commit(self, commit: Commit) -> list[str]:
         needle: str = commit.oid
         return [name for name, oid in self.branches().items() if oid == needle]
@@ -322,20 +298,25 @@ class Repo:
     def branches(self) -> Dict[str, str]:
         return {b.name: b.commit.hexsha for b in self._nrepo.references}
 
+    def iter_commits(self,
+                     revision: str = 'HEAD',
+                     paths='') -> Iterator[Commit]:
+        parent = None
+        for git_commit in self._nrepo.iter_commits(rev="%s" % revision,
+                                                   paths=paths,
+                                                   first_parent=True):
+            parent = to_commit(self, git_commit, parent)
+            yield parent
+
     def walker(self,
-               start_c: Optional[Commit] = None,
+               start_c: Commit,
                end_c: Optional[Commit] = None,
                parent: Optional[Commit] = None) -> Iterator[Commit]:
-        if not start_c:
-            start = self.__start.hexsha
-        else:
-            start = start_c.oid
-
+        start = start_c.oid
         end = None
+
         if end_c:
             end = end_c.oid or None
-        elif self.__end:
-            end = self.__end.hexsha
 
         if end:
             commit_log = self._nrepo.iter_commits(rev="%s..%s" % (end, start),
@@ -346,13 +327,6 @@ class Repo:
         for git_commit in commit_log:
             parent = to_commit(self, git_commit, parent)
             yield parent  # type: ignore
-
-    def __str__(self) -> str:
-        path = self._nrepo.working_dir.replace(os.path.expanduser('~'), '~', 1)
-        revision = self.revision
-        if self.revision == 'HEAD':
-            revision = self._nrepo.head.ref.name
-        return '%s \uf418 %s' % (path.rstrip('/'), revision)
 
 
 def _commit_changed_files(commit: git.Commit, files: List[str]) -> bool:

@@ -20,6 +20,7 @@
 #
 import itertools
 import logging
+import os
 import re
 import sys
 from threading import Thread
@@ -41,7 +42,7 @@ from glv import (Commit, CommitLink, Foldable, NoPathMatches,
                  NoRevisionMatches, Repo, utils, vcs)
 from glv.icon import ASCII
 from glv.ui.status import STATUS, STATUS_WINDOW
-from glv.utils import repo_from_args
+from glv.utils import parse_args
 
 LOG = logging.getLogger('glv')
 
@@ -231,14 +232,33 @@ def highlight_substring(search: SearchState,
 
 class History(UIContent):
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, repo: Repo) -> None:
+    def __init__(self, arguments: dict) -> None:
+        try:
+            self.path, self.revision, self.files = parse_args(**arguments)
+            repo = Repo(path=self.path)
+
+            path = repo._nrepo.working_dir.replace(os.path.expanduser('~'),
+                                                   '~', 1)
+            revision = self.revision[0]
+            if self.revision == 'HEAD':
+                revision = repo._nrepo.head.ref.name
+            title = '%s \uf418 %s' % (path.rstrip('/'), revision)
+
+            shortcuts.set_title('%s - Git Log Viewer' % title)
+        except NoRevisionMatches:
+            print('No revisions match the given arguments.', file=sys.stderr)
+            sys.exit(1)
+        except NoPathMatches:
+            print("No paths match the given arguments.", file=sys.stderr)
+            sys.exit(1)
+
         self.date_max_len = 0
         self.name_max_len = 0
         self._repo = repo
-        self.line_count = len(list(self._repo.walker()))
+        self.line_count = len(list(self._repo.iter_commits(self.revision[0])))
         self.commit_list: List[Commit] = []
         self.search_state: Optional[SearchState] = None
-        self.walker = self._repo.walker()
+        self.walker = self._repo.iter_commits(self.revision[0], self.files)
         self._search_thread: Optional[Thread] = None
         super().__init__(line_count=self.line_count,
                          get_line=self.get_line,
@@ -443,9 +463,9 @@ class History(UIContent):
 
 class HistoryControl(BufferControl):
     def __init__(self, search_buffer_control: SearchBufferControl,
-                 key_bindings: Optional[KeyBindings], repo: Repo) -> None:
+                 key_bindings: Optional[KeyBindings], arguments: dict) -> None:
         buffer = Buffer(name='history')
-        self.content = History(repo)
+        self.content = History(arguments)
         buffer.apply_search = self.content.apply_search  # type: ignore
         super().__init__(buffer=buffer,
                          search_buffer_control=search_buffer_control,
@@ -553,20 +573,10 @@ class HistoryControl(BufferControl):
 
 class HistoryContainer(HSplit):
     def __init__(self, key_bindings, arguments, right_margins=None):
-        try:
-            repo = repo_from_args(**arguments)
-            shortcuts.set_title('%s - Git Log Viewer' % repo)
-        except NoRevisionMatches:
-            print('No revisions match the given arguments.', file=sys.stderr)
-            sys.exit(1)
-        except NoPathMatches:
-            print("No paths match the given arguments.", file=sys.stderr)
-            sys.exit(1)
-
         search = SearchToolbar(vi_mode=True)
         log_view = HistoryControl(search.control,
                                   key_bindings=key_bindings,
-                                  repo=repo)
+                                  arguments=arguments)
         window = Window(content=log_view, right_margins=right_margins)
         super().__init__([window, search, STATUS_WINDOW])
 
