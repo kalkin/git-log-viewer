@@ -26,6 +26,7 @@ import os.path
 import subprocess  # nosec
 from typing import Dict, List, Set
 
+import git
 import xdg
 from pygit2 import Commit  # pylint: disable=no-name-in-module
 from pygit2 import Repository  # pylint: disable=no-name-in-module
@@ -42,19 +43,33 @@ __all__ = [
 ]
 
 
-@functools.lru_cache()
-def subtree_config_files(repo: Repository) -> List[str]:
-    ''' Return all the `.gitsubtree` files from a repository using git(1)‼ '''
-    index = repo.index
+def find_subtrees(items):
+    ''' Filter trees for blobs with path ending in '.gitsubtrees'.  '''
     result = []
-    for i in range(0, len(index)):
-        try:
-            entry = index[i]
-            if entry.path.endswith('.gitsubtrees') and os.path.isfile(entry.path):
-                result.append(entry.path)
-        except UnicodeDecodeError:
-            continue
+    for item in items:
+        if isinstance(item, git.Tree):
+            result += find_subtrees(item)
+        elif isinstance(item, git.Blob) and item.path.endswith(".gitsubtrees"):
+            result += [item]
     return result
+
+
+@functools.lru_cache()
+def subtree_config_files(repo) -> List[str]:
+    ''' Return all the `.gitsubtree` files from a repository using git(1)‼ '''
+    if isinstance(repo, Repository):
+        index = repo.index
+        result = []
+        for i in range(0, len(index)):  # pylint: disable=consider-using-enumerate
+            try:
+                entry = index[i]
+                if entry.path.endswith('.gitsubtrees') and os.path.isfile(
+                        entry.path):
+                    result.append(entry.path)
+            except UnicodeDecodeError:
+                continue
+        return result
+    return [x.path for x in find_subtrees(repo.head.commit.tree)]
 
 
 @functools.lru_cache()
@@ -66,7 +81,11 @@ def modules(repo: Repository) -> Dict[str, str]:
     result: Dict[str, str] = {}
     for _file in files:
         conf = configparser.ConfigParser()
-        conf.read(os.path.join(repo.workdir, _file))
+        if isinstance(repo, Repository):
+            workdir = repo.workdir
+        else:
+            workdir = repo.working_dir
+        conf.read(os.path.join(workdir, _file))
         path = ''
         if '/' in _file:
             parts = _file.split('/')[:-1]
