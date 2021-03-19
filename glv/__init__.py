@@ -111,19 +111,6 @@ class Commit:
                 return f'{round(delta.total_seconds())} s'
             raise e
 
-    @property  # type: ignore
-    @functools.lru_cache()
-    def next(self) -> Optional['Commit']:
-        raw_commit: GitCommit = self.raw_commit
-        try:
-            if not raw_commit.parents:
-                return None
-        except:  # pylint: disable=bare-except
-            return None
-
-        next_raw_commit: GitCommit = raw_commit.parents[0]
-        return to_commit(self._repo, next_raw_commit, self)
-
     @functools.lru_cache()
     def __stgit(self) -> bool:
         for name in self.branches:
