@@ -68,8 +68,7 @@ class Commit:
 
     @property
     def branches(self) -> List[str]:
-        # XXX Port to GitPython
-        return []
+        return self._repo.branches_for_commit(self)
 
     @functools.lru_cache()
     def author_name(self) -> str:
@@ -275,6 +274,9 @@ class Repo:
         # self.provider = ProviderActor.start(
         # provider(self._nrepo, cache_dir))
         # break
+    def branches_for_commit(self, commit: Commit) -> list[str]:
+        needle: str = commit.oid
+        return [name for name, oid in self.branches().items() if oid == needle]
 
     def get(self, sth: Union[str, str]) -> Commit:
         try:
@@ -297,8 +299,8 @@ class Repo:
             return None
 
     @functools.lru_cache()
-    def branches(self) -> Dict[str, Any]:
-        return [branch.name for branch in self._nrepo.branches]
+    def branches(self) -> Dict[str, str]:
+        return {b.name: b.commit.hexsha for b in self._nrepo.references}
 
     def walker(self,
                start_c: Optional[Commit] = None,

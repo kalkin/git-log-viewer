@@ -190,10 +190,8 @@ class LogEntry:
         _type = level + self.commit.icon + self.commit.arrows
         return (color, _type)
 
-    @functools.lru_cache()
-    def branches(self) -> List[Tuple[str, str]]:
+    def branches(self, branches) -> List[Tuple[str, str]]:
         color = vcs.CONFIG['history']['branches_color']
-        branches = self.commit.branches
         branch_tupples = [[('', ' '), (color, '«%s»' % name)]
                           for name in branches
                           if not name.startswith('patches/')]
@@ -344,7 +342,7 @@ class History(UIContent):
         module = entry.modules
         icon = entry.icon
         subject = entry.subject
-        branches = entry.branches()
+        branches = entry.branches(self._repo.branches_for_commit(commit))
 
         if self.search_state and self.search_state.text in _id[1]:
             _id = highlight_substring(self.search_state, _id)
