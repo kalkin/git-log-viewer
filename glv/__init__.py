@@ -428,8 +428,10 @@ class Foldable(Commit):
     def is_rebased(self):
         try:
             if self._rebased is None:
+                # pylint: disable=protected-access
                 self._rebased = len(self._commit.parents) >= 2 and \
-                        self._repo._nrepo.is_ancestor(self._commit.parents[0], self._commit.parents[1])
+                        self._repo._nrepo.is_ancestor(self._commit.parents[0],
+                                self._commit.parents[1])
             return self._rebased
         except:  # pylint: disable=bare-except
             return False
