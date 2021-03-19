@@ -22,6 +22,7 @@ import datetime
 import textwrap
 from typing import Optional
 
+import git
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import AnyFormattedText
@@ -30,11 +31,8 @@ from prompt_toolkit.layout import AnyDimension, BufferControl, HSplit, Window
 from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.layout.margins import ScrollbarMargin
 from prompt_toolkit.widgets import Frame, SearchToolbar
-from pygit2 import GIT_DIFF_STATS_FULL  # pylint: disable=no-name-in-module
-from pygit2 import Diff  # pylint: disable=no-name-in-module
-from pygit2 import Signature  # pylint: disable=no-name-in-module
 
-from glv import Commit, vcs
+from glv import Commit
 from glv.lexer import COMMIT_LEXER
 from glv.utils import screen_height, screen_width
 
@@ -97,39 +95,37 @@ class DiffControl(BufferControl):
                          search_buffer_control=search)
 
     @staticmethod
-    def _render_body(diff: Diff) -> Optional[str]:
+    def _render_body(diffs: list[git.Diff]) -> Optional[str]:
         '''
             Renders diff stats and diff patches.
 
             May fail if local repository is missing objects, will return None on
             error.
         '''
+        # XXX Port to GitPython
         try:
-            text = ''
-            text += diff.stats.format(GIT_DIFF_STATS_FULL, screen_width() - 10)
+            text = ' DIFF_STATS NIY '
+            # text += diff.stats.format(GIT_DIFF_STATS_FULL, screen_width() - 10)
             text += "\n"
-            text += "\n\n".join([p.text for p in diff])
+            # text += "\n\n".join([p.text for p in diff])
             return text
         except Exception:  # pylint: disable=broad-except
             return None
 
     def show_diff(self, commit: Commit):
         ''' Command diff view to show a diff '''
-        diff: Diff = commit.diff()
-        if diff is None:
-            raise ValueError('Got None instead of a Diff')
+        # XXX Port to GitPython
+        diffs: list[git.Diff] = commit.diff()
         text = ""
-        author: Signature = commit.author_signature
-        committer: Signature = commit.committer_signature
 
         text += "Commit:     %s\n" % commit.oid
-        text += "Author:     %s\n" % self.name_from_signature(author)
-        text += "AuthorDate: %s\n" % self.date_from_signature(author)
+        text += "Author:     %s\n" % commit.author_name()
+        text += "AuthorDate: %s\n" % commit.author_date()
 
-        if committer.name != author.name:
-            text += "Committer:     %s\n" % self.name_from_signature(committer)
-        if committer.time != author.time:
-            text += "CommitDate: %s\n" % self.date_from_signature(committer)
+        if commit.committer_name() != commit.author_name():
+            text += "Committer:     %s\n" % commit.committer_name()
+        if commit.committer_date() != commit.author_date():
+            text += "CommitDate: %s\n" % commit.committer_date()
 
         if commit.monorepo_modules():
             modules = ', '.join(commit.modules())
@@ -158,12 +154,13 @@ class DiffControl(BufferControl):
 
         text += "\n " + 26 * ' ' + "❦ ❦ ❦ ❦ \n\n"
 
-        body = DiffControl._render_body(diff)
-        if body is None:
-            success = vcs.fetch_missing_data(commit._commit,
-                                             commit._repo._repo)
-            if success:
-                body = DiffControl._render_body(diff)
+        body = DiffControl._render_body(diffs)
+        # if body is None:
+        # # XXX Port me
+        # success = vcs.fetch_missing_data(commit._commit,
+        # commit._repo._repo)
+        # if success:
+        # body = DiffControl._render_body(diff)
 
         if body is None:
             body = "‼ Missing data for commit %s and failed to fetch it." % commit.oid
@@ -174,12 +171,12 @@ class DiffControl(BufferControl):
         self.buffer.set_document(doc, bypass_readonly=True)
 
     @staticmethod
-    def name_from_signature(sign: Signature) -> str:
+    def name_from_signature(sign) -> str:
         ''' Returns: Author Name <email> '''
         return "%s <%s>" % (sign.name, sign.email)
 
     @staticmethod
-    def date_from_signature(sign: Signature) -> str:
+    def date_from_signature(sign) -> str:
         ''' Returns date formatted to current local and timezone'''
         date = datetime.datetime.fromtimestamp(sign.time, LOCAL_TZ)
         return date.strftime('%c')

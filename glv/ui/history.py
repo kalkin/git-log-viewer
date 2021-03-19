@@ -99,7 +99,7 @@ class LogEntry:
     @property
     def author_date(self):
         color = vcs.CONFIG['history']['author_date_color']
-        return (color, self.commit.author_date())
+        return (color, self.commit.author_date)
 
     @property
     def modules(self) -> Tuple[str, str]:
@@ -337,7 +337,7 @@ class History(UIContent):
         entry = LogEntry(commit)
         _id = entry.short_id
         author_date = (entry.author_date[0],
-                       entry.author_date[1].ljust(self.date_max_len, " "))
+                       entry.author_date[1]().ljust(self.date_max_len, " "))
         author_name = (entry.author_name[0],
                        entry.author_name[1].ljust(self.name_max_len, " "))
         _type = entry.type
