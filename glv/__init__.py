@@ -337,29 +337,15 @@ class Repo:
         elif self.__end:
             end = self.__end.hexsha
 
-        git_commit = self._nrepo.commit(start)
-        try:
-            while self.files and not _commit_changed_files(
-                    git_commit, self.files):
-                git_commit = git_commit.parents[0]
-        except KeyError as exc:
-            raise NoPathMatches() from exc
-
-        parent = to_commit(self, git_commit, parent)
-        yield parent  # type: ignore
-        while True:
-            try:
-                if not git_commit.parents:
-                    break
-            except KeyError:
-                break
-            git_commit = git_commit.parents[0]
-            if git_commit.hexsha == end:
-                break
-            tmp = to_commit(self, git_commit, parent)
-            if not self.files or _commit_changed_files(git_commit, self.files):
-                yield tmp
-            parent = tmp
+        if end:
+            commit_log = self._nrepo.iter_commits(rev="%s..%s" % (end, start),
+                                                  first_parent=True)
+        else:
+            commit_log = self._nrepo.iter_commits(rev="%s" % start,
+                                                  first_parent=True)
+        for git_commit in commit_log:
+            parent = to_commit(self, git_commit, parent)
+            yield parent  # type: ignore
 
     def __str__(self) -> str:
         path = self._nrepo.working_dir.replace(os.path.expanduser('~'), '~', 1)
