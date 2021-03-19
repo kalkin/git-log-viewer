@@ -313,9 +313,9 @@ class Repo:
     def get(self, sth: Union[str, Oid]) -> Commit:
         try:
             git_commit = self._repo[sth]
-        except ValueError:
+        except ValueError as exc:
             if not isinstance(sth, str):
-                raise ValueError("Not found %s" % sth)
+                raise ValueError("Not found %s" % sth) from exc
             git_commit = self._repo.revparse_single(sth)
         return to_commit(self, git_commit)
 
@@ -353,8 +353,8 @@ class Repo:
             while self.files and not _commit_changed_files(
                     git_commit, self.files):
                 git_commit = git_commit.parents[0]
-        except KeyError:
-            raise NoPathMatches()
+        except KeyError as exc:
+            raise NoPathMatches() from exc
 
         parent = to_commit(self, git_commit, parent)
         yield parent  # type: ignore
