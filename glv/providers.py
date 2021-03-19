@@ -90,8 +90,8 @@ class Provider():
         try:
             auth_store = netrc.netrc()
             auth_tupple = auth_store.authenticators(self._url.host)
-        except netrc.NetrcParseError as e:
-            print(str(e), file=sys.stderr)
+        except netrc.NetrcParseError as exc:
+            print(str(exc), file=sys.stderr)
             auth_tupple = None
         except FileNotFoundError:
             auth_tupple = None
@@ -137,7 +137,7 @@ class GitHub(Provider):
                 _url = repo.remotes['origin'].url
             url = urllib3.util.parse_url(_url)
             result = url.hostname == 'github.com'
-        except Exception:  # pylint: disable=broad-except
+        except Exception:  # nosec pylint: disable=broad-except
             pass
         LOG.debug('github-api: enabled %s', result)
         return result
@@ -218,7 +218,7 @@ class Atlassian(Provider):
             if repo.remotes:
                 url = urllib3.util.parse_url(repo.remotes['origin'].url)
                 return url.hostname.startswith('bitbucket')
-        except Exception:  # pylint: disable=broad-except
+        except Exception:  # nosec pylint: disable=broad-except
             pass
         return False
 

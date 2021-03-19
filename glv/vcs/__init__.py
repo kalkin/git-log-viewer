@@ -23,7 +23,7 @@ import functools
 import logging
 import os
 import os.path
-import subprocess
+import subprocess  # nosec
 from typing import Dict, List, Set
 
 import xdg
@@ -140,11 +140,12 @@ def fetch_missing_data(commit: Commit, repo: Repository) -> bool:
     LOG.info('Fetching missisng data for %s', oid)
     LOG.debug('Executing %s', ' '.join(cmd))
     try:
-        subprocess.run(cmd,
-                       capture_output=False,
-                       stdout=subprocess.DEVNULL,
-                       stderr=subprocess.DEVNULL,
-                       check=True)
+        subprocess.run(  # nosec
+            cmd,
+            capture_output=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=True)
     except subprocess.CalledProcessError:
         return False
     return True
