@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-import functools
 import itertools
 import logging
 import re
@@ -190,12 +189,12 @@ class LogEntry:
         _type = level + self.commit.icon + self.commit.arrows
         return (color, _type)
 
-    def branches(self, branches) -> List[Tuple[str, str]]:
-        color = vcs.CONFIG['history']['branches_color']
-        branch_tupples = [[('', ' '), (color, '«%s»' % name)]
-                          for name in branches
-                          if not name.startswith('patches/')]
-        return list(itertools.chain(*branch_tupples))
+
+def format_branches(branches) -> List[Tuple[str, str]]:
+    color = vcs.CONFIG['history']['branches_color']
+    branch_tupples = [[('', ' '), (color, '«%s»' % name)] for name in branches
+                      if not name.startswith('patches/')]
+    return list(itertools.chain(*branch_tupples))
 
 
 def highlight_substring(search: SearchState,
@@ -249,7 +248,7 @@ class History(UIContent):
         if self._search_thread is not None and self._search_thread.is_alive():
             try:
                 self._search_thread._stop()  # pylint: disable=protected-access
-            except Exception:  # pylint: disable=broad-except
+            except Exception:  # nosec pylint: disable=broad-except
                 pass
             finally:
                 STATUS.clear()
@@ -342,7 +341,7 @@ class History(UIContent):
         module = entry.modules
         icon = entry.icon
         subject = entry.subject
-        branches = entry.branches(self._repo.branches_for_commit(commit))
+        branches = format_branches(self._repo.branches_for_commit(commit))
 
         if self.search_state and self.search_state.text in _id[1]:
             _id = highlight_substring(self.search_state, _id)
