@@ -54,10 +54,9 @@ from prompt_toolkit.styles import style_from_pygments_cls
 from pygments.style import Style
 from pygments.styles.solarized import SolarizedDarkStyle
 
-from glv import NoPathMatches, NoRevisionMatches
 from glv.ui.diff_view import DiffView
 from glv.ui.history import HistoryContainer
-from glv.utils import repo_from_args, screen_height, screen_width
+from glv.utils import screen_height, screen_width
 
 
 def parse_args() -> dict:
@@ -90,7 +89,8 @@ if DEBUG:
     try:
 
         def add_journal_handler():
-            from systemd.journal import JournalHandler  # pylint: disable=import-outside-toplevel
+            from systemd.journal import \
+                JournalHandler  # pylint: disable=import-outside-toplevel
             journald_handler = JournalHandler()
             # set a formatter to include the level name
             journald_handler.setFormatter(
@@ -111,16 +111,6 @@ if DEBUG:
 KB = KeyBindings()
 KD = KeyBindings()
 KG = KeyBindings()
-
-try:
-    REPO = repo_from_args(**ARGUMENTS)
-    shortcuts.set_title('%s - Git Log Viewer' % REPO)
-except NoRevisionMatches:
-    print('No revisions match the given arguments.', file=sys.stderr)
-    sys.exit(1)
-except NoPathMatches:
-    print("No paths match the given arguments.", file=sys.stderr)
-    sys.exit(1)
 
 
 class MyMargin(Margin):
@@ -151,7 +141,7 @@ MARGINS = [
 DIFF_CONTAINER = ConditionalContainer(DiffView(key_bindings=KD),
                                       filter=diff_visible)
 
-HISTORY_CONTAINER = HistoryContainer(KB, REPO, right_margins=MARGINS)
+HISTORY_CONTAINER = HistoryContainer(KB, ARGUMENTS, right_margins=MARGINS)
 
 
 def get_container():

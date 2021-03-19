@@ -21,10 +21,12 @@
 import itertools
 import logging
 import re
+import sys
 from threading import Thread
 from typing import Any, List, Optional, Tuple
 
 import pkg_resources
+from prompt_toolkit import shortcuts
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.data_structures import Point
 from prompt_toolkit.formatted_text import StyleAndTextTuples
@@ -35,9 +37,11 @@ from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.widgets import SearchToolbar
 
-from glv import Commit, CommitLink, Foldable, Repo, utils, vcs
+from glv import (Commit, CommitLink, Foldable, NoPathMatches,
+                 NoRevisionMatches, Repo, utils, vcs)
 from glv.icon import ASCII
 from glv.ui.status import STATUS, STATUS_WINDOW
+from glv.utils import repo_from_args
 
 LOG = logging.getLogger('glv')
 
@@ -548,7 +552,17 @@ class HistoryControl(BufferControl):
 
 
 class HistoryContainer(HSplit):
-    def __init__(self, key_bindings, repo, right_margins=None):
+    def __init__(self, key_bindings, arguments, right_margins=None):
+        try:
+            repo = repo_from_args(**arguments)
+            shortcuts.set_title('%s - Git Log Viewer' % repo)
+        except NoRevisionMatches:
+            print('No revisions match the given arguments.', file=sys.stderr)
+            sys.exit(1)
+        except NoPathMatches:
+            print("No paths match the given arguments.", file=sys.stderr)
+            sys.exit(1)
+
         search = SearchToolbar(vi_mode=True)
         log_view = HistoryControl(search.control,
                                   key_bindings=key_bindings,
