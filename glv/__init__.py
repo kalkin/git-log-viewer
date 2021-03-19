@@ -272,7 +272,8 @@ class Repo:
         self._repo = GitRepo(repo_path)
         self._nrepo = git.Repo(repo_path)
         self.mailmap = Mailmap.from_repository(self._repo)
-        cache_path = os.path.join(self._nrepo.git_dir, __name__ , 'modules.json')
+        cache_path = os.path.join(self._nrepo.git_dir, __name__,
+                                  'modules.json')
         self.module_cache = Cache(cache_path)
         self.has_modules = False
         if vcs.modules(self._nrepo):
@@ -283,6 +284,7 @@ class Repo:
             for r in self._repo.references.objects
             if not r.shorthand.endswith('/HEAD')
         }
+
         parsed_results = parse_revisions(revision)
         if len(parsed_results) == 0:
             raise NoRevisionMatches
