@@ -190,7 +190,7 @@ class LogEntry:
     @property
     def type(self):
         color = vcs.CONFIG['history']['type_color']
-        level = self.commit.level * '￨ '
+        level = self.commit.level * '│ '
         _type = level + self.commit.icon + self.commit.arrows
         return (color, _type)
 
