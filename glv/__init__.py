@@ -44,6 +44,7 @@ from pykka import Future, Timeout
 
 import glv.vcs as vcs
 from glv.actors import ProviderActor
+from glv.cli import parse_revisions
 from glv.providers import Cache, Provider
 
 LOG = logging.getLogger('glv')
@@ -274,30 +275,31 @@ class Repo:
         self.has_modules = False
         if vcs.modules(self._repo):
             self.has_modules = True
+        # {str:pygit2.Object }
         self._branches = {
             r.shorthand: r.peel()
             for r in self._repo.references.objects
             if not r.shorthand.endswith('/HEAD')
         }
-        revision = revision or ['HEAD']
-        if revision and isinstance(revision[0], str):
-            if revision == '*':
-                raise NotImplementedError('--all switch NYI')
-            self.revision = revision[0]
-            self.__end = None
-            try:
-                if '..' in self.revision:
-                    tmp = self.revision.split('..')
-                    self.__end: GitCommit = self._repo.revparse_single(tmp[0])
-                    self.__start: GitCommit = self._repo.revparse_single(
-                        tmp[1])
-                else:
-                    self.__start: GitCommit = self._repo.revparse_single(
-                        self.revision)
-            except KeyError:
-                raise NoRevisionMatches
-        else:
+        parsed_results = parse_revisions(revision)
+        if len(parsed_results) == 0:
+            raise NoRevisionMatches
+        if len(parsed_results) > 1:
             raise NotImplementedError('Multi branch support NYI')
+
+        first_revision_result = parsed_results[0]
+        self.revision = first_revision_result.input
+        try:
+            self.__start: GitCommit = self._repo.revparse_single(
+                first_revision_result.start)
+
+            if first_revision_result.end:
+                self.__end: GitCommit = self._repo.revparse_single(
+                    first_revision_result.end)
+            else:
+                self.__end = None
+        except KeyError as exc:
+            raise NoRevisionMatches from exc
 
         for provider in providers().values():
             if provider.enabled(self._repo):
