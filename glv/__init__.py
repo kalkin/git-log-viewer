@@ -31,8 +31,8 @@ from datetime import datetime
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import babel.dates
-import pkg_resources
 import git
+import pkg_resources
 from pygit2 import GIT_DIFF_REVERSE  # pylint: disable=no-name-in-module
 from pygit2 import Diff  # pylint: disable=no-name-in-module
 from pygit2 import Mailmap  # pylint: disable=no-name-in-module
@@ -304,10 +304,11 @@ class Repo:
             raise NoRevisionMatches from exc
 
         for provider in providers().values():
-            if provider.enabled(self._repo):
-                cache_dir = self._repo.path + __name__ + '/remotes/origin'
+            if provider.enabled(self._nrepo):
+                cache_dir = os.path.join(self._nrepo.git_dir, __name__,
+                                         'remotes', 'origin')
                 self.provider = ProviderActor.start(
-                    provider(self._repo, cache_dir))
+                    provider(self._nrepo, cache_dir))
                 break
 
     def get(self, sth: Union[str, Oid]) -> Commit:

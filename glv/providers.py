@@ -30,6 +30,7 @@ from time import time
 from typing import Any, Optional, Tuple
 
 import certifi
+import git
 import urllib3  # type: ignore
 
 LOG = logging.getLogger('glv')
@@ -64,12 +65,12 @@ class Cache:
 
 
 class Provider():
-    def __init__(self, repo, cache: Cache) -> None:
+    def __init__(self, repo: git.Repo, cache: Cache) -> None:
         self._cache = cache
         if isinstance(repo, str):
             url = repo
         else:
-            url = repo.remotes['origin'].url
+            url = repo.remote().url
 
         self._url = urllib3.util.parse_url(url)
         self.auth_failed = False
@@ -133,8 +134,8 @@ class GitHub(Provider):
         try:
             if isinstance(repo, str):
                 _url = repo
-            elif repo.remotes:
-                _url = repo.remotes['origin'].url
+            else:
+                _url = repo.remotes().url
             url = urllib3.util.parse_url(_url)
             result = url.hostname == 'github.com'
         except Exception:  # nosec pylint: disable=broad-except
@@ -215,8 +216,8 @@ class Atlassian(Provider):
     @staticmethod
     def enabled(repo) -> bool:
         try:
-            if repo.remotes:
-                url = urllib3.util.parse_url(repo.remotes['origin'].url)
+            if repo.remotes():
+                url = urllib3.util.parse_url(repo.remotes().url)
                 return url.hostname.startswith('bitbucket')
         except Exception:  # nosec pylint: disable=broad-except
             pass
