@@ -207,12 +207,13 @@ class Commit:
         # XXX Port to GitPython
         return self._parent
 
-    def diff(self) -> Optional[git.Diff]:
+    def diff(self) -> str:
         other = None
         if self._commit.parents:
-            other = self._commit.parents[0]  # pylint: disable=invalid-name
-            # pylint: disable=protected-access
-        return self._commit.diff(other, create_patch=True, R=True)
+            other = self._commit.parents[0]
+        git_cmd = git.cmd.Git()
+        return git_cmd.diff('--stat', '-p', '-M', '--no-color', '--full-index',
+                            other.hexsha, self.oid) + "\n"
 
     @property
     def is_top(self) -> bool:

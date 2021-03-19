@@ -22,7 +22,6 @@ import datetime
 import textwrap
 from typing import Optional
 
-import git
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import AnyFormattedText
@@ -94,28 +93,9 @@ class DiffControl(BufferControl):
                          key_bindings=None,
                          search_buffer_control=search)
 
-    @staticmethod
-    def _render_body(diffs: list[git.Diff]) -> Optional[str]:
-        '''
-            Renders diff stats and diff patches.
-
-            May fail if local repository is missing objects, will return None on
-            error.
-        '''
-        # XXX Port to GitPython
-        try:
-            text = ' DIFF_STATS NIY '
-            # text += diff.stats.format(GIT_DIFF_STATS_FULL, screen_width() - 10)
-            text += "\n"
-            # text += "\n\n".join([p.text for p in diff])
-            return text
-        except Exception:  # pylint: disable=broad-except
-            return None
-
     def show_diff(self, commit: Commit):
         ''' Command diff view to show a diff '''
-        # XXX Port to GitPython
-        diffs: list[git.Diff] = commit.diff()
+        body: str = commit.diff()
         text = ""
 
         text += "Commit:     %s\n" % commit.oid
@@ -153,14 +133,6 @@ class DiffControl(BufferControl):
             text += "\n".join([" " + l for l in body_lines]) + "\n"
 
         text += "\n " + 26 * ' ' + "❦ ❦ ❦ ❦ \n\n"
-
-        body = DiffControl._render_body(diffs)
-        # if body is None:
-        # # XXX Port me
-        # success = vcs.fetch_missing_data(commit._commit,
-        # commit._repo._repo)
-        # if success:
-        # body = DiffControl._render_body(diff)
 
         if body is None:
             body = "‼ Missing data for commit %s and failed to fetch it." % commit.oid
