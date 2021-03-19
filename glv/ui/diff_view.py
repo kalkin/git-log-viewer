@@ -122,7 +122,7 @@ class DiffControl(BufferControl):
         author: Signature = commit.author_signature
         committer: Signature = commit.committer_signature
 
-        text += "Commit:     %s\n" % commit.raw_commit.oid
+        text += "Commit:     %s\n" % commit.oid
         text += "Author:     %s\n" % self.name_from_signature(author)
         text += "AuthorDate: %s\n" % self.date_from_signature(author)
 
