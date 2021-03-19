@@ -32,6 +32,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import babel.dates
 import pkg_resources
+import git
 from pygit2 import GIT_DIFF_REVERSE  # pylint: disable=no-name-in-module
 from pygit2 import Diff  # pylint: disable=no-name-in-module
 from pygit2 import Mailmap  # pylint: disable=no-name-in-module
@@ -269,6 +270,7 @@ class Repo:
             print(' Not a git repository', file=sys.stderr)
             sys.exit(2)
         self._repo = GitRepo(repo_path)
+        self._nrepo = git.Repo(repo_path)
         self.mailmap = Mailmap.from_repository(self._repo)
         cache_path = self._repo.path + __name__ + '/modules.json'
         self.module_cache = Cache(cache_path)
