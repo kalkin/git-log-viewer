@@ -250,6 +250,7 @@ class History(UIContent):
         self._repo = repo
         self.line_count = len(list(self._repo.iter_commits(self.revision[0])))
         self.commit_list: List[Commit] = []
+        self.log_entry_list: List[Commit] = []
         self.search_state: Optional[SearchState] = None
         self._search_thread: Optional[Thread] = None
         super().__init__(line_count=self.line_count,
@@ -348,7 +349,14 @@ class History(UIContent):
 
     def _render_commit(self, commit: Commit, line_number: int) -> List[tuple]:
         colors = vcs.CONFIG['history']
-        entry = proxies.ColorProxy(LogEntry(commit), colors)
+        try:
+            entry = proxies.ColorProxy(self.log_entry_list[line_number],
+                                       colors)
+        except KeyError:
+            self.log_entry_list[line_number] = LogEntry(commit)
+            entry = proxies.ColorProxy(self.log_entry_list[line_number],
+                                       colors)
+
         _id = entry.short_id
         author_date = (entry.author_date[0],
                        entry.author_date[1]().ljust(self.date_max_len, " "))
@@ -413,6 +421,7 @@ class History(UIContent):
         for _ in commit.child_log():
             cur_commit = self.commit_list[line_number]
             del self.commit_list[line_number]
+            del self.log_entry_list[line_number]
             if isinstance(cur_commit, Foldable) and not cur_commit.is_folded:
                 self._fold(line_number, cur_commit)
             self.line_count -= 1
@@ -423,11 +432,13 @@ class History(UIContent):
         commit.unfold()
         index = 1
         for _ in commit.child_log():
+            entry = LogEntry(_)
             if len(_.short_author_date()) > self.date_max_len:
                 self.date_max_len = len(_.short_author_date())
             if len(_.short_author_name()) > self.name_max_len:
                 self.name_max_len = len(_.short_author_name())
             self.commit_list.insert(line_number + index, _)
+            self.log_entry_list.insert(line_number + index, entry)
             index += 1
 
         self.line_count += index
@@ -443,6 +454,8 @@ class History(UIContent):
                                     max_count=amount))
         for commit in commits:
             self.commit_list.append(commit)
+            entry = LogEntry(commit)
+            self.log_entry_list.append(entry)
             if len(commit.short_author_date()) > self.date_max_len:
                 self.date_max_len = len(commit.short_author_date())
             if len(commit.short_author_name()) > self.name_max_len:
