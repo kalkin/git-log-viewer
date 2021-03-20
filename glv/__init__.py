@@ -261,9 +261,7 @@ class Repo:
         cache_path = os.path.join(self._nrepo.git_dir, __name__,
                                   'modules.json')
         self.module_cache = Cache(cache_path)
-        self.has_modules = False
-        if vcs.modules(self._nrepo):
-            self.has_modules = True
+        self.has_modules = vcs.modules(self._nrepo)
 
         # for provider in providers().values():
         # if provider.enabled(self._nrepo):
