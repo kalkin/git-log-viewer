@@ -26,7 +26,7 @@ Usage:
 
 Options:
     -w DIR, --workdir=DIR   Directory where the git repository is
-    -d --debug              Enable sending debuggin output to journalctl
+    -d --debug              Enable sending debugging output to journalctl
                             (journalctl --user -f)
     --all                   show all branches
 Arguments:
