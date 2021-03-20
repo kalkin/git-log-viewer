@@ -364,7 +364,7 @@ class History(UIContent):
         module = entry.modules
         icon = entry.icon
         subject = entry.subject
-        branches = format_branches(self._repo.branches_for_commit(commit))
+        branches = format_branches(commit.branches)
 
         if self.search_state and self.search_state.text in _id[1]:
             _id = highlight_substring(self.search_state, _id)

@@ -57,7 +57,8 @@ class Commit:
                  repo,
                  commit: git.Commit,
                  parent: Optional['Commit'] = None,
-                 level: int = 0) -> None:
+                 level: int = 0,
+                 branches: list[str] = None) -> None:
         self._commit: git.Commit = commit
         self.level: int = level
         self._parent: Optional['Commit'] = parent
@@ -65,11 +66,11 @@ class Commit:
         self._fork_point: Optional[bool] = None
         self._subject: Optional[Future] = None
         self._repo = repo
+        self._branches: list[str] = branches or []
 
     @property
-    @functools.lru_cache
     def branches(self) -> List[str]:
-        return self._repo.branches_for_commit(self)
+        return self._branches
 
     @functools.lru_cache()
     def author_name(self) -> str:
@@ -271,8 +272,8 @@ class Repo:
         # provider(self._nrepo, cache_dir))
         # break
 
-    def branches_for_commit(self, commit: Commit) -> list[str]:
-        needle: str = commit.oid
+    def branches_for_commit(self, commit: git.Commit) -> list[str]:
+        needle: str = commit.hexsha
         return [name for name, oid in self.branches().items() if oid == needle]
 
     def get(self, sth: Union[str, str]) -> Commit:
@@ -368,8 +369,9 @@ class Foldable(Commit):
                  repo: Repo,
                  commit: git.Commit,
                  parent: Optional[Commit] = None,
-                 level: int = 1) -> None:
-        super().__init__(repo, commit, parent, level)
+                 level: int = 1,
+                 branches: list[str] = None) -> None:
+        super().__init__(repo, commit, parent, level, branches)
         self._folded = True
         self._repo = repo
         self._rebased = None
@@ -469,17 +471,22 @@ def to_commit(repo: Repo,
               git_commit: git.Commit,
               parent: Optional[Commit] = None) -> Commit:
     level = 0
+    branches = repo.branches_for_commit(git_commit)
     try:
         if not git_commit.parents:
-            return InitialCommit(repo, git_commit, parent, level)
+            return InitialCommit(repo, git_commit, parent, level, branches)
     except Exception:  # pylint: disable=broad-except
-        return Commit(repo, git_commit, parent, level)
+        return Commit(repo, git_commit, parent, level, branches)
 
     parents_len = len(git_commit.parents)
     if parents_len == 1:
-        return Commit(repo, git_commit, parent, level)
+        return Commit(repo, git_commit, parent, level, branches)
 
     if parents_len == 2:
-        return Merge(repo, git_commit, level=level, parent=parent)
+        return Merge(repo,
+                     git_commit,
+                     level=level,
+                     parent=parent,
+                     branches=branches)
 
     return Octopus(repo, git_commit, level=level, parent=parent)
