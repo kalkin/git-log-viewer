@@ -306,11 +306,13 @@ class Repo:
 
     def iter_commits(self,
                      revision: str = 'HEAD',
-                     paths='') -> Iterator[Commit]:
+                     paths='',
+                     **kwargs) -> Iterator[Commit]:
         parent = None
         for git_commit in self._nrepo.iter_commits(rev="%s" % revision,
                                                    paths=paths,
-                                                   first_parent=True):
+                                                   first_parent=True,
+                                                   **kwargs):
             parent = to_commit(self, git_commit, parent)
             yield parent
 

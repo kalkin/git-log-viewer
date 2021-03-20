@@ -258,7 +258,6 @@ class History(UIContent):
         self.line_count = len(list(self._repo.iter_commits(self.revision[0])))
         self.commit_list: List[Commit] = []
         self.search_state: Optional[SearchState] = None
-        self.walker = self._repo.iter_commits(self.revision[0], self.files)
         self._search_thread: Optional[Thread] = None
         super().__init__(line_count=self.line_count,
                          get_line=self.get_line,
@@ -443,22 +442,18 @@ class History(UIContent):
         if amount <= 0:
             raise ValueError('Amount must be ≤ 0')
 
-        result = 0
-        for _ in range(0, amount):
-            try:
-                commit: Commit = next(self.walker)  # type: ignore
-            except Exception:  # pylint: disable=broad-except
-                return result
-            if not commit:
-                break
-
+        commits = list(
+            self._repo.iter_commits(self.revision[0],
+                                    self.files,
+                                    skip=len(self.commit_list),
+                                    max_count=amount))
+        for commit in commits:
             self.commit_list.append(commit)
-            result += 1
             if len(commit.short_author_date()) > self.date_max_len:
                 self.date_max_len = len(commit.short_author_date())
             if len(commit.short_author_name()) > self.name_max_len:
                 self.name_max_len = len(commit.short_author_name())
-        return result
+        return len(commits)
 
 
 class HistoryControl(BufferControl):
