@@ -91,32 +91,36 @@ def modules(repo: git.Repo) -> Dict[str, str]:
     return result
 
 
-def changed_files(commit: git.Commit) -> Set[str]:
+def changed_files(commit: git.Commit, paths=None) -> Set[str]:
     ''' Return all files which were changed in the specified commit '''
     try:
         parent1 = commit.parents[0]
     except IndexError:
         return set()
 
-    diffs: list[git.Diff] = commit.tree.diff(parent1.tree)
-    result: List[str] = []
-    for diff in diffs:
-        result += [diff.a_path, diff.b_path]
-
-    return set(result)
+    git_cmd = git.cmd.Git(working_dir=commit.repo.working_dir)
+    return git_cmd.diff_tree(commit.tree,
+                             parent1.tree,
+                             "--",
+                             *paths,
+                             name_only=True,
+                             no_renames=True,
+                             no_color=True).splitlines()
 
 
 def changed_modules(repo: git.Repo, commit: git.Commit) -> Set[str]:
     ''' Return all .gisubtrees modules which were changed in the specified commit '''
     _modules = modules(repo)
-    changed = changed_files(commit)
+    changed = changed_files(commit, _modules.values())
+    if not changed:
+        return []
     files = {name: True for name in changed}
     result: List[str] = []
     for directory in sorted(_modules, reverse=True):
-        matches = [_file for _file in files if _file.startswith(directory)]
-        if matches:
-            result.append(_modules[directory])
-            files = {k: True for k in files if k not in matches}
+        for _file in files:
+            if _file.startswith(directory):
+                result.append(directory)
+                break
 
     return set(result)
 
