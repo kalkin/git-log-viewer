@@ -39,7 +39,7 @@ from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.widgets import SearchToolbar
 
 from glv import (Commit, CommitLink, Foldable, NoPathMatches,
-                 NoRevisionMatches, Repo, utils, vcs)
+                 NoRevisionMatches, Repo, proxies, utils, vcs)
 from glv.icon import ASCII
 from glv.ui.status import STATUS, STATUS_WINDOW
 from glv.utils import parse_args
@@ -102,8 +102,7 @@ class LogEntry:
 
     @property
     def author_date(self):
-        color = vcs.CONFIG['history']['author_date_color']
-        return (color, self.commit.short_author_date)
+        return self.commit.short_author_date
 
     @property
     def modules(self) -> Tuple[str, str]:
@@ -117,7 +116,6 @@ class LogEntry:
         except KeyError:
             modules_max_width = 35
 
-        color = vcs.CONFIG['history']['modules_color']
         modules = self.commit.monorepo_modules()
 
         subject = self.commit.subject()
@@ -139,30 +137,26 @@ class LogEntry:
         text = ', '.join([':' + x for x in modules])
         if len(text) > modules_max_width:
             text = ':(%d modules)' % len(modules)
-        return (color, text)
+        return text
 
     @property
     def author_name(self):
-        color = vcs.CONFIG['history']['author_name_color']
-        return (color, self.commit.short_author_name())
+        return self.commit.short_author_name()
 
     @property
     def short_id(self):
-        color = vcs.CONFIG['history']['short_id_color']
-        return (color, self.commit.short_id())
+        return self.commit.short_id()
 
     @property
     def icon(self) -> Tuple[str, str]:
-        color = vcs.CONFIG['history']['icon_color']
         subject = self.commit.subject()
         for (regex, icon) in icon_collection():
             if re.match(regex, subject, flags=re.I):
-                return (color, icon)
-        return ('', '  ')
+                return icon
+        return '  '
 
     @property
     def subject(self) -> Tuple[str, str]:
-        color = vcs.CONFIG['history']['subject_color']
         try:
             parts = vcs.CONFIG['history']['subject_parts'].split()
         except KeyError:
@@ -185,14 +179,13 @@ class LogEntry:
         elif 'verb' not in parts:
             subject = remove_verb(subject)
 
-        return (color, subject)
+        return subject
 
     @property
     def type(self):
-        color = vcs.CONFIG['history']['type_color']
         level = self.commit.level * '│ '
         _type = level + self.commit.icon + self.commit.arrows
-        return (color, _type)
+        return _type
 
 
 def format_branches(branches) -> List[Tuple[str, str]]:
@@ -354,7 +347,8 @@ class History(UIContent):
         return self._render_commit(commit, line_number)
 
     def _render_commit(self, commit: Commit, line_number: int) -> List[tuple]:
-        entry = LogEntry(commit)
+        colors = vcs.CONFIG['history']
+        entry = proxies.ColorProxy(LogEntry(commit), colors)
         _id = entry.short_id
         author_date = (entry.author_date[0],
                        entry.author_date[1]().ljust(self.date_max_len, " "))
