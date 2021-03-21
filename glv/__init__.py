@@ -262,7 +262,15 @@ class Repo:
 
     @functools.lru_cache()
     def branches(self) -> Dict[str, str]:
-        return {b.name: b.commit.hexsha for b in self._nrepo.references}
+        git_cmd = git.cmd.Git(self.working_dir)
+        result = {}
+        for line in git_cmd.show_ref().splitlines():
+            oid, _, ref = line.partition(' ')
+            try:
+                result[ref.split("/", 2)[2]] = oid
+            except IndexError:
+                pass
+        return result
 
     def count_commits(self, revision: str = 'HEAD') -> int:
         git_cmd = git.cmd.Git(self.working_dir)
