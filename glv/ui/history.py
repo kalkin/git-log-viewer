@@ -23,9 +23,12 @@ import logging
 import os
 import re
 import sys
+import textwrap
+from datetime import datetime
 from threading import Thread
 from typing import Any, List, Optional, Tuple
 
+import babel.dates
 import pkg_resources
 from prompt_toolkit import shortcuts
 from prompt_toolkit.buffer import Buffer
@@ -97,12 +100,35 @@ def remove_verb(subject: str) -> bool:
 
 
 class LogEntry:
-    def __init__(self, commit: Commit) -> None:
+    def __init__(self, commit: Commit, working_dir: str) -> None:
         self.commit = commit
+        self._mailmap = utils.mailmap(working_dir)
 
     @property
-    def author_date(self):
-        return self.commit.author_date
+    def author_date(self) -> str:
+        timestamp: int = self.commit.author_unixdate
+        delta = datetime.now() - datetime.fromtimestamp(timestamp)
+        _format = vcs.CONFIG['history']['author_date_format']
+        try:
+            return babel.dates.format_timedelta(delta, format=_format)
+        except KeyError as e:
+            if delta.total_seconds() < 60:
+                return f'{round(delta.total_seconds())} s'
+            raise e
+
+    @property
+    def committer_date(self) -> str:
+        ''' Returns relative commiter date '''
+        # pylint: disable=invalid-name
+        timestamp: int = self.commit.committed_date
+        delta = datetime.now() - datetime.fromtimestamp(timestamp)
+        _format = vcs.CONFIG['history']['author_date_format']
+        try:
+            return babel.dates.format_timedelta(delta, format=_format)
+        except KeyError as e:
+            if delta.total_seconds() < 60:
+                return f'{round(delta.total_seconds())} s'
+            raise e
 
     @property
     def modules(self) -> Tuple[str, str]:
@@ -141,7 +167,13 @@ class LogEntry:
 
     @property
     def author_name(self):
-        return self.commit.author_name()
+        # width = vcs.CONFIG['history'].getint('author_name_width')
+        width = 10
+        name = self._mailmap.name(self.commit.author_name())
+        tmp = textwrap.shorten(name, width=width, placeholder="…")
+        if tmp == '…':
+            return name[0:width - 1] + '…'
+        return tmp
 
     @property
     def short_id(self):
@@ -230,8 +262,7 @@ class History(UIContent):
             self.path, self.revision, self.files = parse_args(**arguments)
             repo = Repo(path=self.path)
 
-            path = repo._nrepo.working_dir.replace(os.path.expanduser('~'),
-                                                   '~', 1)
+            path = repo.working_dir.replace(os.path.expanduser('~'), '~', 1)
             revision = self.revision[0]
             if self.revision == 'HEAD':
                 revision = repo._nrepo.head.ref.name
@@ -353,13 +384,14 @@ class History(UIContent):
             entry = proxies.ColorProxy(self.log_entry_list[line_number],
                                        colors)
         except KeyError:
-            self.log_entry_list[line_number] = LogEntry(commit)
+            self.log_entry_list[line_number] = LogEntry(
+                commit, self._repo.working_dir)
             entry = proxies.ColorProxy(self.log_entry_list[line_number],
                                        colors)
 
         _id = entry.short_id
         author_date = (entry.author_date[0],
-                       entry.author_date[1]().ljust(self.date_max_len, " "))
+                       entry.author_date[1].ljust(self.date_max_len, " "))
         author_name = (entry.author_name[0],
                        entry.author_name[1].ljust(self.name_max_len, " "))
         _type = entry.type
@@ -432,9 +464,9 @@ class History(UIContent):
         commit.unfold()
         index = 1
         for _ in commit.child_log():
-            entry = LogEntry(_)
-            if len(entry.author_date()) > self.date_max_len:
-                self.date_max_len = len(entry.author_date())
+            entry = LogEntry(_, self._repo.working_dir)
+            if len(entry.author_date) > self.date_max_len:
+                self.date_max_len = len(entry.author_date)
             if len(entry.author_name) > self.name_max_len:
                 self.name_max_len = len(entry.author_name)
             self.commit_list.insert(line_number + index, _)
@@ -454,10 +486,10 @@ class History(UIContent):
                                     max_count=amount))
         for commit in commits:
             self.commit_list.append(commit)
-            entry = LogEntry(commit)
+            entry = LogEntry(commit, self._repo.working_dir)
             self.log_entry_list.append(entry)
-            if len(entry.author_date()) > self.date_max_len:
-                self.date_max_len = len(entry.author_date())
+            if len(entry.author_date) > self.date_max_len:
+                self.date_max_len = len(entry.author_date)
             if len(entry.author_name) > self.name_max_len:
                 self.name_max_len = len(entry.author_name)
         return len(commits)

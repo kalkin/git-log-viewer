@@ -94,41 +94,17 @@ class Commit:
                     and self._parent.is_rebased())
         return bool(self._fork_point)
 
-    @functools.lru_cache()
-    def short_author_date(self) -> str:
-        ''' Returns relative commiter date '''
-        # pylint: disable=invalid-name
-        timestamp: int = self._commit.authored_date
-        delta = datetime.now() - datetime.fromtimestamp(timestamp)
-        _format = vcs.CONFIG['history']['author_date_format']
-        try:
-            return babel.dates.format_timedelta(delta, format=_format)
-        except KeyError as e:
-            if delta.total_seconds() < 60:
-                return f'{round(delta.total_seconds())} s'
-            raise e
-
-    @functools.lru_cache()
+    @property
     def author_date(self) -> str:
         return str(self._commit.authored_datetime)
+
+    @property
+    def author_unixdate(self) -> int:
+        return self._commit.authored_date
 
     @functools.lru_cache()
     def committer_date(self) -> str:
         return str(self._commit.committed_datetime)
-
-    @functools.lru_cache()
-    def short_committer_date(self) -> str:
-        ''' Returns relative commiter date '''
-        # pylint: disable=invalid-name
-        timestamp: int = self._commit.committed_date
-        delta = datetime.now() - datetime.fromtimestamp(timestamp)
-        _format = vcs.CONFIG['history']['author_date_format']
-        try:
-            return babel.dates.format_timedelta(delta, format=_format)
-        except KeyError as e:
-            if delta.total_seconds() < 60:
-                return f'{round(delta.total_seconds())} s'
-            raise e
 
     @functools.lru_cache()
     def __stgit(self) -> bool:
@@ -207,27 +183,17 @@ class Commit:
         # XXX Port to GitPython
         return str(self._commit.hexsha)[0:max_len - 1]
 
-    def short_author_name(self) -> str:
-        # XXX Port to GitPython
-        width = vcs.CONFIG['history'].getint('author_name_width')
-        name = self._repo.mailmap_name(self.author_name())
-        tmp = textwrap.shorten(name, width=width, placeholder="…")
-        if tmp == '…':
-            return name[0:width - 1] + '…'
-        return tmp
-
     def __repr__(self) -> str:
         return str(self._commit.hexsha)
 
     def __str__(self) -> str:
         hash_id: str = self.short_id()
-        rel_date: str = self.author_date()
-        author = self.short_author_name()
+        rel_date: str = self.author_date
+        author = self.author_name()
         return " ".join([hash_id, rel_date, author, self.subject()])
 
     @property
     def parent(self) -> Optional['Commit']:
-        # XXX Port to GitPython
         return self._parent
 
     def diff(self) -> str:
@@ -299,11 +265,6 @@ class Repo:
             return to_commit(self, result)
         except git.BadName:
             return None
-
-    @functools.lru_cache()
-    def mailmap_name(self, name: str) -> str:
-        git_cmd = git.cmd.Git(working_dir=self._nrepo.working_dir)
-        return git_cmd.check_mailmap(name).partition('<')[0]
 
     @functools.lru_cache()
     def branches(self) -> Dict[str, str]:

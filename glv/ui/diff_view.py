@@ -100,11 +100,11 @@ class DiffControl(BufferControl):
 
         text += "Commit:     %s\n" % commit.oid
         text += "Author:     %s\n" % commit.author_name()
-        text += "AuthorDate: %s\n" % commit.author_date()
+        text += "AuthorDate: %s\n" % commit.author_date
 
         if commit.committer_name() != commit.author_name():
             text += "Committer:     %s\n" % commit.committer_name()
-        if commit.committer_date() != commit.author_date():
+        if commit.committer_date != commit.author_date:
             text += "CommitDate: %s\n" % commit.committer_date()
 
         if commit.monorepo_modules():
