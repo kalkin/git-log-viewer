@@ -264,6 +264,11 @@ class Repo:
     def branches(self) -> Dict[str, str]:
         return {b.name: b.commit.hexsha for b in self._nrepo.references}
 
+    def count_commits(self, revision: str = 'HEAD') -> int:
+        git_cmd = git.cmd.Git(self.working_dir)
+        return int(
+            git_cmd.rev_list(revision, first_parent=True, count=True).strip())
+
     def iter_commits(self,
                      revision: str = 'HEAD',
                      paths='',

@@ -279,7 +279,7 @@ class History(UIContent):
         self.date_max_len = 0
         self.name_max_len = 0
         self._repo = repo
-        self.line_count = len(list(self._repo.iter_commits(self.revision[0])))
+        self.line_count = self._repo.count_commits(self.revision[0])
         self.commit_list: List[Commit] = []
         self.log_entry_list: List[Commit] = []
         self.search_state: Optional[SearchState] = None
