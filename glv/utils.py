@@ -18,9 +18,11 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 ''' A collection of useful functions '''
+import functools
 import os
 import sys
 
+import git
 from prompt_toolkit import __version__ as ptk_version
 from prompt_toolkit.data_structures import Size
 from prompt_toolkit.output.base import Output
@@ -71,3 +73,25 @@ def _screen_size() -> Size:
         output: Output = create_output()
 
     return output.from_pty(sys.stdout).get_size()
+
+
+class Mailmap:
+    ''' Mailmap helper class '''  # pylint: disable=too-few-public-methods
+
+    def __init__(self, working_dir: str) -> None:
+        self._cmd = git.cmd.Git(working_dir)
+
+    @functools.lru_cache()
+    def name(self, name) -> str:
+        ''' Return name from mailmap file '''
+        return self._cmd.check_mailmap(name).partition('<')[0]
+
+
+_MAILMAP_INSTANCES: dict[str, Mailmap] = {}
+
+
+def mailmap(working_dir: str) -> Mailmap:
+    ''' Return the Mailmap instance for given working_dir '''
+    if working_dir not in _MAILMAP_INSTANCES:
+        _MAILMAP_INSTANCES[working_dir] = Mailmap(working_dir)
+    return _MAILMAP_INSTANCES[working_dir]
