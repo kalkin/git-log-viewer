@@ -143,35 +143,6 @@ class Commit:
         ''' Returns the first line of the commit message. '''
         return self._first_subject_line()
 
-    def modules(self) -> List[str]:
-        warnings.warn("Use monorepo_modules instead", DeprecationWarning)
-        return self.monorepo_modules()
-
-    @functools.lru_cache()
-    def monorepo_modules(self) -> List[str]:
-        '''
-            Return a list of monorepo modules touched by this commit.
-            See vcs(1)
-        '''
-        # XXX Port to GitPython
-        if not self._repo.has_modules:
-            return []
-
-        _id = str(self.oid)
-        try:
-            return self._repo.module_cache[_id]
-        except KeyError:
-            # pylint: disable=protected-access
-            try:
-                modules = list(
-                    vcs.changed_modules(self._repo._nrepo, self._commit))
-                self._repo.module_cache[_id] = modules
-                return self._repo.module_cache[_id]
-            except KeyError:
-                pass
-
-        return ''
-
     def short_id(self, max_len: int = 8) -> str:
         ''' Returns a shortend commit id. '''
         # XXX Port to GitPython

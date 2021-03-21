@@ -69,6 +69,6 @@ class ModuleActor(pykka.ThreadingActor):
                 if _file.startswith(directory):
                     result.append(directory)
                     break
-        get_app().invalidate()
-        LOG.warn("Found changes %s", result)
+        if result:
+            get_app().invalidate()
         return result

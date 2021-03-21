@@ -103,6 +103,7 @@ class LogEntry:
     def __init__(self, commit: Commit, working_dir: str) -> None:
         self.commit = commit
         self._mailmap = utils.mailmap(working_dir)
+        self._modchanges = utils.mod_changes(working_dir)
 
     @property
     def author_date(self) -> str:
@@ -142,7 +143,7 @@ class LogEntry:
         except KeyError:
             modules_max_width = 35
 
-        modules = self.commit.monorepo_modules()
+        modules = list(self._modchanges.commit_modules(self.commit))
 
         subject = self.commit.subject()
 
@@ -199,7 +200,8 @@ class LogEntry:
             component = parse_component(subject)
             if component and not is_hex(component):
                 if 'modules-component' in parts:
-                    modules = self.commit.monorepo_modules()
+                    modules = list(self._modchanges.commit_modules(
+                        self.commit))
                     if not modules or component in modules:
                         subject = remove_component(subject)
                 elif 'component' not in parts:

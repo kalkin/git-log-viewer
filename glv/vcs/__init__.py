@@ -33,7 +33,6 @@ LOG = logging.getLogger('glv')
 
 __all__ = [
     "changed_files",
-    "changed_modules",
     "CONFIG",
     "fetch_missing_data",
     "modules",
@@ -106,23 +105,6 @@ def changed_files(commit: git.Commit, paths=None) -> Set[str]:
                              name_only=True,
                              no_renames=True,
                              no_color=True).splitlines()
-
-
-def changed_modules(repo: git.Repo, commit: git.Commit) -> Set[str]:
-    ''' Return all .gisubtrees modules which were changed in the specified commit '''
-    _modules = modules(repo)
-    changed = changed_files(commit, _modules.values())
-    if not changed:
-        return []
-    files = {name: True for name in changed}
-    result: List[str] = []
-    for directory in sorted(_modules, reverse=True):
-        for _file in files:
-            if _file.startswith(directory):
-                result.append(directory)
-                break
-
-    return set(result)
 
 
 def fetch_missing_data(commit: git.Commit, repo: git.Repo) -> bool:

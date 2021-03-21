@@ -23,11 +23,12 @@ import os
 import sys
 
 import git
+import pykka
 from prompt_toolkit import __version__ as ptk_version
 from prompt_toolkit.data_structures import Size
 from prompt_toolkit.output.base import Output
 
-from glv import Repo
+from glv import Commit, Repo, actors, vcs
 
 if ptk_version.startswith('3.'):
     PTK_VERSION = 3
@@ -95,3 +96,42 @@ def mailmap(working_dir: str) -> Mailmap:
     if working_dir not in _MAILMAP_INSTANCES:
         _MAILMAP_INSTANCES[working_dir] = Mailmap(working_dir)
     return _MAILMAP_INSTANCES[working_dir]
+
+
+class ModuleChanges:
+    ''' Helper class for querying two trees have module changes.
+        The query runs async and the results are cached.
+    '''
+    def __init__(self, working_dir: str) -> None:
+        modules = vcs.modules(git.Repo(path=working_dir))
+        self._actor = actors.ModuleActor.start(working_dir, modules)
+        self._cache: dict[tuple(str, str), set[str]] = {}
+
+    def commit_modules(self, commit: Commit) -> list[str]:
+        ''' Handy wrapper around `self.changed_modules` '''
+        # pylint: disable=protected-access
+        if not commit._commit.parents:
+            return []
+
+        key = commit.oid
+
+        if key not in self._cache:
+            oid1 = commit._commit.tree.hexsha
+            oid2 = commit._commit.parents[0].tree.hexsha
+            message = (oid1, oid2)
+            self._cache[key] = self._actor.ask(message, block=False)
+
+        try:
+            return self._cache[key].get(0)
+        except pykka.Timeout:
+            return []
+
+
+_MOD_CHANGES_INSTANCES: dict[str, ModuleChanges] = {}
+
+
+def mod_changes(working_dir: str) -> ModuleChanges:
+    ''' Return the `ModuleChanges` instance for given working_dir '''
+    if working_dir not in _MOD_CHANGES_INSTANCES:
+        _MOD_CHANGES_INSTANCES[working_dir] = ModuleChanges(working_dir)
+    return _MOD_CHANGES_INSTANCES[working_dir]
