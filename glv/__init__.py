@@ -72,19 +72,16 @@ class Commit:
     def branches(self) -> List[str]:
         return self._branches
 
-    @functools.lru_cache()
     def author_name(self) -> str:
         ''' Returns author name with mail as string. '''
         commit = self._commit
         return commit.author.name + " <" + commit.author.email + ">"
 
-    @functools.lru_cache()
     def committer_name(self) -> str:
         ''' Returns author name with mail as string. '''
         commit = self._commit
         return commit.committer.name + " <" + commit.committer.email + ">"
 
-    @functools.lru_cache()
     def is_fork_point(self) -> bool:
         # XXX Port to GitPython
         if self._fork_point is None:
@@ -102,11 +99,9 @@ class Commit:
     def author_unixdate(self) -> int:
         return self._commit.authored_date
 
-    @functools.lru_cache()
     def committer_date(self) -> str:
         return str(self._commit.committed_datetime)
 
-    @functools.lru_cache()
     def __stgit(self) -> bool:
         for name in self.branches:
             if name.startswith('patches/') \
@@ -138,7 +133,6 @@ class Commit:
     def oid(self) -> str:
         return self._oid
 
-    @functools.lru_cache()
     def _first_subject_line(self) -> str:
         try:
             return self._commit.message.strip().splitlines()[0]
