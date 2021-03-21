@@ -330,15 +330,9 @@ def descendant_of(commit_a: git.Commit, commit_b: git.Commit) -> bool:
 
 
 class Foldable(Commit):
-    def __init__(self,
-                 repo: Repo,
-                 commit: git.Commit,
-                 parent: Optional[Commit] = None,
-                 level: int = 1,
-                 branches: list[str] = None) -> None:
-        super().__init__(repo, commit, parent, level, branches)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self._folded = True
-        self._repo = repo
         self._rebased = None
 
     def child_log(self) -> Iterator[Commit]:

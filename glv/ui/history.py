@@ -111,10 +111,10 @@ class LogEntry:
         _format = vcs.CONFIG['history']['author_date_format']
         try:
             return babel.dates.format_timedelta(delta, format=_format)
-        except KeyError as e:
+        except KeyError as exc:
             if delta.total_seconds() < 60:
                 return f'{round(delta.total_seconds())} s'
-            raise e
+            raise exc
 
     @property
     def committer_date(self) -> str:
@@ -394,9 +394,7 @@ class History(UIContent):
                        entry.author_date[1].ljust(self.date_max_len, " "))
         author_name = (entry.author_name[0],
                        entry.author_name[1].ljust(self.name_max_len, " "))
-        _type = entry.type
         module = entry.modules
-        icon = entry.icon
         subject = entry.subject
         branches = format_branches(commit.branches)
 
@@ -419,7 +417,10 @@ class History(UIContent):
             author_name = ('italic ' + author_name[0], author_name[1])
             author_date = ('italic ' + author_date[0], author_date[1])
 
-        tmp = [_id, author_date, author_name, icon, _type, module, subject]
+        tmp = [
+            _id, author_date, author_name, entry.icon, entry.type, module,
+            subject
+        ]
         result: List[tuple] = []
         for sth in tmp:
             if isinstance(sth, tuple):
