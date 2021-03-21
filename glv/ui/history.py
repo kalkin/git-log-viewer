@@ -102,7 +102,7 @@ class LogEntry:
 
     @property
     def author_date(self):
-        return self.commit.short_author_date
+        return self.commit.author_date
 
     @property
     def modules(self) -> Tuple[str, str]:
@@ -141,7 +141,7 @@ class LogEntry:
 
     @property
     def author_name(self):
-        return self.commit.short_author_name()
+        return self.commit.author_name()
 
     @property
     def short_id(self):
@@ -310,7 +310,7 @@ class History(UIContent):
                     commit = self.commit_list[index]
 
                 if needle in commit.short_id() or needle in commit.subject() \
-                        or needle in commit.short_author_name() \
+                        or needle in commit.author_name() \
                         or needle in commit.monorepo_modules() \
                         or any(needle in haystack for haystack in commit.branches):
                     new_position = index
@@ -323,7 +323,7 @@ class History(UIContent):
             while index >= 0:
                 commit = self.commit_list[index]
                 if needle in commit.short_id() or needle in commit.subject() \
-                        or needle in commit.short_author_name() \
+                        or needle in commit.author_name() \
                         or needle in commit.monorepo_modules():
                     new_position = index
                     break
@@ -433,10 +433,10 @@ class History(UIContent):
         index = 1
         for _ in commit.child_log():
             entry = LogEntry(_)
-            if len(_.short_author_date()) > self.date_max_len:
-                self.date_max_len = len(_.short_author_date())
-            if len(_.short_author_name()) > self.name_max_len:
-                self.name_max_len = len(_.short_author_name())
+            if len(entry.author_date()) > self.date_max_len:
+                self.date_max_len = len(entry.author_date())
+            if len(entry.author_name) > self.name_max_len:
+                self.name_max_len = len(entry.author_name)
             self.commit_list.insert(line_number + index, _)
             self.log_entry_list.insert(line_number + index, entry)
             index += 1
@@ -456,10 +456,10 @@ class History(UIContent):
             self.commit_list.append(commit)
             entry = LogEntry(commit)
             self.log_entry_list.append(entry)
-            if len(commit.short_author_date()) > self.date_max_len:
-                self.date_max_len = len(commit.short_author_date())
-            if len(commit.short_author_name()) > self.name_max_len:
-                self.name_max_len = len(commit.short_author_name())
+            if len(entry.author_date()) > self.date_max_len:
+                self.date_max_len = len(entry.author_date())
+            if len(entry.author_name) > self.name_max_len:
+                self.name_max_len = len(entry.author_name)
         return len(commits)
 
 
