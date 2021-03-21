@@ -285,6 +285,10 @@ class Repo:
             git_commit = self._nrepo.commit(sth)
         return to_commit(self, git_commit)
 
+    @property
+    def working_dir(self) -> str:
+        return self._nrepo.working_dir
+
     def merge_base(self, oid1: git.Commit,
                    oid2: git.Commit) -> Optional[Commit]:
         try:
