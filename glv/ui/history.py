@@ -18,14 +18,19 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-import functools
 import itertools
 import logging
+import os
 import re
+import sys
+import textwrap
+from datetime import datetime
 from threading import Thread
 from typing import Any, List, Optional, Tuple
 
+import babel.dates
 import pkg_resources
+from prompt_toolkit import shortcuts
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.data_structures import Point
 from prompt_toolkit.formatted_text import StyleAndTextTuples
@@ -36,9 +41,11 @@ from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.widgets import SearchToolbar
 
-from glv import Commit, CommitLink, Foldable, Repo, utils, vcs
+from glv import (Commit, CommitLink, Foldable, NoPathMatches,
+                 NoRevisionMatches, Repo, proxies, utils, vcs)
 from glv.icon import ASCII
 from glv.ui.status import STATUS, STATUS_WINDOW
+from glv.utils import parse_args
 
 LOG = logging.getLogger('glv')
 
@@ -58,69 +65,166 @@ def icon_collection():
     return result
 
 
+def has_component(subject: str) -> bool:
+    return re.match(r'^\w+\([\w\d_-]+\)[\s:]\s*.*', subject, flags=re.I)
+
+
+def parse_component(subject: str) -> Optional[str]:
+    tmp = re.findall(r'^\w+\(([\w\d_-]+)\):.*', subject)
+    if tmp:
+        return tmp[0]
+    return None
+
+
+def is_hex(subject: str) -> bool:
+    return re.match(r'^[0-9a-f]+$', subject, flags=re.I)
+
+
+def remove_component(subject: str) -> bool:
+    return re.sub(r'^(\w+)\([\w\d_-]+\)', '\\1', subject, flags=re.I, count=1)
+
+
+def parse_verb(subject: str) -> Optional[str]:
+    tmp = re.findall(r'^(\w+)(?:\([\w\d_-]+\)\s*:)?', subject, re.I)
+    if tmp:
+        return tmp[0]
+    return None
+
+
+def remove_verb(subject: str) -> bool:
+    return re.sub(r'^(\w+)((?=\()|\s*:|\s)\s*',
+                  '',
+                  subject,
+                  flags=re.I,
+                  count=1)
+
+
 class LogEntry:
-    def __init__(self, commit: Commit) -> None:
+    def __init__(self, commit: Commit, working_dir: str) -> None:
         self.commit = commit
+        self._mailmap = utils.mailmap(working_dir)
 
     @property
-    def author_date(self):
-        color = vcs.CONFIG['history']['author_date_color']
-        return (color, self.commit.author_date())
+    def author_date(self) -> str:
+        timestamp: int = self.commit.author_unixdate
+        delta = datetime.now() - datetime.fromtimestamp(timestamp)
+        _format = vcs.CONFIG['history']['author_date_format']
+        try:
+            return babel.dates.format_timedelta(delta, format=_format)
+        except KeyError as exc:
+            if delta.total_seconds() < 60:
+                return f'{round(delta.total_seconds())} s'
+            raise exc
+
+    @property
+    def committer_date(self) -> str:
+        ''' Returns relative commiter date '''
+        # pylint: disable=invalid-name
+        timestamp: int = self.commit.committed_date
+        delta = datetime.now() - datetime.fromtimestamp(timestamp)
+        _format = vcs.CONFIG['history']['author_date_format']
+        try:
+            return babel.dates.format_timedelta(delta, format=_format)
+        except KeyError as e:
+            if delta.total_seconds() < 60:
+                return f'{round(delta.total_seconds())} s'
+            raise e
 
     @property
     def modules(self) -> Tuple[str, str]:
-        color = vcs.CONFIG['history']['modules_color']
-        modules = self.commit.modules()
-        if not modules:
-            modules = []
+        try:
+            config = vcs.CONFIG['history']['modules_content']
+        except KeyError:
+            config = 'modules-component'
+
+        try:
+            modules_max_width = vcs.CONFIG['history']['modules_max_width']
+        except KeyError:
+            modules_max_width = 35
+
+        modules = self.commit.monorepo_modules()
 
         subject = self.commit.subject()
-        if re.match(r'^\w+\([\w\d_-]+\)[\s:]\s*.*', subject, flags=re.I):
-            tmp = re.findall(r'^\w+\(([\w\d_-]+)\):.*', subject)
-            if tmp:
-                modules.append(tmp[0])
 
-        return (color, ', '.join([':' + x for x in modules]))
+        if config == 'modules-component' and not modules \
+                and has_component(subject):
+            parsed_module = parse_component(subject)
+            if parsed_module and parsed_module not in modules and not is_hex(
+                    parsed_module):
+                modules.append(parsed_module)
+
+        if config == 'component':
+            modules = []
+            if has_component(subject):
+                parsed_module = parse_component(subject)
+                if parsed_module:
+                    modules = [parsed_module]
+
+        text = ', '.join([':' + x for x in modules])
+        if len(text) > modules_max_width:
+            text = ':(%d modules)' % len(modules)
+        return text
 
     @property
     def author_name(self):
-        color = vcs.CONFIG['history']['author_name_color']
-        return (color, self.commit.short_author_name())
+        # width = vcs.CONFIG['history'].getint('author_name_width')
+        width = 10
+        name = self._mailmap.name(self.commit.author_name())
+        tmp = textwrap.shorten(name, width=width, placeholder="…")
+        if tmp == '…':
+            return name[0:width - 1] + '…'
+        return tmp
 
     @property
     def short_id(self):
-        color = vcs.CONFIG['history']['short_id_color']
-        return (color, self.commit.short_id())
+        return self.commit.short_id()
 
     @property
     def icon(self) -> Tuple[str, str]:
-        color = vcs.CONFIG['history']['icon_color']
         subject = self.commit.subject()
         for (regex, icon) in icon_collection():
             if re.match(regex, subject, flags=re.I):
-                return (color, icon)
-        return ('', '  ')
+                return icon
+        return '  '
 
     @property
     def subject(self) -> Tuple[str, str]:
-        color = vcs.CONFIG['history']['subject_color']
-        return (color, self.commit.subject())
+        try:
+            parts = vcs.CONFIG['history']['subject_parts'].split()
+        except KeyError:
+            parts = ['component', 'verb']
+
+        subject = self.commit.subject()
+        if has_component(subject):
+            component = parse_component(subject)
+            if component and not is_hex(component):
+                if 'modules-component' in parts:
+                    modules = self.commit.monorepo_modules()
+                    if not modules or component in modules:
+                        subject = remove_component(subject)
+                elif 'component' not in parts:
+                    subject = remove_component(subject)
+
+        if 'icon-or-verb' in parts:
+            if self.icon[1] != '  ':
+                subject = remove_verb(subject)
+        elif 'verb' not in parts:
+            subject = remove_verb(subject)
+
+        return subject
 
     @property
     def type(self):
-        color = vcs.CONFIG['history']['type_color']
-        level = self.commit.level * '￨ '
+        level = self.commit.level * '│ '
         _type = level + self.commit.icon + self.commit.arrows
-        return (color, _type)
+        return _type
 
-    @functools.lru_cache()
-    def branches(self) -> List[Tuple[str, str]]:
-        color = vcs.CONFIG['history']['branches_color']
-        branches = self.commit.branches
-        branch_tupples = [[('', ' '), (color, '«%s»' % name)]
-                          for name in branches
-                          if not name.startswith('patches/')]
-        return list(itertools.chain(*branch_tupples))
+
+def format_branches(branches) -> List[Tuple[str, str]]:
+    color = vcs.CONFIG['history']['branches_color']
+    branch_tupples = [[('', ' '), (color, '«%s»' % name)] for name in branches
+                      if not name.startswith('patches/')]
+    return list(itertools.chain(*branch_tupples))
 
 
 def highlight_substring(search: SearchState,
@@ -153,14 +257,32 @@ def highlight_substring(search: SearchState,
 
 class History(UIContent):
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, repo: Repo) -> None:
+    def __init__(self, arguments: dict) -> None:
+        try:
+            self.path, self.revision, self.files = parse_args(**arguments)
+            repo = Repo(path=self.path)
+
+            path = repo.working_dir.replace(os.path.expanduser('~'), '~', 1)
+            revision = self.revision[0]
+            if self.revision == 'HEAD':
+                revision = repo._nrepo.head.ref.name
+            title = '%s \uf418 %s' % (path.rstrip('/'), revision)
+
+            shortcuts.set_title('%s - Git Log Viewer' % title)
+        except NoRevisionMatches:
+            print('No revisions match the given arguments.', file=sys.stderr)
+            sys.exit(1)
+        except NoPathMatches:
+            print("No paths match the given arguments.", file=sys.stderr)
+            sys.exit(1)
+
         self.date_max_len = 0
         self.name_max_len = 0
         self._repo = repo
-        self.line_count = len(list(self._repo.walker()))
+        self.line_count = self._repo.count_commits(self.revision[0])
         self.commit_list: List[Commit] = []
+        self.log_entry_list: List[Commit] = []
         self.search_state: Optional[SearchState] = None
-        self.walker = self._repo.walker()
         self._search_thread: Optional[Thread] = None
         super().__init__(line_count=self.line_count,
                          get_line=self.get_line,
@@ -171,10 +293,10 @@ class History(UIContent):
                      search_state: SearchState,
                      include_current_position=True,
                      count=1):
-        if self._search_thread is not None and self._search_thread.isAlive():
+        if self._search_thread is not None and self._search_thread.is_alive():
             try:
                 self._search_thread._stop()  # pylint: disable=protected-access
-            except Exception:  # pylint: disable=broad-except
+            except Exception:  # nosec pylint: disable=broad-except
                 pass
             finally:
                 STATUS.clear()
@@ -219,7 +341,9 @@ class History(UIContent):
                     commit = self.commit_list[index]
 
                 if needle in commit.short_id() or needle in commit.subject() \
-                        or needle in commit.short_author_name() or needle in commit.modules():
+                        or needle in commit.author_name() \
+                        or needle in commit.monorepo_modules() \
+                        or any(needle in haystack for haystack in commit.branches):
                     new_position = index
                     break
 
@@ -230,7 +354,8 @@ class History(UIContent):
             while index >= 0:
                 commit = self.commit_list[index]
                 if needle in commit.short_id() or needle in commit.subject() \
-                        or needle in commit.short_author_name() or needle in commit.modules():
+                        or needle in commit.author_name() \
+                        or needle in commit.monorepo_modules():
                     new_position = index
                     break
 
@@ -254,17 +379,24 @@ class History(UIContent):
         return self._render_commit(commit, line_number)
 
     def _render_commit(self, commit: Commit, line_number: int) -> List[tuple]:
-        entry = LogEntry(commit)
+        colors = vcs.CONFIG['history']
+        try:
+            entry = proxies.ColorProxy(self.log_entry_list[line_number],
+                                       colors)
+        except KeyError:
+            self.log_entry_list[line_number] = LogEntry(
+                commit, self._repo.working_dir)
+            entry = proxies.ColorProxy(self.log_entry_list[line_number],
+                                       colors)
+
         _id = entry.short_id
         author_date = (entry.author_date[0],
                        entry.author_date[1].ljust(self.date_max_len, " "))
         author_name = (entry.author_name[0],
                        entry.author_name[1].ljust(self.name_max_len, " "))
-        _type = entry.type
         module = entry.modules
-        icon = entry.icon
         subject = entry.subject
-        branches = entry.branches()
+        branches = format_branches(commit.branches)
 
         if self.search_state and self.search_state.text in _id[1]:
             _id = highlight_substring(self.search_state, _id)
@@ -285,7 +417,10 @@ class History(UIContent):
             author_name = ('italic ' + author_name[0], author_name[1])
             author_date = ('italic ' + author_date[0], author_date[1])
 
-        tmp = [_id, author_date, author_name, icon, _type, module, subject]
+        tmp = [
+            _id, author_date, author_name, entry.icon, entry.type, module,
+            subject
+        ]
         result: List[tuple] = []
         for sth in tmp:
             if isinstance(sth, tuple):
@@ -319,6 +454,7 @@ class History(UIContent):
         for _ in commit.child_log():
             cur_commit = self.commit_list[line_number]
             del self.commit_list[line_number]
+            del self.log_entry_list[line_number]
             if isinstance(cur_commit, Foldable) and not cur_commit.is_folded:
                 self._fold(line_number, cur_commit)
             self.line_count -= 1
@@ -329,11 +465,13 @@ class History(UIContent):
         commit.unfold()
         index = 1
         for _ in commit.child_log():
-            if len(_.author_date()) > self.date_max_len:
-                self.date_max_len = len(_.author_date())
-            if len(_.short_author_name()) > self.name_max_len:
-                self.name_max_len = len(_.short_author_name())
+            entry = LogEntry(_, self._repo.working_dir)
+            if len(entry.author_date) > self.date_max_len:
+                self.date_max_len = len(entry.author_date)
+            if len(entry.author_name) > self.name_max_len:
+                self.name_max_len = len(entry.author_name)
             self.commit_list.insert(line_number + index, _)
+            self.log_entry_list.insert(line_number + index, entry)
             index += 1
 
         self.line_count += index
@@ -342,29 +480,27 @@ class History(UIContent):
         if amount <= 0:
             raise ValueError('Amount must be ≤ 0')
 
-        result = 0
-        for _ in range(0, amount):
-            try:
-                commit: Commit = next(self.walker)  # type: ignore
-            except Exception:  # pylint: disable=broad-except
-                return result
-            if not commit:
-                break
-
+        commits = list(
+            self._repo.iter_commits(self.revision[0],
+                                    self.files,
+                                    skip=len(self.commit_list),
+                                    max_count=amount))
+        for commit in commits:
             self.commit_list.append(commit)
-            result += 1
-            if len(commit.author_date()) > self.date_max_len:
-                self.date_max_len = len(commit.author_date())
-            if len(commit.short_author_name()) > self.name_max_len:
-                self.name_max_len = len(commit.short_author_name())
-        return result
+            entry = LogEntry(commit, self._repo.working_dir)
+            self.log_entry_list.append(entry)
+            if len(entry.author_date) > self.date_max_len:
+                self.date_max_len = len(entry.author_date)
+            if len(entry.author_name) > self.name_max_len:
+                self.name_max_len = len(entry.author_name)
+        return len(commits)
 
 
 class HistoryControl(BufferControl):
     def __init__(self, search_buffer_control: SearchBufferControl,
-                 key_bindings: Optional[KeyBindings], repo: Repo) -> None:
+                 key_bindings: Optional[KeyBindings], arguments: dict) -> None:
         buffer = Buffer(name='history')
-        self.content = History(repo)
+        self.content = History(arguments)
         buffer.apply_search = self.content.apply_search  # type: ignore
         super().__init__(buffer=buffer,
                          search_buffer_control=search_buffer_control,
@@ -471,11 +607,11 @@ class HistoryControl(BufferControl):
 
 
 class HistoryContainer(HSplit):
-    def __init__(self, key_bindings, repo, right_margins=None):
+    def __init__(self, key_bindings, arguments, right_margins=None):
         search = SearchToolbar(vi_mode=True)
         log_view = HistoryControl(search.control,
                                   key_bindings=key_bindings,
-                                  repo=repo)
+                                  arguments=arguments)
         window = Window(content=log_view, right_margins=right_margins)
         super().__init__([window, search, STATUS_WINDOW])
 

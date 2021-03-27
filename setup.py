@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="git-log-viewer",
-    version="1.5.0",
+    version="1.6.0",
     python_requires='>=3.6',
     author="Bahtiar `kalkin` Gadimov",
     author_email="bahtiar@gadimov.de",
@@ -29,7 +29,7 @@ setuptools.setup(
         ],
     },
     install_requires=[
-        'pygit2 >= 0.28.0', 'prompt_toolkit >= 2.0, <4.0',
+        'GitPython >= 3.1.11', 'prompt_toolkit >= 2.0, <4.0',
         'Babel >= 2.5.1, <3.0', 'certifi', 'urllib3', 'docopt',
         'pykka >= 2.0.0', 'pygments >= 2.6.0', 'xdg >= 4.0.0'
     ],

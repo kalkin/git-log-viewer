@@ -24,11 +24,13 @@ import netrc
 import os
 import pathlib
 import re
+import sys
 from datetime import datetime
 from time import time
 from typing import Any, Optional, Tuple
 
 import certifi
+import git
 import urllib3  # type: ignore
 
 LOG = logging.getLogger('glv')
@@ -63,10 +65,14 @@ class Cache:
 
 
 class Provider():
-    def __init__(self, repo, cache: Cache) -> None:
+    def __init__(self, repo: git.Repo, cache: Cache) -> None:
         self._cache = cache
-        self._repo = repo
-        self._url = urllib3.util.parse_url(self._repo.remotes['origin'].url)
+        if isinstance(repo, str):
+            url = repo
+        else:
+            url = repo.remote().url
+
+        self._url = urllib3.util.parse_url(url)
         self.auth_failed = False
         self._http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED',
                                          ca_certs=certifi.where())
@@ -85,6 +91,9 @@ class Provider():
         try:
             auth_store = netrc.netrc()
             auth_tupple = auth_store.authenticators(self._url.host)
+        except netrc.NetrcParseError as exc:
+            print(str(exc), file=sys.stderr)
+            auth_tupple = None
         except FileNotFoundError:
             auth_tupple = None
 
@@ -123,10 +132,13 @@ class GitHub(Provider):
     def enabled(repo) -> bool:
         result = False
         try:
-            if repo.remotes:
-                url = urllib3.util.parse_url(repo.remotes['origin'].url)
-                result = url.hostname == 'github.com'
-        except Exception:  # pylint: disable=broad-except
+            if isinstance(repo, str):
+                _url = repo
+            else:
+                _url = repo.remotes().url
+            url = urllib3.util.parse_url(_url)
+            result = url.hostname == 'github.com'
+        except Exception:  # nosec pylint: disable=broad-except
             pass
         LOG.debug('github-api: enabled %s', result)
         return result
@@ -204,10 +216,10 @@ class Atlassian(Provider):
     @staticmethod
     def enabled(repo) -> bool:
         try:
-            if repo.remotes:
-                url = urllib3.util.parse_url(repo.remotes['origin'].url)
+            if repo.remotes():
+                url = urllib3.util.parse_url(repo.remotes().url)
                 return url.hostname.startswith('bitbucket')
-        except Exception:  # pylint: disable=broad-except
+        except Exception:  # nosec pylint: disable=broad-except
             pass
         return False
 

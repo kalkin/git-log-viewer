@@ -20,22 +20,26 @@
 
 ASCII = [
     (r'^Revert:?\s*', 'R '),
-    (r'^fixup!\s+', 'f '),
-    (r'^(hot|bug)?fix(ing|ed)?(\(.+\))?[\/:\s]+', 'B '),  # B for bug
+    (r'^fixup!\s+', 'F '),
+    (r'^(hot|bug)?fix(ing|ed)?(\(.+\))?[\/:\s]+', 'f '),  # B for bug
     (r'^add(ed)?(:|\s)', '+ '),
     (r'^feat:?\s*', '+ '),
     (r'^build:?\s*', 'b '),
     (r'^doc(s|umentation)?:?\s*', 'D '),
     (r'^style:?\s*', 's '),
     (r'^test(\(.+\))?:?\s*', 'T '),
+    (r'^improvement:?\s*', '* '),
+    (r'^refactor:?\s*', '8 '),
 ]
 
 NERDFONT = [
     (r'^Revert:?\s*', ' '),
+    (r'^archive:?\s*', '\uf53b '),
+    (r'^issue:?\s*', '\uf145 '),
     (r'^BREAKING CHANGE:?\s*', '⚠ '),
     (r'^fixup!\s+', '\uf0e3 '),
     (r'^ADD:\s?[a-z0-9]+', ' '),
-    (r'^ref(actor)?:?\s*', '⮔ '),
+    (r'^ref(actor)?:?\s*', '↺ '),
     (r'^lang:?\s*', '\ufac9'),
     (r'^deps(\(.+\))?:?\s*', '\uf487 '),
     (r'^config:?\s*', '\uf462 '),
@@ -52,7 +56,7 @@ NERDFONT = [
     (r'^(release|bump):?\s*', '\uf412 '),
     (r'^build:?\s*', '🔨'),
     (r'.*\bchangelog\b.*', '✎ '),
-    (r'^refactor:?\s*', '⮔ '),
+    (r'^refactor:?\s*', '↺ '),
     (r'^.* Import .*', '⮈ '),
     (r'^Split .*', '\uf403 '),
     (r'^Remove:?\s+.*', '\uf48e '),

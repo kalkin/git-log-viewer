@@ -21,14 +21,16 @@
 """glv - Git Log Viewer a TUI application with support for folding merges
 
 Usage:
-    glv [-w DIR|--workdir=DIR] [REVISION] [-d | --debug] [[--] <path>...]
+    glv [-w DIR|--workdir=DIR] [-d | --debug] [(--all|<REVISION>)...] [--] [<path>...]
     glv --version
 
 Options:
-    REVISION                A branch, tag or commit [default: HEAD]
     -w DIR, --workdir=DIR   Directory where the git repository is
-    -d --debug              Enable sending debuggin output to journalctl
+    -d --debug              Enable sending debugging output to journalctl
                             (journalctl --user -f)
+    --all                   show all branches
+Arguments:
+    REVISION                A branch, tag or commit [default: HEAD]
 """  # pylint: disable=missing-docstring,fixme,global-statement
 
 import logging
@@ -52,12 +54,31 @@ from prompt_toolkit.styles import style_from_pygments_cls
 from pygments.style import Style
 from pygments.styles.solarized import SolarizedDarkStyle
 
-from glv import NoPathMatches, NoRevisionMatches
 from glv.ui.diff_view import DiffView
 from glv.ui.history import HistoryContainer
-from glv.utils import repo_from_args, screen_height, screen_width
+from glv.utils import screen_height, screen_width
 
-ARGUMENTS = docopt(__doc__, version='v1.4.0', options_first=True)
+
+def parse_args() -> dict:
+    args = sys.argv[1:]
+
+    paths = []
+    try:
+        dash_dash_idx = args.index('--')
+        try:
+            paths = args[dash_dash_idx + 1:]
+        except IndexError:
+            pass
+        args = args[:dash_dash_idx]
+    except ValueError:
+        pass
+
+    result = docopt(__doc__, argv=args, version='v1.4.0', options_first=True)
+    result['<path>'] += paths
+    return result
+
+
+ARGUMENTS = parse_args()
 DEBUG = ARGUMENTS['--debug']
 
 LOG = logging.getLogger('glv')
@@ -68,7 +89,8 @@ if DEBUG:
     try:
 
         def add_journal_handler():
-            from systemd.journal import JournalHandler  # pylint: disable=import-outside-toplevel
+            from systemd.journal import \
+                JournalHandler  # pylint: disable=import-outside-toplevel
             journald_handler = JournalHandler()
             # set a formatter to include the level name
             journald_handler.setFormatter(
@@ -89,16 +111,6 @@ if DEBUG:
 KB = KeyBindings()
 KD = KeyBindings()
 KG = KeyBindings()
-
-try:
-    REPO = repo_from_args(**ARGUMENTS)
-    shortcuts.set_title('%s - Git Log Viewer' % REPO)
-except NoRevisionMatches:
-    print('No revisions match the given arguments.', file=sys.stderr)
-    sys.exit(1)
-except NoPathMatches:
-    print("No paths match the given arguments.", file=sys.stderr)
-    sys.exit(1)
 
 
 class MyMargin(Margin):
@@ -129,7 +141,7 @@ MARGINS = [
 DIFF_CONTAINER = ConditionalContainer(DiffView(key_bindings=KD),
                                       filter=diff_visible)
 
-HISTORY_CONTAINER = HistoryContainer(KB, REPO, right_margins=MARGINS)
+HISTORY_CONTAINER = HistoryContainer(KB, ARGUMENTS, right_margins=MARGINS)
 
 
 def get_container():

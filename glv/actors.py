@@ -19,6 +19,7 @@
 #
 import logging
 
+import git
 import pykka
 from prompt_toolkit.application import get_app
 
@@ -44,3 +45,30 @@ class ProviderActor(pykka.ThreadingActor):
                 get_app().invalidate()
 
         return message
+
+
+class ModuleActor(pykka.ThreadingActor):
+    def __init__(self, working_dir: str, modules: list[str] = None):
+        super().__init__()
+        self._cache = {}
+        self.git_cmd = git.cmd.Git(working_dir=working_dir)
+        self.modules = modules or []
+        self.use_daemon_thread = True
+
+    def on_receive(self, message: tuple[str, str]) -> list[str]:
+        changed = self.git_cmd.diff_tree(message[0],
+                                         message[1],
+                                         "--",
+                                         *self.modules,
+                                         name_only=True,
+                                         no_renames=True,
+                                         no_color=True).splitlines()
+        result: list[str] = []
+        for directory in sorted(self.modules, reverse=True):
+            for _file in changed:
+                if _file.startswith(directory):
+                    result.append(directory)
+                    break
+        get_app().invalidate()
+        LOG.warn("Found changes %s", result)
+        return result
