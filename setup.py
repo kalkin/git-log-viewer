@@ -1,4 +1,4 @@
-""" git-log-viewer package specification """
+""" glv package specification """
 
 import setuptools
 
@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
     LONG_DESCRIPTION = fh.read()
 
 setuptools.setup(
-    name="git-log-viewer",
+    name="glv",
     version="1.6.0",
     python_requires='>=3.6',
     author="Bahtiar `kalkin` Gadimov",
