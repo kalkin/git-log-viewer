@@ -1,1 +1,4 @@
 include docs/glv.1
+include requirements.txt
+include test-requirements.txt
+recursive-include features/

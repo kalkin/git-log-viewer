@@ -1,44 +1,51 @@
-""" glv package specification """
+#!/usr/bin/env python
+''' Setup script '''
 
-import setuptools
+from setuptools import find_packages, setup
 
-with open("README.md", "r") as fh:
-    LONG_DESCRIPTION = fh.read()
+with open('requirements.txt') as req_file:
+    REQUIREMENTS = req_file.read()
 
-setuptools.setup(
+with open('test-requirements.txt') as req_file:
+    TEST_REQUIREMENTS = req_file.read()
+
+setup(
     name="glv",
-    version="1.6.0",
-    python_requires='>=3.6',
-    author="Bahtiar `kalkin` Gadimov",
+    author="Bahtiar `kalkin-` Gadimov",
     author_email="bahtiar@gadimov.de",
-    description="A git log viewer with folding merges support",
+    python_requires='>=3.7',
     url="https://github.com/kalkin/git-log-viewer",
-    long_description=LONG_DESCRIPTION,
-    long_description_content_type="text/markdown",
-    packages=setuptools.find_packages(),
-    data_files=[('man/man1', ['docs/glv.1'])],
+    classifiers=[
+        "Operating System :: POSIX",
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+):',  # noqa: E501
+        'Topic :: Software Development :: Version Control :: Git'
+    ],
+    description="git log viewer with foling & unfolding merges support",
+    keywords="git GitPython tig tui lazygit",
+    data_files=[
+        ('man/man1', ['docs/glv.1'])
+    ],
+    long_description=
+    '''An alternative to `tig(1)`/`lazygit(1) which supports folding merges and is expandable via plugins. The application can resolve the default merge titles done by using GitHub or Bitbucket to the actual pull request names.''',
+    long_description_content_type='text/markdown',
+    install_requires=REQUIREMENTS,
+    test_require=TEST_REQUIREMENTS,
     entry_points={
-        'console_scripts': ['glv=glv.main:cli'],
+        'console_scripts': [
+            'glv=glv.main:cli',
+        ],
         'glv_providers': [
             'atlassian=glv.providers:Atlassian',
             'github=glv.providers:GitHub',
         ],
         'glv_icons': [
-            'ascii=glv.icon:ASCII',
-            'nerdfont=glv.icon:NERDFONT',
+            'ascii=glv.icons:ASCII',
+            'nerdfont=glv.icons:NERDFONT',
         ],
     },
-    install_requires=[
-        'GitPython >= 3.1.11', 'prompt_toolkit >= 2.0, <4.0',
-        'Babel >= 2.5.1, <3.0', 'certifi', 'urllib3', 'docopt',
-        'pykka >= 2.0.0', 'pygments >= 2.6.0', 'xdg >= 4.0.0'
-    ],
-    tests_require=['aloe >= 0.1.19, <= 0.2.0'],
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        # pylint: disable=line-too-long
-        "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+):",  # noqa: E501
-        "Operating System :: POSIX",
-        "Topic :: Software Development :: Version Control :: Git",
-    ],
-)
+    packages=find_packages(),
+    version="2.0.0")
