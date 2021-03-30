@@ -54,7 +54,8 @@ def find_subtrees(items):
 @functools.lru_cache()
 def subtree_config_files(repo: git.Repo) -> List[str]:
     ''' Return all the `.gitsubtree` files from a repository using git(1)‼ '''
-    return [x.path for x in find_subtrees(repo.head.commit.tree)]
+    git_cmd = git.cmd.Git(working_dir=repo.working_dir)
+    return git_cmd.ls_files('--', '*.gitsubtrees').splitlines()
 
 
 @functools.lru_cache()
