@@ -22,46 +22,18 @@ import json
 import logging
 import netrc
 import os
-import pathlib
 import re
 import sys
 from datetime import datetime
 from time import time
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 import certifi
 import git
 import urllib3  # type: ignore
+from .cache import Cache
 
 LOG = logging.getLogger('glv')
-
-
-class Cache:
-    def __init__(self, file_path: str) -> None:
-        self._storage: dict = {}
-        cache_dir = os.path.dirname(file_path)
-        self._cache_file = file_path
-        self._ro_backend = False
-
-        try:
-            pathlib.Path(cache_dir).mkdir(parents=True, exist_ok=True)
-            if os.path.isfile(file_path):  # restore cache
-                with open(file_path, encoding='utf-8') as data_file:
-                    self._storage = json.loads(data_file.read())
-        except PermissionError:
-            LOG.warning('Read only git-dir, no data will be cached')
-            self._ro_backend = True
-        except json.decoder.JSONDecodeError as exc:
-            LOG.warning('Failed to parse %s: %s', data_file.name, exc.msg)
-
-    def __getitem__(self, key) -> Any:
-        return self._storage[key]
-
-    def __setitem__(self, key, value):
-        self._storage[key] = value
-        if not self._ro_backend:
-            with open(self._cache_file, 'w') as outfile:
-                json.dump(self._storage, outfile)
 
 
 class Provider():
