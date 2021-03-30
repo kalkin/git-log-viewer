@@ -115,7 +115,7 @@ class DiffControl(BufferControl):
         monorepo_modules = changes.commit_modules(commit)
 
         if monorepo_modules:
-            modules = ', '.join(commit.modules())
+            modules = ', '.join(monorepo_modules)
             width = 70
             if screen_width() < width:
                 width = screen_width()

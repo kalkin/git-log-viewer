@@ -51,8 +51,7 @@ class History(UIContent):
             repo = Repo(path=self.path)
 
             path = repo.working_dir.replace(os.path.expanduser('~'), '~', 1)
-            self.working_dir = repo.working_dir.replace(
-                os.path.expanduser('~'), '~', 1)
+            self.working_dir = repo.working_dir
             revision = self.revision[0]
             if self.revision == 'HEAD':
                 revision = repo._nrepo.head.ref.name
@@ -172,7 +171,7 @@ class History(UIContent):
             entry.search_state = self.search_state
         except KeyError:
             self.log_entry_list[line_number] = LogEntry(
-                commit, self._repo.working_dir, self.search_state)
+                commit, self.working_dir, self.search_state)
             entry = self.log_entry_list[line_number]
             entry.search_state = self.search_state
 
@@ -218,8 +217,8 @@ class History(UIContent):
 
     def _unfold(self, line_number: int, commit: Commit) -> Any:
         index = 1
-        for _ in child_history(self._repo.working_dir, commit):
-            entry = LogEntry(_, self._repo.working_dir, self.search_state)
+        for _ in child_history(self.working_dir, commit):
+            entry = LogEntry(_, self.working_dir, self.search_state)
             if len(entry.author_rel_date) > self.date_max_len:
                 self.date_max_len = len(entry.author_rel_date)
             if len(entry.author_name) > self.name_max_len:
@@ -241,7 +240,7 @@ class History(UIContent):
             paths=self.files)
         for commit in commits:
             self.commit_list.append(commit)
-            entry = LogEntry(commit, self._repo.working_dir, self.search_state)
+            entry = LogEntry(commit, self.working_dir, self.search_state)
             self.log_entry_list.append(entry)
             if len(entry.author_rel_date) > self.date_max_len:
                 self.date_max_len = len(entry.author_rel_date)
