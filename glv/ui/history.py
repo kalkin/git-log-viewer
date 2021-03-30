@@ -23,11 +23,10 @@ import logging
 import os
 import re
 import sys
-from datetime import datetime, timezone
+import textwrap
 from threading import Thread
 from typing import Any, List, Optional, Tuple
 
-import babel.dates
 import pkg_resources
 from prompt_toolkit import shortcuts
 from prompt_toolkit.buffer import Buffer
@@ -105,29 +104,7 @@ class LogEntry:
 
     @property
     def author_date(self) -> str:
-        delta = datetime.now(timezone.utc) - datetime.fromisoformat(
-            self.commit.author_date)
-        _format = vcs.CONFIG['history']['author_date_format']
-        try:
-            return babel.dates.format_timedelta(delta, format=_format)
-        except KeyError as exc:
-            if delta.total_seconds() < 60:
-                return f'{round(delta.total_seconds())} s'
-            raise exc
-
-    @property
-    def committer_date(self) -> str:
-        ''' Returns relative commiter date '''
-        # pylint: disable=invalid-name
-        delta = datetime.now(timezone.utc) - datetime.fromisoformat(
-            self.commit.committer_date)
-        _format = vcs.CONFIG['history']['author_date_format']
-        try:
-            return babel.dates.format_timedelta(delta, format=_format)
-        except KeyError as e:
-            if delta.total_seconds() < 60:
-                return f'{round(delta.total_seconds())} s'
-            raise e
+        return self.commit.author_rel_date
 
     @property
     def modules(self) -> Tuple[str, str]:

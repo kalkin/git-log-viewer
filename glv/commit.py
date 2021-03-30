@@ -21,10 +21,13 @@
 
 import logging
 from collections import namedtuple
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
+import babel
 import git
+
+from glv import vcs
 
 LOG = logging.getLogger('glv')
 
@@ -36,6 +39,7 @@ Commit = namedtuple(
         'author_name',
         'author_email',
         'author_date',
+        'author_rel_date',
         'committer_name',
         'committer_email',
         'committer_date',
@@ -108,6 +112,7 @@ def parse_commit(working_dir: str,
             x.decode() for x in data_line.split(b'\0')
         ]
 
+    auth_rel_date = _to_rel_date(datetime.fromisoformat(auth_date))
     is_head = False
     references = []
     branches = []
@@ -157,6 +162,7 @@ def parse_commit(working_dir: str,
                   auth_name,
                   auth_email,
                   auth_date,
+                  auth_rel_date,
                   com_name,
                   com_email,
                   com_date,
@@ -255,6 +261,18 @@ def child_history(working_dir: str, commit: Commit) -> list[Commit]:
         result.append(commit_link)
 
     return result
+
+
+def _to_rel_date(date) -> str:
+    now = datetime.now(timezone.utc)
+    delta = now - date
+    _format = vcs.CONFIG['history']['author_date_format']
+    try:
+        return babel.dates.format_timedelta(delta, format=_format)
+    except KeyError as exc:
+        if delta.total_seconds() < 60:
+            return f'{round(delta.total_seconds())} s'
+        raise exc
 
 
 def is_folded(commit_list: list[Commit], pos: int) -> bool:
