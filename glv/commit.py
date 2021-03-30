@@ -44,6 +44,7 @@ Commit = namedtuple(
         'committer_email',
         'committer_date',
         'subject',
+        'type_icon',
         # optional
         'above',
         'bellow',
@@ -157,6 +158,11 @@ def parse_commit(working_dir: str,
             children = parents[1:]
             is_merge = True
 
+    type_icon_level = ''
+    if level > 0:
+        type_icon_level = level * '│ '
+    type_icon = type_icon_level + _type_icon(bellow, is_commit_link)
+
     return Commit(oid,
                   short_id,
                   auth_name,
@@ -167,6 +173,7 @@ def parse_commit(working_dir: str,
                   com_email,
                   com_date,
                   subject,
+                  type_icon,
                   above=above,
                   bellow=bellow,
                   level=level,
@@ -289,3 +296,12 @@ def is_folded(commit_list: list[Commit], pos: int) -> bool:
     actual = commit_list[pos + 1].level
     expected = commit_list[pos].level
     return expected == actual
+
+
+def _type_icon(bellow: Commit, is_commit_link: bool) -> str:
+    ''' Return the graph icon '''
+    if bellow is None:
+        return "◉"
+    if is_commit_link:
+        return "⭞"
+    return "●"

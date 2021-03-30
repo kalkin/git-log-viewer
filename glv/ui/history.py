@@ -191,19 +191,7 @@ class LogEntry:
 
     @property
     def type(self):
-        ''' Return the graph icon '''
-        if self.commit.bellow is None:
-            result = "◉"
-        elif self.commit.is_commit_link:
-            result = "⭞"
-        else:
-            result = "●"
-
-        level = ''
-        if self.commit.level > 0:
-            level = self.commit.level * '│ '
-
-        return level + result + self._arrows
+        return self.commit.type_icon + self._arrows
 
     @property
     def _arrows(self) -> str:
