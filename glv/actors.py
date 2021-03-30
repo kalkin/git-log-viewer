@@ -56,19 +56,19 @@ class ModuleActor(pykka.ThreadingActor):
         self.use_daemon_thread = True
 
     def on_receive(self, message: tuple[str, str]) -> list[str]:
-        changed = self.git_cmd.diff_tree(message[0],
-                                         message[1],
-                                         "--",
-                                         *self.modules,
-                                         name_only=True,
-                                         no_renames=True,
-                                         no_color=True).splitlines()
-        result: list[str] = []
+        bellow, oid = message
+        revision = '%s..%s' % (bellow, oid)
+        changed = self.git_cmd.diff(revision,
+                                    '--',
+                                    *self.modules,
+                                    name_only=True,
+                                    no_renames=True,
+                                    no_color=True).splitlines()
+        result = []
         for directory in sorted(self.modules, reverse=True):
             for _file in changed:
                 if _file.startswith(directory):
                     result.append(directory)
                     break
-        if result:
-            get_app().invalidate()
+        get_app().invalidate()
         return result

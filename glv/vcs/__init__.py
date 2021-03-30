@@ -52,23 +52,22 @@ def find_subtrees(items):
 
 
 @functools.lru_cache()
-def subtree_config_files(repo: git.Repo) -> List[str]:
+def subtree_config_files(working_dir: str) -> List[str]:
     ''' Return all the `.gitsubtree` files from a repository using git(1)‼ '''
-    git_cmd = git.cmd.Git(working_dir=repo.working_dir)
+    git_cmd = git.cmd.Git(working_dir=working_dir)
     return git_cmd.ls_files('--', '*.gitsubtrees').splitlines()
 
 
 @functools.lru_cache()
-def modules(repo: git.Repo) -> Dict[str, str]:
+def modules(working_dir: str) -> Dict[str, str]:
     ''' Return list of all .gitsubtrees modules in repository '''
 
-    files = subtree_config_files(repo)
+    files = subtree_config_files(working_dir)
     LOG.debug("Found subtree config files: %s", files)
     result: Dict[str, str] = {}
     for _file in files:
         conf = configparser.ConfigParser()
-        workdir = repo.working_dir
-        conf.read(os.path.join(workdir, _file))
+        conf.read(os.path.join(working_dir, _file))
         path = ''
         if '/' in _file:
             parts = _file.split('/')[:-1]
@@ -135,6 +134,26 @@ def fetch_missing_data(commit: git.Commit, repo: git.Repo) -> bool:
     except subprocess.CalledProcessError:
         return False
     return True
+
+
+def changed_modules(workdir: str, oid: str, bellow: str,
+                    _modules: list[str]) -> list[str]:
+    ''' Return all changed modules between two commits '''
+    git_cmd = git.cmd.Git(workdir)
+    revision = '%s..%s' % (bellow, oid)
+    changed = git_cmd.diff(revision,
+                           '--',
+                           *_modules,
+                           name_only=True,
+                           no_renames=True,
+                           no_color=True).splitlines()
+    result = []
+    for directory in sorted(_modules, reverse=True):
+        for _file in changed:
+            if _file.startswith(directory):
+                result.append(directory)
+                break
+    return result
 
 
 def _config() -> configparser.ConfigParser:

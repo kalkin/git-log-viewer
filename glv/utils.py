@@ -18,17 +18,17 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 ''' A collection of useful functions '''
-import functools
 import os
 import sys
 
-import git
 import pykka
 from prompt_toolkit import __version__ as ptk_version
 from prompt_toolkit.data_structures import Size
 from prompt_toolkit.output.base import Output
 
 from glv import Commit, Repo, actors, vcs
+
+from .cache import Cache
 
 if ptk_version.startswith('3.'):
     PTK_VERSION = 3
@@ -76,53 +76,36 @@ def _screen_size() -> Size:
     return output.from_pty(sys.stdout).get_size()
 
 
-class Mailmap:
-    ''' Mailmap helper class '''  # pylint: disable=too-few-public-methods
-
-    def __init__(self, working_dir: str) -> None:
-        self._cmd = git.cmd.Git(working_dir)
-
-    @functools.lru_cache()
-    def name(self, name) -> str:
-        ''' Return name from mailmap file '''
-        return self._cmd.check_mailmap(name).partition('<')[0]
-
-
-_MAILMAP_INSTANCES: dict[str, Mailmap] = {}
-
-
-def mailmap(working_dir: str) -> Mailmap:
-    ''' Return the Mailmap instance for given working_dir '''
-    if working_dir not in _MAILMAP_INSTANCES:
-        _MAILMAP_INSTANCES[working_dir] = Mailmap(working_dir)
-    return _MAILMAP_INSTANCES[working_dir]
-
-
 class ModuleChanges:
     ''' Helper class for querying two trees have module changes.
         The query runs async and the results are cached.
-    '''
+    '''  # pylint: disable=too-few-public-methods
+
     def __init__(self, working_dir: str) -> None:
-        modules = vcs.modules(git.Repo(path=working_dir))
+        modules = vcs.modules(working_dir)
         self._actor = actors.ModuleActor.start(working_dir, modules)
         self._cache: dict[tuple(str, str), set[str]] = {}
+        cache_dir = os.path.join(working_dir, '.git', 'glv', 'modules.json')
+        self._file_cache: dict[tuple(str, str), set[str]] = Cache(cache_dir)
 
     def commit_modules(self, commit: Commit) -> list[str]:
         ''' Handy wrapper around `self.changed_modules` '''
         # pylint: disable=protected-access
-        if not commit._commit.parents:
+        if not commit.bellow:
             return []
 
         key = commit.oid
+        if key in self._file_cache:
+            return self._file_cache[key]
 
         if key not in self._cache:
-            oid1 = commit._commit.tree.hexsha
-            oid2 = commit._commit.parents[0].tree.hexsha
-            message = (oid1, oid2)
+            message = (commit.oid, commit.bellow)
             self._cache[key] = self._actor.ask(message, block=False)
 
         try:
-            return self._cache[key].get(0)
+            tmp = self._cache[key].get(0)
+            self._file_cache[key] = tmp
+            return tmp
         except pykka.Timeout:
             return []
 

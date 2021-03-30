@@ -22,6 +22,7 @@ import datetime
 import textwrap
 from typing import Optional
 
+import git
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import AnyFormattedText
@@ -33,7 +34,7 @@ from prompt_toolkit.widgets import Frame, SearchToolbar
 
 from glv import Commit
 from glv.lexer import COMMIT_LEXER
-from glv.utils import screen_height, screen_width
+from glv.utils import ModuleChanges, mod_changes, screen_height, screen_width
 
 LOCAL_TZ = datetime.datetime.now(datetime.timezone(
     datetime.timedelta(0))).astimezone().tzinfo
@@ -93,21 +94,27 @@ class DiffControl(BufferControl):
                          key_bindings=None,
                          search_buffer_control=search)
 
-    def show_diff(self, commit: Commit):
+    def show_diff(self, working_dir: str, commit: Commit):
         ''' Command diff view to show a diff '''
-        body: str = commit.diff()
+
+        git_cmd = git.cmd.Git()
+        body: str = git_cmd.diff('--stat', '-p', '-M', '--no-color',
+                                 '--full-index', commit.bellow, commit.oid)
         text = ""
 
         text += "Commit:     %s\n" % commit.oid
-        text += "Author:     %s\n" % commit.author_name()
+        text += "Author:     %s\n" % commit.author_name
         text += "AuthorDate: %s\n" % commit.author_date
 
-        if commit.committer_name() != commit.author_name():
-            text += "Committer:     %s\n" % commit.committer_name()
+        if commit.committer_name != commit.author_name:
+            text += "Committer:     %s\n" % commit.committer_name
         if commit.committer_date != commit.author_date:
-            text += "CommitDate: %s\n" % commit.committer_date()
+            text += "CommitDate: %s\n" % commit.committer_date
 
-        if commit.monorepo_modules():
+        changes: ModuleChanges = mod_changes(working_dir)
+        monorepo_modules = changes.commit_modules(commit)
+
+        if monorepo_modules:
             modules = ', '.join(commit.modules())
             width = 70
             if screen_width() < width:
@@ -119,12 +126,12 @@ class DiffControl(BufferControl):
                                     width=width)
             text += '\n'.join(wrapped) + '\n'
 
-        refs = ["«%s»" % name for name in commit.branches]
+        refs = ["«%s»" % name for name in commit.references if name != '']
         if refs:
             text += "Refs:       %s\n" % ", ".join(refs)
         # pylint: disable=protected-access
         text += "\n"
-        body_lines = commit._commit.message.replace('\r', '').split("\n")
+        body_lines = commit.subject.replace('\r', '').split("\n")
         text += " " + body_lines[0] + "\n"
         body_lines = body_lines[1:]
         if body_lines and body_lines[0] == '' and len(body_lines) == 1:

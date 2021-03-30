@@ -23,8 +23,7 @@ import logging
 import os
 import re
 import sys
-import textwrap
-from datetime import datetime
+from datetime import datetime, timezone
 from threading import Thread
 from typing import Any, List, Optional, Tuple
 
@@ -41,11 +40,11 @@ from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.widgets import SearchToolbar
 
-from glv import (Commit, CommitLink, Foldable, NoPathMatches,
-                 NoRevisionMatches, Repo, proxies, utils, vcs)
+from glv import NoPathMatches, NoRevisionMatches, Repo, proxies, utils, vcs
+from glv.commit import Commit, child_history, is_folded
 from glv.icon import ASCII
 from glv.ui.status import STATUS, STATUS_WINDOW
-from glv.utils import parse_args
+from glv.utils import ModuleChanges, mod_changes, parse_args
 
 LOG = logging.getLogger('glv')
 
@@ -102,13 +101,12 @@ def remove_verb(subject: str) -> bool:
 class LogEntry:
     def __init__(self, commit: Commit, working_dir: str) -> None:
         self.commit = commit
-        self._mailmap = utils.mailmap(working_dir)
-        self._modchanges = utils.mod_changes(working_dir)
+        self._working_dir = working_dir
 
     @property
     def author_date(self) -> str:
-        timestamp: int = self.commit.author_unixdate
-        delta = datetime.now() - datetime.fromtimestamp(timestamp)
+        delta = datetime.now(timezone.utc) - datetime.fromisoformat(
+            self.commit.author_date)
         _format = vcs.CONFIG['history']['author_date_format']
         try:
             return babel.dates.format_timedelta(delta, format=_format)
@@ -121,8 +119,8 @@ class LogEntry:
     def committer_date(self) -> str:
         ''' Returns relative commiter date '''
         # pylint: disable=invalid-name
-        timestamp: int = self.commit.committed_date
-        delta = datetime.now() - datetime.fromtimestamp(timestamp)
+        delta = datetime.now(timezone.utc) - datetime.fromisoformat(
+            self.commit.committer_date)
         _format = vcs.CONFIG['history']['author_date_format']
         try:
             return babel.dates.format_timedelta(delta, format=_format)
@@ -143,9 +141,10 @@ class LogEntry:
         except KeyError:
             modules_max_width = 35
 
-        modules = list(self._modchanges.commit_modules(self.commit))
+        changes: ModuleChanges = mod_changes(self._working_dir)
+        modules = changes.commit_modules(self.commit)
 
-        subject = self.commit.subject()
+        subject = self.commit.subject
 
         if config == 'modules-component' and not modules \
                 and has_component(subject):
@@ -168,9 +167,8 @@ class LogEntry:
 
     @property
     def author_name(self):
-        # width = vcs.CONFIG['history'].getint('author_name_width')
         width = 10
-        name = self._mailmap.name(self.commit.author_name())
+        name = self.commit.author_name
         tmp = textwrap.shorten(name, width=width, placeholder="…")
         if tmp == '…':
             return name[0:width - 1] + '…'
@@ -178,11 +176,11 @@ class LogEntry:
 
     @property
     def short_id(self):
-        return self.commit.short_id()
+        return self.commit.short_id
 
     @property
     def icon(self) -> Tuple[str, str]:
-        subject = self.commit.subject()
+        subject = self.commit.subject
         for (regex, icon) in icon_collection():
             if re.match(regex, subject, flags=re.I):
                 return icon
@@ -195,13 +193,12 @@ class LogEntry:
         except KeyError:
             parts = ['component', 'verb']
 
-        subject = self.commit.subject()
+        subject = self.commit.subject
         if has_component(subject):
             component = parse_component(subject)
             if component and not is_hex(component):
                 if 'modules-component' in parts:
-                    modules = list(self._modchanges.commit_modules(
-                        self.commit))
+                    modules = vcs.modules(self._working_dir)
                     if not modules or component in modules:
                         subject = remove_component(subject)
                 elif 'component' not in parts:
@@ -217,12 +214,39 @@ class LogEntry:
 
     @property
     def type(self):
-        level = self.commit.level * '│ '
-        _type = level + self.commit.icon + self.commit.arrows
-        return _type
+        ''' Return the graph icon '''
+        if self.commit.bellow is None:
+            result = "◉"
+        elif self.commit.is_commit_link:
+            result = "⭞"
+        else:
+            result = "●"
+
+        level = ''
+        if self.commit.level > 0:
+            level = self.commit.level * '│ '
+
+        return level + result + self._arrows
+
+    @property
+    def _arrows(self) -> str:
+        if self.commit.is_merge:
+            if self.commit.subject.startswith('Update :') \
+                    or ' Import ' in self.commit.subject:
+                if self.commit.is_fork_point:
+                    return "⇤┤"
+                return '⇤╮'
+            if self.commit.is_fork_point:
+                return "─┤"
+            return "─┐"
+        if self.commit.is_fork_point:
+            return "─┘"
+        return ''
 
 
 def format_branches(branches) -> List[Tuple[str, str]]:
+    if branches == ['']:
+        return []
     color = vcs.CONFIG['history']['branches_color']
     branch_tupples = [[('', ' '), (color, '«%s»' % name)] for name in branches
                       if not name.startswith('patches/')]
@@ -265,6 +289,8 @@ class History(UIContent):
             repo = Repo(path=self.path)
 
             path = repo.working_dir.replace(os.path.expanduser('~'), '~', 1)
+            self.working_dir = repo.working_dir.replace(
+                os.path.expanduser('~'), '~', 1)
             revision = self.revision[0]
             if self.revision == 'HEAD':
                 revision = repo._nrepo.head.ref.name
@@ -342,9 +368,8 @@ class History(UIContent):
 
                     commit = self.commit_list[index]
 
-                if needle in commit.short_id() or needle in commit.subject() \
-                        or needle in commit.author_name() \
-                        or needle in commit.monorepo_modules() \
+                if needle in commit.short_id or needle in commit.subject \
+                        or needle in commit.author_name \
                         or any(needle in haystack for haystack in commit.branches):
                     new_position = index
                     break
@@ -355,9 +380,8 @@ class History(UIContent):
                 index -= 1
             while index >= 0:
                 commit = self.commit_list[index]
-                if needle in commit.short_id() or needle in commit.subject() \
-                        or needle in commit.author_name() \
-                        or needle in commit.monorepo_modules():
+                if needle in commit.short_id() or needle in commit.subject \
+                        or needle in commit.author_name():
                     new_position = index
                     break
 
@@ -398,7 +422,7 @@ class History(UIContent):
                        entry.author_name[1].ljust(self.name_max_len, " "))
         module = entry.modules
         subject = entry.subject
-        branches = format_branches(commit.branches)
+        branches = format_branches(commit.references)
 
         if self.search_state and self.search_state.text in _id[1]:
             _id = highlight_substring(self.search_state, _id)
@@ -412,7 +436,7 @@ class History(UIContent):
         if self.search_state and self.search_state.text in subject[1]:
             subject = highlight_substring(self.search_state, subject)
 
-        if isinstance(commit, CommitLink):
+        if commit.is_commit_link:
             _id = ('italic ' + _id[0], _id[1])
             module = ('italic ' + module[0], module[1])
             subject = ('italic ' + subject[0], subject[1])
@@ -441,32 +465,27 @@ class History(UIContent):
 
     def toggle_fold(self, line_number):
         commit = self.commit_list[line_number]
-        if not isinstance(commit, Foldable):
+        if not commit.is_merge:
             return
 
-        if commit.is_folded:
+        if is_folded(self.commit_list, line_number):
             self._unfold(line_number, commit)
         else:
             self._fold(line_number + 1, commit)
 
-    def _fold(self, line_number: int, commit: Foldable) -> Any:
-        if commit.is_folded:
-            raise ValueError('Received an already folded commit')
-        commit.fold()
-        for _ in commit.child_log():
-            cur_commit = self.commit_list[line_number]
-            del self.commit_list[line_number]
-            del self.log_entry_list[line_number]
-            if isinstance(cur_commit, Foldable) and not cur_commit.is_folded:
-                self._fold(line_number, cur_commit)
-            self.line_count -= 1
+    def _fold(self, pos: int, commit: Commit) -> Any:
+        LOG.info('Expected level %s', commit.level)
+        for _, cur in enumerate(self.commit_list[pos:]):
+            LOG.info('Checking %s', cur)
+            if commit.level < cur.level:
+                del self.commit_list[pos]
+                del self.log_entry_list[pos]
+            else:
+                break
 
-    def _unfold(self, line_number: int, commit: Foldable) -> Any:
-        if not commit.is_folded:
-            raise ValueError('Received an already unfolded commit')
-        commit.unfold()
+    def _unfold(self, line_number: int, commit: Commit) -> Any:
         index = 1
-        for _ in commit.child_log():
+        for _ in child_history(self._repo.working_dir, commit):
             entry = LogEntry(_, self._repo.working_dir)
             if len(entry.author_date) > self.date_max_len:
                 self.date_max_len = len(entry.author_date)
@@ -482,11 +501,11 @@ class History(UIContent):
         if amount <= 0:
             raise ValueError('Amount must be ≤ 0')
 
-        commits = list(
-            self._repo.iter_commits(self.revision[0],
-                                    self.files,
-                                    skip=len(self.commit_list),
-                                    max_count=amount))
+        commits = self._repo.iter_commits(
+            rev_range=self.revision[0],
+            skip=len([x for x in self.commit_list if x.level == 0]),
+            max_count=amount,
+            paths=self.files)
         for commit in commits:
             self.commit_list.append(commit)
             entry = LogEntry(commit, self._repo.working_dir)
@@ -521,6 +540,10 @@ class HistoryControl(BufferControl):
 
     def current(self) -> Optional[Commit]:
         return self.content.current(self.current_line)
+
+    @property
+    def working_dir(self) -> str:
+        return self.content.working_dir
 
     def move_cursor_down(self):
         old_point = self.content.cursor_position
@@ -558,13 +581,13 @@ class HistoryControl(BufferControl):
 
     def is_folded(self, line_number: int) -> bool:
         commit = self.content.commit_list[line_number]
-        if isinstance(commit, Foldable):
+        if commit.is_merge:
             return commit.is_folded
         return False
 
     def is_foldable(self, line_number: int) -> bool:
         commit = self.content.commit_list[line_number]
-        return isinstance(commit, Foldable)
+        return commit.is_merge
 
     def is_child(self, line_number: int) -> bool:
         commit = self.content.commit_list[line_number]
@@ -583,12 +606,12 @@ class HistoryControl(BufferControl):
 
     def is_link(self, line_number: int) -> bool:
         commit = self.content.commit_list[line_number]
-        return isinstance(commit, CommitLink)
+        return commit.is_commit_link
 
     def go_to_link(self, line_number: int):
         commit = self.content.commit_list[line_number]
 
-        if not isinstance(commit, CommitLink):
+        if not commit.is_commit_link:
             raise ValueError('Expected CommitLinkt got %s' % commit)
 
         i = line_number + 1

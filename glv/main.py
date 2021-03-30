@@ -231,12 +231,13 @@ def tab(_: KeyPressEvent):
 def enter(_: KeyPressEvent):
     control = LAYOUT.current_control
     commit = control.current()
+    working_dir = control.working_dir
     if commit:
         global WINDOW_VISIBILITY
         WINDOW_VISIBILITY['diff'] = True
         buffer = LAYOUT.get_buffer_by_name('diff')
         LAYOUT.focus(buffer)
-        LAYOUT.current_control.show_diff(commit)
+        LAYOUT.current_control.show_diff(working_dir, commit)
 
 
 @KB.add('/')
