@@ -1,5 +1,8 @@
 import logging
+from functools import lru_cache
+
 LOG = logging.getLogger('glv')
+
 
 class BaseProxy:
     def __init__(self, objekt: object):
@@ -18,6 +21,7 @@ class ColorProxy(BaseProxy):
         super().__init__(objekt)
         self._colors = colors
 
+    @lru_cache
     def __getattr__(self, attr):
         key = '%s_color' % attr
         try:

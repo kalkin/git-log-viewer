@@ -19,6 +19,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 import itertools
+from functools import lru_cache
 import logging
 import os
 import re
@@ -143,6 +144,7 @@ class LogEntry:
         return text
 
     @property
+    @lru_cache
     def author_name(self):
         width = 10
         name = self.commit.author_name
@@ -156,6 +158,7 @@ class LogEntry:
         return self.commit.short_id
 
     @property
+    @lru_cache
     def icon(self) -> Tuple[str, str]:
         subject = self.commit.subject
         for (regex, icon) in icon_collection():
@@ -164,6 +167,7 @@ class LogEntry:
         return '  '
 
     @property
+    @lru_cache
     def subject(self) -> Tuple[str, str]:
         try:
             parts = vcs.CONFIG['history']['subject_parts'].split()
@@ -190,6 +194,7 @@ class LogEntry:
         return subject
 
     @property
+    @lru_cache
     def type(self):
         return self.commit.type_icon + self._arrows
 
