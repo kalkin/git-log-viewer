@@ -18,13 +18,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-import itertools
-from functools import lru_cache
 import logging
 import os
 import re
 import sys
 import textwrap
+from functools import lru_cache
 from threading import Thread
 from typing import Any, List, Optional, Tuple
 
@@ -32,7 +31,6 @@ import pkg_resources
 from prompt_toolkit import shortcuts
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.data_structures import Point
-from prompt_toolkit.formatted_text import StyleAndTextTuples
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import (BufferControl, Dimension, HSplit, UIContent,
                                    Window)
@@ -108,6 +106,10 @@ class LogEntry:
         return self.commit.author_rel_date
 
     @property
+    def references(self) -> str:
+        return self.commit.references
+
+    @property
     def modules(self) -> Tuple[str, str]:
         try:
             config = vcs.CONFIG['history']['modules_content']
@@ -142,6 +144,10 @@ class LogEntry:
         if len(text) > modules_max_width:
             text = ':(%d modules)' % len(modules)
         return text
+
+    @property
+    def is_commit_link(self) -> bool:
+        return self.commit.is_commit_link
 
     @property
     @lru_cache
@@ -212,43 +218,6 @@ class LogEntry:
         if self.commit.is_fork_point:
             return "─┘"
         return ''
-
-
-def format_branches(branches) -> List[Tuple[str, str]]:
-    if branches == ['']:
-        return []
-    color = vcs.CONFIG['history']['branches_color']
-    branch_tupples = [[('', ' '), (color, '«%s»' % name)] for name in branches
-                      if not name.startswith('patches/')]
-    return list(itertools.chain(*branch_tupples))
-
-
-def highlight_substring(search: SearchState,
-                        parts: Tuple[str, str]) -> StyleAndTextTuples:
-    needle: str = search.text
-    haystack = parts[1]
-    matches = list(re.finditer(re.escape(needle), haystack))
-    if not matches:
-        return parts
-
-    original_h = parts[0]
-    new_h = parts[0] + ' ansired bold'
-    cur = 0
-    result = []
-    if matches[0].start() == 0:
-        match = matches[0]
-        result = [(new_h, needle)]
-        cur = len(needle)
-        matches = matches[1:]
-
-    for match in matches:
-        result += [(original_h, haystack[cur:match.start()])]
-        result += [(new_h, haystack[match.start():match.end()])]
-        cur = match.end()
-
-    if cur < len(haystack):
-        result += [(original_h, haystack[cur:])]
-    return result
 
 
 class History(UIContent):
@@ -378,44 +347,18 @@ class History(UIContent):
         colors = vcs.CONFIG['history']
         try:
             entry = proxies.ColorProxy(self.log_entry_list[line_number],
-                                       colors)
+                                       colors, self.search_state,
+                                       self.date_max_len, self.name_max_len)
         except KeyError:
             self.log_entry_list[line_number] = LogEntry(
                 commit, self._repo.working_dir)
             entry = proxies.ColorProxy(self.log_entry_list[line_number],
-                                       colors)
-
-        _id = entry.short_id
-        author_date = (entry.author_date[0],
-                       entry.author_date[1].ljust(self.date_max_len, " "))
-        author_name = (entry.author_name[0],
-                       entry.author_name[1].ljust(self.name_max_len, " "))
-        module = entry.modules
-        subject = entry.subject
-        branches = format_branches(commit.references)
-
-        if self.search_state and self.search_state.text in _id[1]:
-            _id = highlight_substring(self.search_state, _id)
-
-        if self.search_state and self.search_state.text in module[1]:
-            module = highlight_substring(self.search_state, module)
-
-        if self.search_state and self.search_state.text in author_name[1]:
-            author_name = highlight_substring(self.search_state, author_name)
-
-        if self.search_state and self.search_state.text in subject[1]:
-            subject = highlight_substring(self.search_state, subject)
-
-        if commit.is_commit_link:
-            _id = ('italic ' + _id[0], _id[1])
-            module = ('italic ' + module[0], module[1])
-            subject = ('italic ' + subject[0], subject[1])
-            author_name = ('italic ' + author_name[0], author_name[1])
-            author_date = ('italic ' + author_date[0], author_date[1])
+                                       colors, self.search_state,
+                                       self.date_max_len, self.name_max_len)
 
         tmp = [
-            _id, author_date, author_name, entry.icon, entry.type, module,
-            subject
+            entry.short_id, entry.author_date, entry.author_name, entry.icon,
+            entry.type, entry.modules, entry.subject, entry.references
         ]
         result: List[tuple] = []
         for sth in tmp:
@@ -424,9 +367,6 @@ class History(UIContent):
             else:
                 result += sth
                 result += [('', ' ')]
-
-        if branches:
-            result += branches
 
         if line_number == self.cursor_position.y:
             result = [('reverse ' + x[0], x[1]) for x in result]
