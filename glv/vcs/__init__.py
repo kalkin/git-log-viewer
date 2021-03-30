@@ -60,7 +60,7 @@ def subtree_config_files(working_dir: str) -> List[str]:
 
 @functools.lru_cache()
 def modules(working_dir: str) -> Dict[str, str]:
-    ''' Return list of all .gitsubtrees modules in repository '''
+    ''' Return a dictionary of directories to module names '''
 
     files = subtree_config_files(working_dir)
     LOG.debug("Found subtree config files: %s", files)
