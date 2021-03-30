@@ -20,14 +20,10 @@
 #
 import logging
 import os
-import re
 import sys
-import textwrap
-from functools import lru_cache
 from threading import Thread
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional
 
-import pkg_resources
 from prompt_toolkit import shortcuts
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.data_structures import Point
@@ -38,186 +34,13 @@ from prompt_toolkit.layout.controls import SearchBufferControl
 from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.widgets import SearchToolbar
 
-from glv import NoPathMatches, NoRevisionMatches, Repo, proxies, utils, vcs
+from glv import NoPathMatches, NoRevisionMatches, Repo, utils
 from glv.commit import Commit, child_history, is_folded
-from glv.icon import ASCII
+from glv.ui.log_entry import LogEntry
 from glv.ui.status import STATUS, STATUS_WINDOW
-from glv.utils import ModuleChanges, mod_changes, parse_args
+from glv.utils import parse_args
 
 LOG = logging.getLogger('glv')
-
-
-def icon_collection():
-    name = vcs.CONFIG['history']['icon_set']
-    result = None
-    for entry_point in pkg_resources.iter_entry_points(group='glv_icons'):
-        if entry_point.name == name:
-            try:
-                result = entry_point.load()
-            except ModuleNotFoundError as exc:
-                LOG.error(exc)
-
-    if not result:
-        result = ASCII
-    return result
-
-
-def has_component(subject: str) -> bool:
-    return re.match(r'^\w+\([\w\d_-]+\)[\s:]\s*.*', subject, flags=re.I)
-
-
-def parse_component(subject: str) -> Optional[str]:
-    tmp = re.findall(r'^\w+\(([\w\d_-]+)\):.*', subject)
-    if tmp:
-        return tmp[0]
-    return None
-
-
-def is_hex(subject: str) -> bool:
-    return re.match(r'^[0-9a-f]+$', subject, flags=re.I)
-
-
-def remove_component(subject: str) -> bool:
-    return re.sub(r'^(\w+)\([\w\d_-]+\)', '\\1', subject, flags=re.I, count=1)
-
-
-def parse_verb(subject: str) -> Optional[str]:
-    tmp = re.findall(r'^(\w+)(?:\([\w\d_-]+\)\s*:)?', subject, re.I)
-    if tmp:
-        return tmp[0]
-    return None
-
-
-def remove_verb(subject: str) -> bool:
-    return re.sub(r'^(\w+)((?=\()|\s*:|\s)\s*',
-                  '',
-                  subject,
-                  flags=re.I,
-                  count=1)
-
-
-class LogEntry:
-    def __init__(self, commit: Commit, working_dir: str) -> None:
-        self.commit = commit
-        self._working_dir = working_dir
-
-    @property
-    def author_date(self) -> str:
-        return self.commit.author_rel_date
-
-    @property
-    def references(self) -> str:
-        return self.commit.references
-
-    @property
-    def modules(self) -> Tuple[str, str]:
-        try:
-            config = vcs.CONFIG['history']['modules_content']
-        except KeyError:
-            config = 'modules-component'
-
-        try:
-            modules_max_width = vcs.CONFIG['history']['modules_max_width']
-        except KeyError:
-            modules_max_width = 35
-
-        changes: ModuleChanges = mod_changes(self._working_dir)
-        modules = changes.commit_modules(self.commit)
-
-        subject = self.commit.subject
-
-        if config == 'modules-component' and not modules \
-                and has_component(subject):
-            parsed_module = parse_component(subject)
-            if parsed_module and parsed_module not in modules and not is_hex(
-                    parsed_module):
-                modules.append(parsed_module)
-
-        if config == 'component':
-            modules = []
-            if has_component(subject):
-                parsed_module = parse_component(subject)
-                if parsed_module:
-                    modules = [parsed_module]
-
-        text = ', '.join([':' + x for x in modules])
-        if len(text) > modules_max_width:
-            text = ':(%d modules)' % len(modules)
-        return text
-
-    @property
-    def is_commit_link(self) -> bool:
-        return self.commit.is_commit_link
-
-    @property
-    @lru_cache
-    def author_name(self):
-        width = 10
-        name = self.commit.author_name
-        tmp = textwrap.shorten(name, width=width, placeholder="…")
-        if tmp == '…':
-            return name[0:width - 1] + '…'
-        return tmp
-
-    @property
-    def short_id(self):
-        return self.commit.short_id
-
-    @property
-    @lru_cache
-    def icon(self) -> Tuple[str, str]:
-        subject = self.commit.subject
-        for (regex, icon) in icon_collection():
-            if re.match(regex, subject, flags=re.I):
-                return icon
-        return '  '
-
-    @property
-    @lru_cache
-    def subject(self) -> Tuple[str, str]:
-        try:
-            parts = vcs.CONFIG['history']['subject_parts'].split()
-        except KeyError:
-            parts = ['component', 'verb']
-
-        subject = self.commit.subject
-        if has_component(subject):
-            component = parse_component(subject)
-            if component and not is_hex(component):
-                if 'modules-component' in parts:
-                    modules = vcs.modules(self._working_dir)
-                    if not modules or component in modules:
-                        subject = remove_component(subject)
-                elif 'component' not in parts:
-                    subject = remove_component(subject)
-
-        if 'icon-or-verb' in parts:
-            if self.icon[1] != '  ':
-                subject = remove_verb(subject)
-        elif 'verb' not in parts:
-            subject = remove_verb(subject)
-
-        return subject
-
-    @property
-    @lru_cache
-    def type(self):
-        return self.commit.type_icon + self._arrows
-
-    @property
-    def _arrows(self) -> str:
-        if self.commit.is_merge:
-            if self.commit.subject.startswith('Update :') \
-                    or ' Import ' in self.commit.subject:
-                if self.commit.is_fork_point:
-                    return "⇤┤"
-                return '⇤╮'
-            if self.commit.is_fork_point:
-                return "─┤"
-            return "─┐"
-        if self.commit.is_fork_point:
-            return "─┘"
-        return ''
 
 
 class History(UIContent):
@@ -344,21 +167,21 @@ class History(UIContent):
         return self._render_commit(commit, line_number)
 
     def _render_commit(self, commit: Commit, line_number: int) -> List[tuple]:
-        colors = vcs.CONFIG['history']
         try:
-            entry = proxies.ColorProxy(self.log_entry_list[line_number],
-                                       colors, self.search_state,
-                                       self.date_max_len, self.name_max_len)
+            entry = self.log_entry_list[line_number]
+            entry.search_state = self.search_state
         except KeyError:
             self.log_entry_list[line_number] = LogEntry(
-                commit, self._repo.working_dir)
-            entry = proxies.ColorProxy(self.log_entry_list[line_number],
-                                       colors, self.search_state,
-                                       self.date_max_len, self.name_max_len)
+                commit, self._repo.working_dir, self.search_state)
+            entry = self.log_entry_list[line_number]
+            entry.search_state = self.search_state
 
         tmp = [
-            entry.short_id, entry.author_date, entry.author_name, entry.icon,
-            entry.type, entry.modules, entry.subject, entry.references
+            entry.short_id_colored,
+            entry.author_date_short_colored(self.date_max_len),
+            entry.author_name_short_colored(self.name_max_len),
+            entry.icon_colored, entry.type_colored, entry.modules_colored,
+            entry.subject_colored, entry.references_colored
         ]
         result: List[tuple] = []
         for sth in tmp:
@@ -396,9 +219,9 @@ class History(UIContent):
     def _unfold(self, line_number: int, commit: Commit) -> Any:
         index = 1
         for _ in child_history(self._repo.working_dir, commit):
-            entry = LogEntry(_, self._repo.working_dir)
-            if len(entry.author_date) > self.date_max_len:
-                self.date_max_len = len(entry.author_date)
+            entry = LogEntry(_, self._repo.working_dir, self.search_state)
+            if len(entry.author_rel_date) > self.date_max_len:
+                self.date_max_len = len(entry.author_rel_date)
             if len(entry.author_name) > self.name_max_len:
                 self.name_max_len = len(entry.author_name)
             self.commit_list.insert(line_number + index, _)
@@ -418,10 +241,10 @@ class History(UIContent):
             paths=self.files)
         for commit in commits:
             self.commit_list.append(commit)
-            entry = LogEntry(commit, self._repo.working_dir)
+            entry = LogEntry(commit, self._repo.working_dir, self.search_state)
             self.log_entry_list.append(entry)
-            if len(entry.author_date) > self.date_max_len:
-                self.date_max_len = len(entry.author_date)
+            if len(entry.author_rel_date) > self.date_max_len:
+                self.date_max_len = len(entry.author_rel_date)
             if len(entry.author_name) > self.name_max_len:
                 self.name_max_len = len(entry.author_name)
         return len(commits)
