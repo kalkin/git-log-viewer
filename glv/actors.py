@@ -65,10 +65,11 @@ class ModuleActor(pykka.ThreadingActor):
                                     no_renames=True,
                                     no_color=True).splitlines()
         result = []
-        for directory in sorted(self.modules, reverse=True):
-            for _file in changed:
+        for _file in changed:
+            for directory in sorted(self.modules, reverse=True):
                 if _file.startswith(directory):
-                    result.append(directory)
+                    if directory not in result:
+                        result.append(directory)
                     break
         get_app().invalidate()
         return result
