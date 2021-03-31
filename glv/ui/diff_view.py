@@ -99,7 +99,8 @@ class DiffControl(BufferControl):
 
         git_cmd = git.cmd.Git()
         body: str = git_cmd.diff('--stat', '-p', '-M', '--no-color',
-                                 '--full-index', commit.bellow, commit.oid)
+                                 '--full-index',
+                                 '%s..%s' % (commit.bellow, commit.oid))
         text = ""
 
         text += "Commit:     %s\n" % commit.oid
