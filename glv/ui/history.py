@@ -314,7 +314,7 @@ class HistoryControl(BufferControl):
     def is_folded(self, line_number: int) -> bool:
         commit = self.content.commit_list[line_number]
         if commit.is_merge:
-            return commit.is_folded
+            return is_folded(self.content.commit_list, line_number)
         return False
 
     def is_foldable(self, line_number: int) -> bool:
