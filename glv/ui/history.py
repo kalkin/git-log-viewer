@@ -353,7 +353,7 @@ class HistoryControl(BufferControl):
             except IndexError:
                 self.content.fill_up(utils.screen_height())
 
-            if candidat.short_id() == commit.short_id():
+            if candidat.short_id == commit.short_id:
                 self.goto_line(i)
                 break
             i += 1
