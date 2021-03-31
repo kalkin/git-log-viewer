@@ -35,7 +35,7 @@ from prompt_toolkit.search import SearchDirection, SearchState
 from prompt_toolkit.widgets import SearchToolbar
 
 from glv import NoPathMatches, NoRevisionMatches, Repo, utils
-from glv.commit import Commit, child_history, is_folded
+from glv.commit import Commit, CommitNotFound, child_history, follow, is_folded
 from glv.ui.log_entry import LogEntry
 from glv.ui.status import STATUS, STATUS_WINDOW
 from glv.utils import parse_args
@@ -341,22 +341,20 @@ class HistoryControl(BufferControl):
         return commit.is_commit_link
 
     def go_to_link(self, line_number: int):
-        commit = self.content.commit_list[line_number]
+        try:
+            result = follow(self.working_dir, self.content.commit_list,
+                            line_number)
 
-        if not commit.is_commit_link:
-            raise ValueError('Expected CommitLinkt got %s' % commit)
-
-        i = line_number + 1
-        while i < line_number + 400:
-            try:
-                candidat = self.content.commit_list[i]
-            except IndexError:
-                self.content.fill_up(utils.screen_height())
-
-            if candidat.short_id == commit.short_id:
-                self.goto_line(i)
-                break
-            i += 1
+            if result >= len(self.content.log_entry_list):
+                # sync commit_list with log_entry_list
+                pos = len(self.content.log_entry_list)
+                for commit in self.content.commit_list[pos:]:
+                    entry = LogEntry(commit, self.working_dir,
+                                     self.content.search_state)
+                    self.content.log_entry_list.append(entry)
+            self.goto_line(result)
+        except CommitNotFound:
+            pass
 
     @property
     def path(self) -> str:

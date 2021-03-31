@@ -305,3 +305,70 @@ def _type_icon(bellow: Commit, is_commit_link: bool) -> str:
     if is_commit_link:
         return "⭞"
     return "●"
+
+
+class CommitNotFound(Exception):
+    ''' Thrown when following a link or searching fails '''
+
+
+def find_non_link(working_dir: str, commit_list: list[Commit],
+                  needle: Commit) -> int:
+    '''
+        Search recursively in a commit list for specified commit which is not a
+        link. Will modify the commit_list if needed.
+    '''
+    needle_date = datetime.fromisoformat(needle.committer_date)
+    for i, commit in enumerate(commit_list):
+        if commit.is_commit_link:
+            continue
+        if commit.oid == needle.oid:
+            return i
+        commit_date = datetime.fromisoformat(commit.committer_date)
+        if commit_date < needle_date:
+            break
+        if commit.is_merge and \
+                merge_base(working_dir, needle.oid, commit.children[0]):
+            # ↑ optimization for not descending just imported subtrees \
+            children = child_history(working_dir, commit)
+            try:
+                tmp = find_non_link(working_dir, children, needle)
+                commit_list[i + 1:i + 1] = children
+                return tmp + i + 1
+            except CommitNotFound:
+                pass
+
+    raise CommitNotFound
+
+
+def follow(working_dir: str, commit_list: list[Commit], pos: int) -> int:
+    '''
+        Find link target in the commit_list. Will fill up commit list if
+        needed.
+    '''
+    if pos > len(commit_list):
+        raise ValueError('Position %d should be less then length %d' %
+                         (pos, len(commit_list)))
+    link: Commit = commit_list[pos]
+
+    try:
+        # May be the link is already in the commit list?
+        return find_non_link(working_dir, commit_list, link)
+    except CommitNotFound:
+        pass
+
+    last_commit = commit_list[-1]
+    last_oid: str = last_commit.oid
+    end = merge_base(working_dir, last_oid, link.oid)
+    if not end:
+        raise CommitNotFound('Commit has no mergebase')
+
+    rev_range = "%s~1..%s~1" % (end, last_oid)
+    tmp = commits_for_range(working_dir,
+                            rev_range,
+                            above_commit=last_commit,
+                            level=commit_list[-1].level)
+    if tmp:
+        commit_list += tmp
+        return find_non_link(working_dir, commit_list, link)
+
+    raise CommitNotFound
