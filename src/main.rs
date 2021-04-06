@@ -10,9 +10,9 @@ fn git_log() -> Vec<SpannedString<Style>> {
     let working_dir = &git_wrapper::top_level().unwrap()[..];
     let proc = git_wrapper::git_cmd_out(
         working_dir.to_string(),
-        &["log", "-1", "-p", "--color=always"],
-        )
-        .unwrap();
+        vec!["log", "-1", "-p", "--color=always"],
+    )
+    .unwrap();
 
     let stdout: Vec<u8> = proc.stdout;
     raw::parse_spans(stdout)
