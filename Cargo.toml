@@ -9,4 +9,7 @@ edition = "2018"
 [dependencies]
 cursive = "0.16"
 git-wrapper = { path = "../git-wrapper" }
+glv-core = { path = "../glv-core" }
+log = "0.4"
 vte = "0.10.0"
+posix-errors = { path = "../posix-errors" }
