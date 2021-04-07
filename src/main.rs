@@ -1,12 +1,13 @@
 use cursive::theme::{PaletteColor::*, Style};
 use cursive::utils::span::SpannedString;
 
+use crate::scroll::CustomScrollView;
 use cursive::traits::*;
-use cursive::views::*;
 use cursive::{Cursive, CursiveExt};
 
 mod history;
 mod raw;
+mod scroll;
 
 fn git_log() -> Vec<SpannedString<Style>> {
     let working_dir = &git_wrapper::top_level().unwrap()[..];
@@ -36,21 +37,18 @@ fn main() {
     //.scrollable();
 
     let working_dir = git_wrapper::top_level().unwrap();
-    let history_log = history::History::new(&working_dir, "HEAD")
-        .unwrap()
-        .full_screen()
-        .scrollable();
-
-    let ll = LinearLayout::vertical().child(history_log);
+    let history_log = history::History::new(&working_dir, "HEAD").unwrap();
+    // let ll = LinearLayout::vertical().child(history_log);
     //.child(diff_view);
-    siv.add_fullscreen_layer(ll);
+    siv.add_fullscreen_layer(CustomScrollView::new(history_log).full_screen());
     siv.add_global_callback('q', |s| s.quit());
+
     let mut theme: cursive::theme::Theme = Default::default();
     theme.palette[View] = cursive::theme::Color::TerminalDefault;
     theme.palette[Primary] = cursive::theme::Color::TerminalDefault;
     siv.set_theme(theme);
+
     siv.add_global_callback('~', cursive::Cursive::toggle_debug_console);
-    log::error!("Something serious probably happened!");
 
     siv.run();
 }

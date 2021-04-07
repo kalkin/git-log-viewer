@@ -13,3 +13,4 @@ glv-core = { path = "../glv-core" }
 log = "0.4"
 vte = "0.10.0"
 posix-errors = { path = "../posix-errors" }
+unicode-width = "0.1.7"
