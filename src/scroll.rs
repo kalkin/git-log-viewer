@@ -34,6 +34,7 @@ where
 
     fn layout(&mut self, size: Vec2) {
         self.view_port.bottom = self.view_port.top + size.y - 1;
+        self.inner.layout(size);
     }
 
     fn on_event(&mut self, event: Event) -> EventResult {

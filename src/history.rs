@@ -10,17 +10,24 @@ use cursive::{Rect, Vec2, XY};
 use unicode_width::UnicodeWidthStr;
 
 pub struct History {
+    range: String,
     history: Vec<Commit>,
     selected: usize,
+    length: usize,
+    working_dir: String,
 }
 
 impl History {
     pub fn new(working_dir: &str, range: &str) -> Result<History, PosixError> {
-        let history = commits_for_range(working_dir, range, 0, None, vec![], Some(0), Some(200))?;
+        let history = commits_for_range(working_dir, range, 0, None, vec![], Some(0), Some(25))?;
+        let length = history_length(working_dir, range, vec![])?;
         assert!(!history.is_empty());
         Ok(History {
+            range: range.to_string(),
             history,
             selected: 0,
+            length,
+            working_dir: working_dir.to_string(),
         })
     }
 
@@ -103,11 +110,11 @@ impl cursive::view::View for History {
             "Wrong `draw()` call. Selected '{}' is not visible",
             self.selected
         );
-        let top = printer.content_offset.y;
-        let height = top + printer.size.y;
-        let (max_author, max_date) = self.calc_max_name_date(height);
+        let start = printer.content_offset.y;
+        let end = start + printer.size.y;
+        let (max_author, max_date) = self.calc_max_name_date(end);
 
-        for x in top..height {
+        for x in start..end {
             if let Some(commit) = self.history.get(x) {
                 let buf;
                 if x == self.selected {
@@ -122,6 +129,30 @@ impl cursive::view::View for History {
             } else {
                 break;
             }
+        }
+    }
+
+    fn layout(&mut self, size: Vec2) {
+        // Always prefetch commits for one page from selected
+        let end = self.selected + size.y;
+        log::warn!("End would be {}", end);
+        if end >= self.history.len() - 1 && end < self.length {
+            let max = end + 1 - self.history.len();
+            let skip = self.history.len();
+            let range = self.range.as_str();
+            let working_dir = self.working_dir.as_str();
+            let above_commit = self.history.last();
+            let mut tmp = commits_for_range(
+                working_dir,
+                range,
+                0,
+                above_commit,
+                vec![],
+                Some(skip),
+                Some(max),
+            )
+            .unwrap();
+            self.history.append(tmp.as_mut());
         }
     }
 
@@ -152,7 +183,7 @@ impl cursive::view::View for History {
 
 impl Scrollable for History {
     fn length(&self) -> usize {
-        self.history.len()
+        self.length
     }
 }
 
