@@ -9,16 +9,21 @@ mod history;
 mod raw;
 mod scroll;
 
-fn git_log() -> Vec<SpannedString<Style>> {
+fn git_log(id: &str) -> TextContent {
     let working_dir = &git_wrapper::top_level().unwrap()[..];
     let proc = git_wrapper::git_cmd_out(
         working_dir.to_string(),
-        vec!["log", "-1", "-p", "--color=always"],
+        vec!["log", "-1", "-p", "--color=always", id],
     )
     .unwrap();
 
     let stdout: Vec<u8> = proc.stdout;
-    raw::parse_spans(stdout)
+
+    let content = TextContent::new("");
+    for line in raw::parse_spans(stdout) {
+        content.append(line);
+    }
+    content
 }
 
 fn main() {
