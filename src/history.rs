@@ -1,13 +1,15 @@
+use cursive::direction::Direction;
 use cursive::theme::*;
 use cursive::utils::span::{SpannedStr, SpannedString};
+use cursive::{Rect, Vec2, XY};
+use unicode_width::UnicodeWidthStr;
+
 use glv_core::*;
 use posix_errors::PosixError;
 
-use crate::scroll::{MoveDirection, Scrollable, Selectable};
-use cursive::direction::Direction;
+use monorepo::SubtreeConfig;
 
-use cursive::{Rect, Vec2, XY};
-use unicode_width::UnicodeWidthStr;
+use crate::scroll::{MoveDirection, ScrollableSelectable};
 
 pub struct History {
     range: String,
@@ -135,7 +137,6 @@ impl cursive::view::View for History {
     fn layout(&mut self, size: Vec2) {
         // Always prefetch commits for one page from selected
         let end = self.selected + size.y;
-        log::warn!("End would be {}", end);
         if end >= self.history.len() - 1 && end < self.length {
             let max = end + 1 - self.history.len();
             let skip = self.history.len();
@@ -181,15 +182,9 @@ impl cursive::view::View for History {
     }
 }
 
-impl Scrollable for History {
+impl ScrollableSelectable for History {
     fn length(&self) -> usize {
         self.length
-    }
-}
-
-impl Selectable for History {
-    fn selected(&self) -> usize {
-        self.selected
     }
 
     fn move_focus(&mut self, n: usize, source: MoveDirection) -> bool {
@@ -214,6 +209,13 @@ impl Selectable for History {
         } else {
             false
         }
+    }
+    fn selected_pos(&self) -> usize {
+        self.selected
+    }
+
+    fn selected_item(&self) -> &Commit {
+        self.history.get(self.selected).as_ref().unwrap()
     }
 }
 

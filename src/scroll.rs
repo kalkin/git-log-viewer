@@ -1,5 +1,6 @@
 use cursive::event::{Event, EventResult, Key};
 use cursive::{Printer, Vec2, View};
+use glv_core::Commit;
 
 struct ViewPort {
     top: usize,
@@ -20,9 +21,30 @@ impl<V> CustomScrollView<V> {
     }
 }
 
+impl<V> ScrollableSelectable for CustomScrollView<V>
+where
+    V: View + ScrollableSelectable,
+{
+    fn length(&self) -> usize {
+        self.inner.length()
+    }
+
+    fn move_focus(&mut self, n: usize, direction: MoveDirection) -> bool {
+        self.inner.move_focus(n, direction)
+    }
+
+    fn selected_pos(&self) -> usize {
+        self.inner.selected_pos()
+    }
+
+    fn selected_item(&self) -> &Commit {
+        self.inner.selected_item()
+    }
+}
+
 impl<V> View for CustomScrollView<V>
 where
-    V: View + Scrollable + Selectable,
+    V: View + ScrollableSelectable,
 {
     fn draw(&self, printer: &Printer) {
         let printer = &printer.content_offset(Vec2 {
@@ -37,12 +59,15 @@ where
         self.inner.layout(size);
     }
 
+    fn required_size(&mut self, constraint: Vec2) -> Vec2 {
+        self.inner.required_size(constraint)
+    }
+
     fn on_event(&mut self, event: Event) -> EventResult {
-        // log::info!("Event: {:?}", event);
         match event {
             Event::Key(Key::Up) => {
                 if self.inner.move_focus(1, MoveDirection::Up) {
-                    let sel = self.inner.selected();
+                    let sel = self.inner.selected_pos();
                     if sel < self.view_port.top {
                         let height = self.view_port.bottom - self.view_port.top;
                         self.view_port.top = sel;
@@ -53,7 +78,7 @@ where
             }
             Event::Key(Key::Down) => {
                 if self.inner.move_focus(1, MoveDirection::Down) {
-                    let sel = self.inner.selected();
+                    let sel = self.inner.selected_pos();
                     if sel >= self.view_port.bottom {
                         let height = self.view_port.bottom - self.view_port.top;
                         self.view_port.top = sel - height;
@@ -70,9 +95,9 @@ where
                     self.view_port.top = top;
                     self.view_port.bottom = bottom;
                     self.inner.move_focus(n + 1, MoveDirection::Down);
-                } else if self.inner.selected() < self.inner.length() - 1 {
+                } else if self.inner.selected_pos() < self.inner.length() - 1 {
                     self.inner.move_focus(
-                        self.inner.length() - 1 - self.inner.selected(),
+                        self.inner.length() - 1 - self.inner.selected_pos(),
                         MoveDirection::Down,
                     );
                 }
@@ -87,9 +112,9 @@ where
                     self.view_port.top = top;
                     self.view_port.bottom = bottom;
                     self.inner.move_focus(n + 1, MoveDirection::Up);
-                } else if self.inner.selected() != 0 {
+                } else if self.inner.selected_pos() != 0 {
                     self.inner.move_focus(
-                        self.inner.selected() - self.view_port.top,
+                        self.inner.selected_pos() - self.view_port.top,
                         MoveDirection::Up,
                     );
                 }
@@ -100,17 +125,15 @@ where
     }
 }
 
-pub trait Scrollable {
+pub trait ScrollableSelectable {
     fn length(&self) -> usize;
+    fn move_focus(&mut self, n: usize, direction: MoveDirection) -> bool;
+    fn selected_pos(&self) -> usize;
+    fn selected_item(&self) -> &Commit;
 }
 
 #[derive(Eq, PartialEq)]
 pub enum MoveDirection {
     Up,
     Down,
-}
-
-pub trait Selectable {
-    fn selected(&self) -> usize;
-    fn move_focus(&mut self, n: usize, direction: MoveDirection) -> bool;
 }

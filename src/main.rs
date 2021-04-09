@@ -1,30 +1,15 @@
-use cursive::theme::{PaletteColor::*, Style};
-use cursive::utils::span::SpannedString;
-
-use crate::scroll::CustomScrollView;
-use cursive::traits::*;
+use cursive::theme::PaletteColor::*;
 use cursive::{Cursive, CursiveExt};
 
+use crate::detail::CommitDetailView;
+use crate::scroll::CustomScrollView;
+use crate::views::DynamicSplitView;
+
+mod detail;
 mod history;
 mod raw;
 mod scroll;
-
-fn git_log(id: &str) -> TextContent {
-    let working_dir = &git_wrapper::top_level().unwrap()[..];
-    let proc = git_wrapper::git_cmd_out(
-        working_dir.to_string(),
-        vec!["log", "-1", "-p", "--color=always", id],
-    )
-    .unwrap();
-
-    let stdout: Vec<u8> = proc.stdout;
-
-    let content = TextContent::new("");
-    for line in raw::parse_spans(stdout) {
-        content.append(line);
-    }
-    content
-}
+mod views;
 
 fn main() {
     cursive::logger::init();
@@ -42,10 +27,16 @@ fn main() {
     //.scrollable();
 
     let working_dir = git_wrapper::top_level().unwrap();
-    let history_log = history::History::new(&working_dir, "HEAD").unwrap();
+    let history = history::History::new(&working_dir, "HEAD").unwrap();
+    // let main = CustomScrollView::new(history);
+    let main = CustomScrollView::new(history);
+    let aside = CommitDetailView::new();
+    let spl_view = DynamicSplitView::new(main, aside);
+
     // let ll = LinearLayout::vertical().child(history_log);
     //.child(diff_view);
-    siv.add_fullscreen_layer(CustomScrollView::new(history_log).full_screen());
+    // siv.add_fullscreen_layer(spl_view.full_screen());
+    siv.add_fullscreen_layer(spl_view);
     siv.add_global_callback('q', |s| s.quit());
 
     let mut theme: cursive::theme::Theme = Default::default();
