@@ -2,6 +2,8 @@ use cursive::direction::Direction;
 use cursive::theme::*;
 use cursive::utils::span::{SpannedStr, SpannedString};
 use cursive::{Rect, Vec2, XY};
+use lazy_static::lazy_static;
+use regex::Regex;
 use unicode_width::UnicodeWidthStr;
 
 use glv_core::*;
@@ -10,6 +12,51 @@ use posix_errors::PosixError;
 use monorepo::SubtreeConfig;
 
 use crate::scroll::{MoveDirection, ScrollableSelectable};
+
+// const icons: Vec<Regex> = vec![Regex::new(r"^Revert:?\s*").unwrap()];
+
+lazy_static! {
+    static ref REGEXES: Vec<(Regex, &'static str)> = vec![
+        (Regex::new(r"(?i)^Revert:?\s*").unwrap(), " "),
+        (Regex::new(r"(?i)^archive:?\s*").unwrap(), "\u{f53b} "),
+        (Regex::new(r"(?i)^issue:?\s*").unwrap(), "\u{f145} "),
+        (Regex::new(r"(?i)^BREAKING CHANGE:?\s*").unwrap(), "⚠ "),
+        (Regex::new(r"(?i)^fixup!\s+").unwrap(), "\u{f0e3} "),
+        (Regex::new(r"(?i)^ADD:\s?[a-z0-9]+").unwrap(), " "),
+        (Regex::new(r"(?i)^ref(actor)?:?\s*").unwrap(), "↺ "),
+        (Regex::new(r"(?i)^lang:?\s*").unwrap(), "\u{fac9}"),
+        (Regex::new(r"(?i)^deps(\(.+\))?:?\s*").unwrap(), "\u{f487} "),
+        (Regex::new(r"(?i)^config:?\s*").unwrap(), "\u{f462} "),
+        (Regex::new(r"(?i)^test(\(.+\))?:?\s*").unwrap(), "\u{f45e} "),
+        (Regex::new(r"(?i)^ci(\(.+\))?:?\s*").unwrap(), "\u{f085} "),
+        (Regex::new(r"(?i)^perf(\(.+\))?:?\s*").unwrap(), "\u{f9c4}"),
+        (
+            Regex::new(r"(?i)^(bug)?fix(ing|ed)?(\(.+\))?[/:\s]+").unwrap(),
+            "\u{f188} "
+        ),
+        (Regex::new(r"(?i)^doc(s|umentation)?:?\s*").unwrap(), "✎ "),
+        (Regex::new(r"(?i)^improvement:?\s*").unwrap(), "\u{e370} "),
+        (Regex::new(r"(?i)^CHANGE/?:?\s*").unwrap(), "\u{e370} "),
+        (Regex::new(r"(?i)^hotfix:?\s*").unwrap(), "\u{f490} "),
+        (Regex::new(r"(?i)^feat:?\s*").unwrap(), "➕"),
+        (Regex::new(r"(?i)^add:?\s*").unwrap(), "➕"),
+        (
+            Regex::new(r"(?i)^(release|bump):?\s*").unwrap(),
+            "\u{f412} "
+        ),
+        (Regex::new(r"(?i)^build:?\s*").unwrap(), "🔨"),
+        (Regex::new(r"(?i).*\bchangelog\b.*").unwrap(), "✎ "),
+        (Regex::new(r"(?i)^refactor:?\s*").unwrap(), "↺ "),
+        (Regex::new(r"(?i)^.* Import .*").unwrap(), "⮈ "),
+        (Regex::new(r"(?i)^Split .*").unwrap(), "\u{f403} "),
+        (Regex::new(r"(?i)^Remove:?\s+.*").unwrap(), "\u{f48e} "),
+        (Regex::new(r"(?i)^Update :\w+.*").unwrap(), "\u{f419} "),
+        (Regex::new(r"(?i)^style:?\s*").unwrap(), "♥ "),
+        (Regex::new(r"(?i)^DONE:?\s?[a-z0-9]+").unwrap(), "\u{f41d} "),
+        (Regex::new(r"(?i)^rename?\s*").unwrap(), "\u{f044} "),
+        (Regex::new(r"(?i).*").unwrap(), "  "),
+    ];
+}
 
 pub struct History {
     range: String,
@@ -64,6 +111,13 @@ impl History {
                 for _ in 0..result {
                     buf.append_styled(" ", name_style)
                 }
+            }
+        }
+        buf.append_styled(" ", default_style);
+        for (reg, icon) in REGEXES.iter() {
+            if reg.is_match(commit.subject()) {
+                buf.append_styled(icon.to_string(), default_style);
+                break;
             }
         }
         buf.append_styled(" ", default_style);

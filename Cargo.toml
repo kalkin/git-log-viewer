@@ -11,6 +11,8 @@ cursive = "0.16"
 git-wrapper = { path = "../git-wrapper" }
 glv-core = { path = "../glv-core" }
 log = "0.4"
+lazy_static = "1.4"
+regex = "1"
 vte = "0.10.0"
 posix-errors = { path = "../posix-errors" }
 unicode-width = "0.1.7"
