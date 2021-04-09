@@ -1,4 +1,5 @@
 use cursive::direction::Direction;
+use cursive::event::{Event, EventResult};
 use cursive::theme::*;
 use cursive::utils::span::{SpannedStr, SpannedString};
 use cursive::{Rect, Vec2, XY};
@@ -121,6 +122,9 @@ impl History {
             }
         }
         buf.append_styled(" ", default_style);
+        for _ in 0..commit.level() {
+            buf.append_styled("│ ", default_style)
+        }
         if commit.bellow().is_none() {
             buf.append_styled("◉", default_style)
         } else if commit.is_commit_link() {
@@ -128,6 +132,23 @@ impl History {
         } else {
             buf.append_styled("●", default_style)
         }
+
+        if commit.is_merge() {
+            if commit.subject().starts_with("Update :") || commit.subject().contains(" Import ") {
+                if commit.is_fork_point() {
+                    buf.append_styled("⇤┤", default_style);
+                } else {
+                    buf.append_styled("⇤╮", default_style);
+                }
+            } else if commit.is_fork_point() {
+                buf.append_styled("─┤", default_style);
+            } else {
+                buf.append_styled("─┐", default_style)
+            }
+        } else if commit.is_fork_point() {
+            buf.append_styled("─┘", default_style)
+        }
+
         buf.append_styled(" ", default_style);
         buf.append_styled(commit.subject(), default_style);
         buf.append_styled(" ", default_style);
@@ -223,6 +244,41 @@ impl cursive::view::View for History {
         Vec2 {
             x: constraint.x,
             y: 200,
+        }
+    }
+
+    fn on_event(&mut self, e: Event) -> EventResult {
+        match e {
+            Event::Char(' ') => {
+                if self.selected_item().is_merge() {
+                    let pos = self.selected + 1;
+                    if self.selected_item().is_folded() {
+                        let children: Vec<Commit> =
+                            glv_core::child_history(&self.working_dir, self.selected_item());
+                        for (i, c) in children.iter().cloned().enumerate() {
+                            self.history.insert(pos + i, c);
+                        }
+                    } else {
+                        while let Some(c) = self.history.get(pos) {
+                            if c.level() > self.selected_item().level() {
+                                self.history.remove(pos);
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                    let cur = self.history.get_mut(self.selected).unwrap();
+                    cur.folded(!cur.is_folded());
+
+                    EventResult::Consumed(None)
+                } else {
+                    EventResult::Ignored
+                }
+            }
+            _ => {
+                log::warn!("History: Unexpected key {:?}", e);
+                EventResult::Ignored
+            }
         }
     }
 

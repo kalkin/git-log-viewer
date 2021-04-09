@@ -120,7 +120,7 @@ where
                 }
                 EventResult::Consumed(None)
             }
-            _ => EventResult::Ignored,
+            _ => self.inner.on_event(event),
         }
     }
 }
