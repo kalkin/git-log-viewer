@@ -67,6 +67,14 @@ impl History {
             }
         }
         buf.append_styled(" ", default_style);
+        if commit.bellow().is_none() {
+            buf.append_styled("◉", default_style)
+        } else if commit.is_commit_link() {
+            buf.append_styled("⭞", default_style)
+        } else {
+            buf.append_styled("●", default_style)
+        }
+        buf.append_styled(" ", default_style);
         buf.append_styled(commit.subject(), default_style);
         buf.append_styled(" ", default_style);
         for r in commit.references() {
