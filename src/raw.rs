@@ -49,7 +49,7 @@ impl vte::Perform for Counter {
         _intermediates: &[u8],
         _ignore: bool,
         _c: char,
-        ) {
+    ) {
         self.save_cur_span();
         let mut iter = params.iter();
         loop {

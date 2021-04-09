@@ -1,5 +1,6 @@
 use cursive::event::{Event, EventResult, Key};
 use cursive::{Printer, Vec2, View};
+
 use glv_core::Commit;
 
 struct ViewPort {
