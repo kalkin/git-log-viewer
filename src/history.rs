@@ -38,7 +38,10 @@ lazy_static! {
             "\u{f188} "
         ),
         (Regex::new(r"(?i)^doc(s|umentation)?:?\s*").unwrap(), "✎ "),
-        (Regex::new(r"(?i)^improvement:?\s*").unwrap(), "\u{e370} "),
+        (
+            Regex::new(r"(?i)^improve(ment)?:?\s*").unwrap(),
+            "\u{e370} "
+        ),
         (Regex::new(r"(?i)^CHANGE/?:?\s*").unwrap(), "\u{e370} "),
         (Regex::new(r"(?i)^hotfix:?\s*").unwrap(), "\u{f490} "),
         (Regex::new(r"(?i)^feat:?\s*").unwrap(), "➕"),
