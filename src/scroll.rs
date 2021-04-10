@@ -108,7 +108,12 @@ where
             Event::Key(Key::PageUp) => {
                 if self.view_port.top != 0 {
                     let n = self.view_port.bottom - self.view_port.top;
-                    let top = self.view_port.top - n - 1;
+                    let top;
+                    if n + 1 > self.view_port.top {
+                        top = 0;
+                    } else {
+                        top = self.view_port.top - n - 1;
+                    }
                     let bottom = top + n;
                     self.view_port.top = top;
                     self.view_port.bottom = bottom;
