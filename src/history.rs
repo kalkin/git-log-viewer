@@ -10,8 +10,6 @@ use unicode_width::UnicodeWidthStr;
 use glv_core::*;
 use posix_errors::PosixError;
 
-use monorepo::SubtreeConfig;
-
 use crate::scroll::{MoveDirection, ScrollableSelectable};
 use crate::style::DEFAULT_STYLE;
 use crate::style::{date_style, id_style, name_style, ref_style};
