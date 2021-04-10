@@ -13,6 +13,8 @@ use posix_errors::PosixError;
 use monorepo::SubtreeConfig;
 
 use crate::scroll::{MoveDirection, ScrollableSelectable};
+use crate::style::DEFAULT_STYLE;
+use crate::style::{date_style, id_style, name_style, ref_style};
 
 // const icons: Vec<Regex> = vec![Regex::new(r"^Revert:?\s*").unwrap()];
 
@@ -159,36 +161,8 @@ impl History {
     }
 }
 
-fn id_style(default: &Style) -> Style {
-    let mut id_style = default.clone();
-    id_style.color = ColorStyle::new(Color::Dark(BaseColor::Magenta), Color::TerminalDefault);
-    id_style
-}
-
-fn date_style(default: &Style) -> Style {
-    let mut date_style = default.clone();
-    date_style.color = ColorStyle::new(Color::Dark(BaseColor::Blue), Color::TerminalDefault);
-    date_style
-}
-
-fn name_style(default: &Style) -> Style {
-    let mut name_style = default.clone();
-    name_style.color = ColorStyle::new(Color::Dark(BaseColor::Green), Color::TerminalDefault);
-    name_style
-}
-
-fn ref_style(default: &Style) -> Style {
-    let mut ref_style = default.clone();
-    ref_style.color = ColorStyle::new(Color::Dark(BaseColor::Yellow), Color::TerminalDefault);
-    ref_style
-}
-
 impl cursive::view::View for History {
     fn draw(&self, printer: &cursive::Printer) {
-        let default_style: Style = Style {
-            color: ColorStyle::terminal_default(),
-            ..Default::default()
-        };
         assert!(
             printer.content_offset.y <= self.selected
                 && self.selected < printer.content_offset.y + printer.size.y,
@@ -203,11 +177,11 @@ impl cursive::view::View for History {
             if let Some(commit) = self.history.get(x) {
                 let buf;
                 if x == self.selected {
-                    let mut hl_style = default_style;
+                    let mut hl_style = *DEFAULT_STYLE;
                     hl_style.effects |= Effect::Reverse;
                     buf = History::render_commit(commit, hl_style, max_author, max_date);
                 } else {
-                    buf = History::render_commit(commit, default_style, max_author, max_date);
+                    buf = History::render_commit(commit, *DEFAULT_STYLE, max_author, max_date);
                 }
                 let t = SpannedStr::from(&buf);
                 printer.print_styled((0, x), t);

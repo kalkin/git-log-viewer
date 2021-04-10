@@ -10,6 +10,7 @@ mod history;
 mod raw;
 mod scroll;
 mod views;
+mod style;
 
 fn main() {
     cursive::logger::init();
