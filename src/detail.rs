@@ -1,3 +1,6 @@
+use std::io::Write;
+use std::process::{Command, Stdio};
+
 use cursive::event::{Event, EventResult};
 use cursive::theme::Style;
 use cursive::traits::*;
@@ -108,20 +111,52 @@ fn git_diff(commit: &Commit) -> Vec<SpannedString<Style>> {
     let default = Oid { 0: "".to_string() };
     let bellow = commit.bellow().unwrap_or(&default);
     let rev = format!("{}..{}", commit.id().0, bellow.0);
-    let proc = git_wrapper::git_cmd_out(
-        working_dir.to_string(),
-        vec![
-            "diff",
-            "--stat",
-            "-p",
-            "-M",
-            "--color=always",
-            "--full-index",
-            &rev,
-        ],
-    )
-    .unwrap();
+    if let Ok(_) = which::which("delta") {
+        let proc = git_wrapper::git_cmd_out(
+            working_dir.to_string(),
+            vec![
+                "diff",
+                "--color=always",
+                "--stat",
+                "-p",
+                "-M",
+                "--full-index",
+                &rev,
+            ],
+        )
+        .unwrap();
 
-    let stdout: Vec<u8> = proc.stdout;
-    raw::parse_spans(stdout)
+        if let Ok(mut delta_p) = Command::new("delta")
+            .arg("--paging=never")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+        {
+            delta_p
+                .stdin
+                .as_mut()
+                .unwrap()
+                .write_all(proc.stdout.as_slice())
+                .unwrap();
+
+            raw::parse_spans(delta_p.wait_with_output().unwrap().stdout)
+        } else {
+            raw::parse_spans(proc.stdout)
+        }
+    } else {
+        let proc = git_wrapper::git_cmd_out(
+            working_dir.to_string(),
+            vec![
+                "diff",
+                "--color=always",
+                "--stat",
+                "-p",
+                "-M",
+                "--full-index",
+                &rev,
+            ],
+        )
+        .unwrap();
+        raw::parse_spans(proc.stdout)
+    }
 }
