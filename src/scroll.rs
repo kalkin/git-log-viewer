@@ -57,6 +57,19 @@ where
 
     fn layout(&mut self, size: Vec2) {
         self.view_port.bottom = self.view_port.top + size.y - 1;
+        let range = self.view_port.top..self.view_port.bottom;
+        let selected = self.inner.selected_pos();
+        if !range.contains(&selected) {
+            if selected > self.view_port.bottom {
+                let height = self.view_port.bottom - self.view_port.top;
+                self.view_port.bottom = self.selected_pos();
+                self.view_port.top = self.view_port.bottom - height;
+            } else if selected < self.view_port.top {
+                let height = self.view_port.bottom - self.view_port.top;
+                self.view_port.top = self.inner.selected_pos();
+                self.view_port.bottom = self.view_port.top + height;
+            }
+        }
         self.inner.layout(size);
     }
 
