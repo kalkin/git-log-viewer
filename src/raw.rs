@@ -65,6 +65,7 @@ impl vte::Perform for Counter {
                 2 => self.style.effects |= Effect::Italic,
                 4 => self.style.effects |= Effect::Underline,
                 5 => self.style.effects |= Effect::Blink,
+                7 => self.style.effects |= Effect::Reverse,
 
                 30 => self.style.color.front = ColorType::Color(Color::Dark(BaseColor::Black)),
                 31 => self.style.color.front = ColorType::Color(Color::Dark(BaseColor::Red)),
