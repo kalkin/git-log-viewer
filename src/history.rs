@@ -9,8 +9,8 @@ use glv_core::*;
 use posix_errors::PosixError;
 
 use crate::scroll::{MoveDirection, ScrollableSelectable};
-use crate::style::DEFAULT_STYLE;
 use crate::style::{date_style, id_style, name_style, ref_style};
+use crate::style::{mod_style, DEFAULT_STYLE};
 
 // const icons: Vec<Regex> = vec![Regex::new(r"^Revert:?\s*").unwrap()];
 
@@ -100,8 +100,17 @@ impl History {
             buf.append_styled("─┘", default_style)
         }
 
+        if let Some(v) = commit.subject_module() {
+            let mod_style = mod_style(&default_style);
+            buf.append_styled(" ", mod_style);
+            buf.append_styled(v, mod_style);
+        }
         buf.append_styled(" ", default_style);
-        buf.append_styled(commit.subject(), default_style);
+        if let Some(subject) = commit.short_subject() {
+            buf.append_styled(subject, default_style);
+        } else {
+            buf.append_styled(commit.subject(), default_style);
+        }
         buf.append_styled(" ", default_style);
         for r in commit.references() {
             buf.append_styled("«", ref_style(&default_style));

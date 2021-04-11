@@ -25,6 +25,12 @@ pub fn ref_style(default: &Style) -> Style {
     ref_style
 }
 
+pub fn mod_style(default: &Style) -> Style {
+    let mut ref_style = *default;
+    ref_style.color = ColorStyle::new(Color::Dark(BaseColor::Yellow), Color::TerminalDefault);
+    ref_style
+}
+
 pub fn bold_style(default: &Style) -> Style {
     let mut style = *default;
     style.effects |= Effect::Bold;
