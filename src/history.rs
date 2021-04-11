@@ -156,7 +156,9 @@ impl History {
         buf.append_styled(commit.subject(), default_style);
         buf.append_styled(" ", default_style);
         for r in commit.references() {
+            buf.append_styled("«", ref_style(&default_style));
             buf.append_styled(r.to_string(), ref_style(&default_style));
+            buf.append_styled("» ", ref_style(&default_style));
         }
         buf
     }
