@@ -44,35 +44,25 @@ impl History {
     ) -> SpannedString<Style> {
         let mut buf = SpannedString::new();
         let id_style = id_style(&default_style);
+        let name_style = name_style(&default_style);
         let date_style = date_style(&default_style);
+
         buf.append_styled(commit.short_id(), id_style);
         buf.append_styled(" ", default_style);
+
         {
-            buf.append_styled(commit.author_rel_date(), date_style);
-            let date_len = UnicodeWidthStr::width(commit.author_rel_date().as_str());
-            if date_len < max_date {
-                let result = max_date - date_len;
-                for _ in 0..result {
-                    buf.append_styled(" ", date_style)
-                }
-            }
+            let date = glv_core::adjust_string(commit.author_rel_date(), max_date);
+            buf.append_styled(date, date_style);
         }
         buf.append_styled(" ", default_style);
+
         {
-            let name_style = name_style(&default_style);
-            buf.append_styled(commit.author_name(), name_style);
-            if commit.author_name().len() <= max_author {
-                let author_len = UnicodeWidthStr::width(commit.author_name().as_str());
-                let result = max_author - author_len;
-                for _ in 0..result {
-                    buf.append_styled(" ", name_style)
-                }
-            }
+            let name = glv_core::adjust_string(commit.author_name(), max_author);
+            buf.append_styled(name, name_style);
         }
         buf.append_styled(" ", default_style);
         buf.append_styled(commit.icon(), default_style);
 
-        buf.append_styled(" ", default_style);
         for _ in 0..commit.level() {
             buf.append_styled("│ ", default_style)
         }
@@ -131,7 +121,16 @@ impl cursive::view::View for History {
         );
         let start = printer.content_offset.y;
         let end = start + printer.size.y;
-        let (max_author, max_date) = self.calc_max_name_date(end);
+        let configured_max_author = glv_core::author_name_width();
+        let configured_max_date = glv_core::author_rel_date_width();
+        let (mut max_author, mut max_date) = self.calc_max_name_date(end);
+        if configured_max_author != 0 && max_author > configured_max_author {
+            max_author = configured_max_author;
+        }
+
+        if configured_max_date != 0 && max_date > configured_max_date {
+            max_date = configured_max_date;
+        }
 
         for x in start..end {
             if let Some(commit) = self.history.get(x) {
