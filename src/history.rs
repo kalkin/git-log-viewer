@@ -20,11 +20,22 @@ pub struct History {
     selected: usize,
     length: usize,
     working_dir: String,
+    subtree_modules: Vec<SubtreeConfig>,
 }
 
 impl History {
     pub fn new(working_dir: &str, range: &str) -> Result<History, PosixError> {
-        let history = commits_for_range(working_dir, range, 0, None, vec![], Some(0), Some(25))?;
+        let subtree_modules = monorepo::subtrees(working_dir)?;
+        let history = commits_for_range(
+            working_dir,
+            range,
+            0,
+            None,
+            subtree_modules.as_ref(),
+            vec![],
+            Some(0),
+            Some(25),
+        )?;
         let length = history_length(working_dir, range, vec![])?;
         assert!(!history.is_empty());
         Ok(History {
@@ -33,6 +44,7 @@ impl History {
             selected: 0,
             length,
             working_dir: working_dir.to_string(),
+            subtree_modules,
         })
     }
 
@@ -46,6 +58,7 @@ impl History {
         let id_style = id_style(&default_style);
         let name_style = name_style(&default_style);
         let date_style = date_style(&default_style);
+        let mod_style = mod_style(&default_style);
 
         buf.append_styled(commit.short_id(), id_style);
         buf.append_styled(" ", default_style);
@@ -89,13 +102,16 @@ impl History {
         } else if commit.is_fork_point() {
             buf.append_styled("─┘", default_style)
         }
-
-        if let Some(v) = commit.subject_module() {
-            let mod_style = mod_style(&default_style);
-            buf.append_styled(" ", mod_style);
-            buf.append_styled(v, mod_style);
-        }
         buf.append_styled(" ", default_style);
+
+        if !commit.subtree_modules().is_empty() {
+            buf.append_styled(commit.subtree_modules().join(", "), mod_style);
+            buf.append_styled(" ", default_style);
+        } else if let Some(v) = commit.subject_module() {
+            buf.append_styled(v, mod_style);
+            buf.append_styled(" ", default_style);
+        }
+
         if let Some(subject) = commit.short_subject() {
             buf.append_styled(subject, default_style);
         } else {
@@ -164,6 +180,7 @@ impl cursive::view::View for History {
                 range,
                 0,
                 above_commit,
+                self.subtree_modules.as_ref(),
                 vec![],
                 Some(skip),
                 Some(max),
@@ -186,8 +203,11 @@ impl cursive::view::View for History {
                 if self.selected_item().is_merge() {
                     let pos = self.selected + 1;
                     if self.selected_item().is_folded() {
-                        let children: Vec<Commit> =
-                            glv_core::child_history(&self.working_dir, self.selected_item());
+                        let children: Vec<Commit> = glv_core::child_history(
+                            &self.working_dir,
+                            self.selected_item(),
+                            self.subtree_modules.as_ref(),
+                        );
                         for (i, c) in children.iter().cloned().enumerate() {
                             self.history.insert(pos + i, c);
                         }
