@@ -40,7 +40,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         }
     }
 
-    pub fn name(&self) -> SpannedString<Style> {
+    pub fn name_span(&self) -> SpannedString<Style> {
         let style = name_style(&self.default_style);
         let text = glv_core::adjust_string(self.commit.author_name(), self.width_config.max_author);
         let mut result = SpannedString::new();
@@ -65,7 +65,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         result
     }
 
-    pub fn date(&self) -> SpannedString<Style> {
+    pub fn date_span(&self) -> SpannedString<Style> {
         let style = date_style(&self.default_style);
         let text =
             glv_core::adjust_string(self.commit.author_rel_date(), self.width_config.max_date);
@@ -74,7 +74,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         result
     }
 
-    pub fn id(&self) -> SpannedString<Style> {
+    pub fn id_span(&self) -> SpannedString<Style> {
         let style = id_style(&self.default_style);
         let text = self.commit.short_id();
         let mut result;
@@ -87,7 +87,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         result
     }
 
-    pub fn modules(&self) -> Option<SpannedString<Style>> {
+    pub fn modules_span(&self) -> Option<SpannedString<Style>> {
         let style = mod_style(&self.default_style);
         let mut text;
         match (
@@ -109,7 +109,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         Some(<HistoryEntry<'a, 'b>>::highlight_search(style, &text, &self.search_state))
     }
 
-    pub fn graph(&self) -> SpannedString<Style> {
+    pub fn graph_span(&self) -> SpannedString<Style> {
         let style = self.default_style;
         let mut result = SpannedString::new();
         for _ in 0..self.commit.level() {
@@ -145,7 +145,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         result
     }
 
-    pub fn subject(&self) -> SpannedString<Style> {
+    pub fn subject_span(&self) -> SpannedString<Style> {
         let style = self.default_style;
         let text = if let Some(v) = self.commit.short_subject() {
             v
@@ -165,7 +165,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         result
     }
 
-    pub fn references(&self) -> SpannedString<Style> {
+    pub fn references_span(&self) -> SpannedString<Style> {
         let style = ref_style(&self.default_style);
         let mut result = SpannedString::new();
         for r in self.commit.references() {

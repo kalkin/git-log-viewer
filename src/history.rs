@@ -82,37 +82,37 @@ impl History {
         let sc = HistoryEntry::new(style, commit, &self.search_state, width_config);
 
         {
-            buf.append(sc.id());
+            buf.append(sc.id_span());
             buf.append_styled(" ", style);
         }
 
         {
             // Author date
-            buf.append(sc.date());
+            buf.append(sc.date_span());
             buf.append_styled(" ", style);
         }
 
         {
             // Author name
-            buf.append(sc.name());
+            buf.append(sc.name_span());
             buf.append_styled(" ", style);
         }
 
         buf.append_styled(commit.icon(), style);
 
-        buf.append(sc.graph());
+        buf.append(sc.graph_span());
         buf.append_styled(" ", style);
 
-        if let Some(modules) = sc.modules() {
+        if let Some(modules) = sc.modules_span() {
             buf.append(modules);
             buf.append_styled(" ", style);
         }
 
         {
-            buf.append(sc.subject());
+            buf.append(sc.subject_span());
             buf.append_styled(" ", style);
         }
-        buf.append(sc.references());
+        buf.append(sc.references_span());
 
         buf
     }
