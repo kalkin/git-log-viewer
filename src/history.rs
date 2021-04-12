@@ -5,12 +5,13 @@ use cursive::utils::span::{SpannedStr, SpannedString};
 use cursive::{Rect, Vec2, XY};
 use unicode_width::UnicodeWidthStr;
 
-use glv_core::*;
 use posix_errors::PosixError;
 
 use crate::scroll::{MoveDirection, ScrollableSelectable};
 use crate::style::{date_style, id_style, name_style, ref_style};
 use crate::style::{mod_style, DEFAULT_STYLE};
+use git_subtrees_improved::{subtrees, SubtreeConfig};
+use glv_core::*;
 
 // const icons: Vec<Regex> = vec![Regex::new(r"^Revert:?\s*").unwrap()];
 
@@ -25,7 +26,7 @@ pub struct History {
 
 impl History {
     pub fn new(working_dir: &str, range: &str) -> Result<History, PosixError> {
-        let subtree_modules = monorepo::subtrees(working_dir)?;
+        let subtree_modules = subtrees(working_dir)?;
         let history = commits_for_range(
             working_dir,
             range,
@@ -105,7 +106,13 @@ impl History {
         buf.append_styled(" ", default_style);
 
         if !commit.subtree_modules().is_empty() {
-            buf.append_styled(commit.subtree_modules().join(", "), mod_style);
+            let mut modules_text: String = ":".to_string();
+            let subtree_modules = commit.subtree_modules();
+            modules_text.push_str(&subtree_modules.join(" :"));
+            if modules_text.width() > modules_width() {
+                modules_text = format!("({} modules)", subtree_modules.len());
+            }
+            buf.append_styled(modules_text, mod_style);
             buf.append_styled(" ", default_style);
         } else if let Some(v) = commit.subject_module() {
             buf.append_styled(v, mod_style);

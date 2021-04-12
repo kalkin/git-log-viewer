@@ -14,7 +14,7 @@ git-wrapper = { path = "../git-wrapper" }
 glv-core = { path = "../glv-core" }
 log = "0.4"
 lazy_static = "1.4"
-monorepo = { path = "../monorepo" }
+git-subtrees-improved = { path = "../git-subtrees-improved" }
 serde = { version = "1", features = ["derive"] }
 vte = "0.10.0"
 posix-errors = { path = "../posix-errors" }
