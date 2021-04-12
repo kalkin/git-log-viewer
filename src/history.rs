@@ -210,28 +210,7 @@ impl cursive::view::View for History {
         match e {
             Event::Char(' ') => {
                 if self.selected_item().is_merge() {
-                    let pos = self.selected + 1;
-                    if self.selected_item().is_folded() {
-                        let children: Vec<Commit> = glv_core::child_history(
-                            &self.working_dir,
-                            self.selected_item(),
-                            self.subtree_modules.as_ref(),
-                        );
-                        for (i, c) in children.iter().cloned().enumerate() {
-                            self.history.insert(pos + i, c);
-                        }
-                    } else {
-                        while let Some(c) = self.history.get(pos) {
-                            if c.level() > self.selected_item().level() {
-                                self.history.remove(pos);
-                            } else {
-                                break;
-                            }
-                        }
-                    }
-                    let cur = self.history.get_mut(self.selected).unwrap();
-                    cur.folded(!cur.is_folded());
-
+                    self.toggle_folding();
                     EventResult::Consumed(None)
                 } else {
                     EventResult::Ignored
@@ -321,5 +300,28 @@ impl History {
             }
         }
         (max_author, max_date)
+    }
+    fn toggle_folding(&mut self) {
+        let pos = self.selected + 1;
+        if self.selected_item().is_folded() {
+            let children: Vec<Commit> = glv_core::child_history(
+                &self.working_dir,
+                self.selected_item(),
+                self.subtree_modules.as_ref(),
+            );
+            for (i, c) in children.iter().cloned().enumerate() {
+                self.history.insert(pos + i, c);
+            }
+        } else {
+            while let Some(c) = self.history.get(pos) {
+                if c.level() > self.selected_item().level() {
+                    self.history.remove(pos);
+                } else {
+                    break;
+                }
+            }
+        }
+        let cur = self.history.get_mut(self.selected).unwrap();
+        cur.folded(!cur.is_folded());
     }
 }
