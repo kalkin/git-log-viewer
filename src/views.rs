@@ -5,10 +5,16 @@ use glv_core::Commit;
 
 use crate::scroll::ScrollableSelectable;
 
+enum FocusedView {
+    MAIN,
+    ASIDE,
+}
+
 pub struct DynamicSplitView<V1, V2> {
     main: V1,
     aside: V2,
     aside_visible: bool,
+    focused: FocusedView,
 }
 
 impl<V1, V2> DynamicSplitView<V1, V2> {
@@ -18,6 +24,7 @@ impl<V1, V2> DynamicSplitView<V1, V2> {
             main,
             aside,
             aside_visible,
+            focused: FocusedView::MAIN,
         }
     }
 }
@@ -117,19 +124,45 @@ where
         return constraint;
     }
     fn on_event(&mut self, e: Event) -> EventResult {
-        match (self.aside_visible, &e) {
-            (false, Event::Key(Key::Enter)) => {
-                self.aside.set_detail(self.main.selected_item());
-                self.aside_visible = true;
-                EventResult::Consumed(None)
-            }
-            (false, _) => self.main.on_event(e),
-            (true, Event::Char('q')) => {
-                self.aside_visible = false;
-                return EventResult::Consumed(None);
-            }
-            (true, _) => self.aside.on_event(e),
-        }
+        return match self.focused {
+            FocusedView::MAIN => match self.main.on_event(e.clone()) {
+                EventResult::Ignored => match e {
+                    Event::Key(Key::Enter) => {
+                        self.aside.set_detail(self.main.selected_item());
+                        self.focused = FocusedView::ASIDE;
+                        self.aside_visible = true;
+                        EventResult::Consumed(None)
+                    }
+                    Event::Key(Key::Tab) => {
+                        self.focused = FocusedView::ASIDE;
+                        EventResult::Consumed(None)
+                    }
+                    _ => {
+                        log::warn!("MAIN: Unexpected key {:?}", e);
+                        EventResult::Ignored
+                    }
+                },
+                EventResult::Consumed(callback) => EventResult::Consumed(callback),
+            },
+            FocusedView::ASIDE => match self.aside.on_event(e.clone()) {
+                EventResult::Ignored => match e {
+                    Event::Char('q') => {
+                        self.aside_visible = false;
+                        self.focused = FocusedView::MAIN;
+                        EventResult::Consumed(None)
+                    }
+                    Event::Key(Key::Tab) => {
+                        self.focused = FocusedView::MAIN;
+                        EventResult::Consumed(None)
+                    }
+                    _ => {
+                        log::warn!("ASIDE: Unexpected key {:?}", e);
+                        EventResult::Ignored
+                    }
+                },
+                EventResult::Consumed(callback) => EventResult::Consumed(callback),
+            },
+        };
     }
 }
 
