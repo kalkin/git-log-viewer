@@ -42,7 +42,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
 
     pub fn name_span(&self) -> SpannedString<Style> {
         let style = name_style(&self.default_style);
-        let text = glv_core::adjust_string(self.commit.author_name(), self.width_config.max_author);
+        let text = self.name();
         let mut result = SpannedString::new();
         if self.search_state.active {
             result = <HistoryEntry<'a, 'b>>::highlight_search(style, &text, &self.search_state);
@@ -50,6 +50,10 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
             result.append_styled(text, style);
         }
         result
+    }
+
+    fn name(&self) -> String {
+        glv_core::adjust_string(self.commit.author_name(), self.width_config.max_author)
     }
 
     fn search_text(haystack: &str, needle: &str) -> Vec<SearchMatch> {
@@ -67,16 +71,19 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
 
     pub fn date_span(&self) -> SpannedString<Style> {
         let style = date_style(&self.default_style);
-        let text =
-            glv_core::adjust_string(self.commit.author_rel_date(), self.width_config.max_date);
+        let text = self.date();
         let mut result = SpannedString::new();
         result.append_styled(text, style);
         result
     }
 
+    fn date(&self) -> String {
+        glv_core::adjust_string(self.commit.author_rel_date(), self.width_config.max_date)
+    }
+
     pub fn id_span(&self) -> SpannedString<Style> {
         let style = id_style(&self.default_style);
-        let text = self.commit.short_id();
+        let text = self.id();
         let mut result;
         if self.search_state.active {
             result = <HistoryEntry<'a, 'b>>::highlight_search(style, &text, &self.search_state);
@@ -85,6 +92,10 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
             result.append_styled(text, style);
         }
         result
+    }
+
+    fn id(&self) -> &String {
+        self.commit.short_id()
     }
 
     pub fn modules_span(&self) -> Option<SpannedString<Style>> {
@@ -147,11 +158,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
 
     pub fn subject_span(&self) -> SpannedString<Style> {
         let style = self.default_style;
-        let text = if let Some(v) = self.commit.short_subject() {
-            v
-        } else {
-            self.commit.subject()
-        };
+        let text = self.subject();
 
         let mut result;
         if self.search_state.active {
@@ -163,6 +170,14 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         }
 
         result
+    }
+
+    fn subject(&self) -> &String {
+        if let Some(v) = self.commit.short_subject() {
+            v
+        } else {
+            self.commit.subject()
+        }
     }
 
     pub fn references_span(&self) -> SpannedString<Style> {
