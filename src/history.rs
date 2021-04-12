@@ -22,6 +22,12 @@ pub struct History {
     subtree_modules: Vec<SubtreeConfig>,
 }
 
+struct RenderConfig {
+    max_author: usize,
+    max_date: usize,
+    highlight: bool,
+}
+
 impl History {
     pub fn new(working_dir: &str, range: &str) -> Result<History, PosixError> {
         let subtree_modules = subtrees(working_dir)?;
@@ -47,61 +53,60 @@ impl History {
         })
     }
 
-    fn render_commit(
-        commit: &Commit,
-        default_style: Style,
-        max_author: usize,
-        max_date: usize,
-    ) -> SpannedString<Style> {
+    fn render_commit(commit: &Commit, render_config: RenderConfig) -> SpannedString<Style> {
+        let mut style = *DEFAULT_STYLE;
+        if render_config.highlight {
+            style.effects |= Effect::Reverse;
+        }
         let mut buf = SpannedString::new();
-        let id_style = id_style(&default_style);
-        let name_style = name_style(&default_style);
-        let date_style = date_style(&default_style);
-        let mod_style = mod_style(&default_style);
+        let id_style = id_style(&style);
+        let name_style = name_style(&style);
+        let date_style = date_style(&style);
+        let mod_style = mod_style(&style);
 
         buf.append_styled(commit.short_id(), id_style);
-        buf.append_styled(" ", default_style);
+        buf.append_styled(" ", style);
 
         {
-            let date = glv_core::adjust_string(commit.author_rel_date(), max_date);
+            let date = glv_core::adjust_string(commit.author_rel_date(), render_config.max_date);
             buf.append_styled(date, date_style);
         }
-        buf.append_styled(" ", default_style);
+        buf.append_styled(" ", style);
 
         {
-            let name = glv_core::adjust_string(commit.author_name(), max_author);
+            let name = glv_core::adjust_string(commit.author_name(), render_config.max_author);
             buf.append_styled(name, name_style);
         }
-        buf.append_styled(" ", default_style);
-        buf.append_styled(commit.icon(), default_style);
+        buf.append_styled(" ", style);
+        buf.append_styled(commit.icon(), style);
 
         for _ in 0..commit.level() {
-            buf.append_styled("│ ", default_style)
+            buf.append_styled("│ ", style)
         }
         if commit.bellow().is_none() {
-            buf.append_styled("◉", default_style)
+            buf.append_styled("◉", style)
         } else if commit.is_commit_link() {
-            buf.append_styled("⭞", default_style)
+            buf.append_styled("⭞", style)
         } else {
-            buf.append_styled("●", default_style)
+            buf.append_styled("●", style)
         }
 
         if commit.is_merge() {
             if commit.subject().starts_with("Update :") || commit.subject().contains(" Import ") {
                 if commit.is_fork_point() {
-                    buf.append_styled("⇤┤", default_style);
+                    buf.append_styled("⇤┤", style);
                 } else {
-                    buf.append_styled("⇤╮", default_style);
+                    buf.append_styled("⇤╮", style);
                 }
             } else if commit.is_fork_point() {
-                buf.append_styled("─┤", default_style);
+                buf.append_styled("─┤", style);
             } else {
-                buf.append_styled("─┐", default_style)
+                buf.append_styled("─┐", style)
             }
         } else if commit.is_fork_point() {
-            buf.append_styled("─┘", default_style)
+            buf.append_styled("─┘", style)
         }
-        buf.append_styled(" ", default_style);
+        buf.append_styled(" ", style);
 
         if !commit.subtree_modules().is_empty() {
             let mut modules_text: String = ":".to_string();
@@ -111,22 +116,22 @@ impl History {
                 modules_text = format!("({} modules)", subtree_modules.len());
             }
             buf.append_styled(modules_text, mod_style);
-            buf.append_styled(" ", default_style);
+            buf.append_styled(" ", style);
         } else if let Some(v) = commit.subject_module() {
             buf.append_styled(v, mod_style);
-            buf.append_styled(" ", default_style);
+            buf.append_styled(" ", style);
         }
 
         if let Some(subject) = commit.short_subject() {
-            buf.append_styled(subject, default_style);
+            buf.append_styled(subject, style);
         } else {
-            buf.append_styled(commit.subject(), default_style);
+            buf.append_styled(commit.subject(), style);
         }
-        buf.append_styled(" ", default_style);
+        buf.append_styled(" ", style);
         for r in commit.references() {
-            buf.append_styled("«", ref_style(&default_style));
-            buf.append_styled(r.to_string(), ref_style(&default_style));
-            buf.append_styled("» ", ref_style(&default_style));
+            buf.append_styled("«", ref_style(&style));
+            buf.append_styled(r.to_string(), ref_style(&style));
+            buf.append_styled("» ", ref_style(&style));
         }
         buf
     }
@@ -156,13 +161,12 @@ impl cursive::view::View for History {
         for x in start..end {
             if let Some(commit) = self.history.get(x) {
                 let buf;
-                if x == self.selected {
-                    let mut hl_style = *DEFAULT_STYLE;
-                    hl_style.effects |= Effect::Reverse;
-                    buf = History::render_commit(commit, hl_style, max_author, max_date);
-                } else {
-                    buf = History::render_commit(commit, *DEFAULT_STYLE, max_author, max_date);
-                }
+                let render_config = RenderConfig {
+                    max_author,
+                    max_date,
+                    highlight: x == self.selected,
+                };
+                buf = History::render_commit(commit, render_config);
                 let t = SpannedStr::from(&buf);
                 printer.print_styled((0, x), t);
             } else {
