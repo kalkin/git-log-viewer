@@ -31,26 +31,52 @@ where
         if !self.aside_visible {
             self.main.draw(printer);
         } else {
-            let aside_size = Vec2 {
-                x: printer.size.x,
-                y: printer.size.y / 2,
-            };
-            let main_size = Vec2 {
-                x: printer.size.x,
-                y: printer.size.y - printer.size.y / 2,
-            };
+            let aside_size;
+            let main_size;
+
+            let horizontal = printer.size.x < 160;
+            if horizontal {
+                aside_size = Vec2 {
+                    x: printer.size.x,
+                    y: printer.size.y / 2,
+                };
+                main_size = Vec2 {
+                    x: printer.size.x,
+                    y: printer.size.y - printer.size.y / 2,
+                };
+            } else {
+                aside_size = Vec2 {
+                    x: printer.size.x / 2,
+                    y: printer.size.y,
+                };
+                main_size = Vec2 {
+                    x: printer.size.x - printer.size.x / 2,
+                    y: printer.size.y,
+                };
+            }
 
             let main_rect = Rect::from_size(printer.offset, main_size);
             let main_printer = printer.windowed(main_rect);
             self.main.draw(&main_printer);
 
-            let aside_rect = Rect::from_size(
-                Vec2 {
-                    x: 0,
-                    y: main_size.y,
-                },
-                aside_size,
-            );
+            let aside_rect;
+            if horizontal {
+                aside_rect = Rect::from_size(
+                    Vec2 {
+                        x: 0,
+                        y: main_size.y,
+                    },
+                    aside_size,
+                );
+            } else {
+                aside_rect = Rect::from_size(
+                    Vec2 {
+                        x: main_size.x,
+                        y: 0,
+                    },
+                    aside_size,
+                );
+            }
             let aside_printer = printer.windowed(aside_rect);
             self.aside.draw(&aside_printer);
         }
@@ -60,15 +86,28 @@ where
         if !self.aside_visible {
             self.main.layout(size);
         } else {
-            let aside_size = Vec2 {
-                x: size.x,
-                y: size.y / 2,
-            };
-            let main_size = Vec2 {
-                x: size.x,
-                y: size.y - size.y / 2,
-            };
+            let aside_size;
+            let main_size;
 
+            if size.x < 160 {
+                aside_size = Vec2 {
+                    x: size.x,
+                    y: size.y / 2,
+                };
+                main_size = Vec2 {
+                    x: size.x,
+                    y: size.y - size.y / 2,
+                };
+            } else {
+                aside_size = Vec2 {
+                    x: size.x / 2,
+                    y: size.y,
+                };
+                main_size = Vec2 {
+                    x: size.x - size.x / 2,
+                    y: size.y,
+                };
+            }
             self.main.layout(main_size);
             self.aside.layout(aside_size);
         }
