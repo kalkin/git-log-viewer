@@ -8,8 +8,9 @@ use unicode_width::UnicodeWidthStr;
 
 use posix_errors::PosixError;
 
+use crate::history_entry::{HistoryEntry, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
-use crate::search::{SearchState, SearchableCommit, WidthConfig};
+use crate::search::SearchState;
 use crate::style::DEFAULT_STYLE;
 use git_subtrees_improved::{subtrees, SubtreeConfig};
 use glv_core::*;
@@ -78,7 +79,7 @@ impl History {
             max_modules: modules_width(),
         };
 
-        let sc = SearchableCommit::new(style, commit, &self.search_state, width_config);
+        let sc = HistoryEntry::new(style, commit, &self.search_state, width_config);
 
         {
             buf.append(sc.short_id());

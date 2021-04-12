@@ -10,6 +10,7 @@ use serde::Deserialize;
 
 mod detail;
 mod history;
+mod history_entry;
 mod raw;
 mod scroll;
 mod search;
