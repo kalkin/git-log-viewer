@@ -13,8 +13,6 @@ use crate::style::{mod_style, DEFAULT_STYLE};
 use git_subtrees_improved::{subtrees, SubtreeConfig};
 use glv_core::*;
 
-// const icons: Vec<Regex> = vec![Regex::new(r"^Revert:?\s*").unwrap()];
-
 pub struct History {
     range: String,
     history: Vec<Commit>,
