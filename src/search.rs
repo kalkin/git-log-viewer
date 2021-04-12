@@ -111,7 +111,7 @@ impl<'a, 'b> SearchableCommit<'a, 'b> {
 
         let mut result;
         if self.search_state.active {
-            let search_state = &self.search_state;
+            let search_state = self.search_state;
             result = <SearchableCommit<'a, 'b>>::highlight_search(style, &text, search_state);
         } else {
             result = SpannedString::new();
@@ -126,7 +126,7 @@ impl<'a, 'b> SearchableCommit<'a, 'b> {
         for r in self.commit.references() {
             result.append_styled('«', style);
             if self.search_state.active {
-                let search_state = &self.search_state;
+                let search_state = self.search_state;
                 let tmp: SpannedString<Style> = <SearchableCommit<'a, 'b>>::highlight_search(
                     style,
                     &r.to_string(),

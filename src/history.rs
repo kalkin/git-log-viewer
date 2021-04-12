@@ -1,8 +1,9 @@
 use cursive::direction::Direction;
-use cursive::event::{Event, EventResult};
+use cursive::event::{Event, EventResult, Key};
 use cursive::theme::*;
 use cursive::utils::span::{SpannedStr, SpannedString};
-use cursive::{Rect, Vec2, XY};
+use cursive::views::EditView;
+use cursive::{Printer, Rect, Vec2, XY};
 use unicode_width::UnicodeWidthStr;
 
 use posix_errors::PosixError;
@@ -13,6 +14,11 @@ use crate::style::DEFAULT_STYLE;
 use git_subtrees_improved::{subtrees, SubtreeConfig};
 use glv_core::*;
 
+enum HistoryFocus {
+    History,
+    Search,
+}
+
 pub struct History {
     range: String,
     history: Vec<Commit>,
@@ -21,6 +27,8 @@ pub struct History {
     working_dir: String,
     subtree_modules: Vec<SubtreeConfig>,
     search_state: SearchState,
+    search_input: Option<EditView>,
+    focused: HistoryFocus,
 }
 
 struct RenderConfig {
@@ -53,6 +61,8 @@ impl History {
             working_dir: working_dir.to_string(),
             subtree_modules,
             search_state,
+            search_input: None,
+            focused: HistoryFocus::History,
         })
     }
 
@@ -172,16 +182,8 @@ impl History {
         let cur = self.history.get_mut(self.selected).unwrap();
         cur.folded(!cur.is_folded());
     }
-}
 
-impl cursive::view::View for History {
-    fn draw(&self, printer: &cursive::Printer) {
-        assert!(
-            printer.content_offset.y <= self.selected
-                && self.selected < printer.content_offset.y + printer.size.y,
-            "Wrong `draw()` call. Selected '{}' is not visible",
-            self.selected
-        );
+    fn render_history(&self, printer: &Printer) {
         let start = printer.content_offset.y;
         let end = start + printer.size.y;
         let configured_max_author = glv_core::author_name_width();
@@ -211,6 +213,36 @@ impl cursive::view::View for History {
             }
         }
     }
+}
+
+impl cursive::view::View for History {
+    fn draw(&self, printer: &cursive::Printer) {
+        assert!(
+            printer.content_offset.y <= self.selected
+                && self.selected < printer.content_offset.y + printer.size.y,
+            "Wrong `draw()` call. Selected '{}' is not visible",
+            self.selected
+        );
+        if let Some(input) = &self.search_input {
+            let history_printer = printer.inner_size(Vec2 {
+                x: printer.size.x,
+                y: printer.size.y - 1,
+            });
+            let search_printer = printer
+                .offset(Vec2 {
+                    x: printer.content_offset.x,
+                    y: printer.content_offset.y + history_printer.size.y,
+                })
+                .inner_size(Vec2 {
+                    x: printer.size.x,
+                    y: 1,
+                });
+            self.render_history(&history_printer);
+            input.draw(&search_printer);
+        } else {
+            self.render_history(printer)
+        }
+    }
 
     fn layout(&mut self, size: Vec2) {
         // Always prefetch commits for one page from selected
@@ -234,6 +266,9 @@ impl cursive::view::View for History {
             .unwrap();
             self.history.append(tmp.as_mut());
         }
+        if let Some(input) = self.search_input.as_mut() {
+            input.layout(Vec2 { x: size.x, y: 1 });
+        }
     }
 
     fn required_size(&mut self, constraint: Vec2) -> Vec2 {
@@ -244,25 +279,69 @@ impl cursive::view::View for History {
     }
 
     fn on_event(&mut self, e: Event) -> EventResult {
-        match e {
-            Event::Char('/') => EventResult::Consumed(None),
-            Event::Char(' ') => {
-                if self.selected_item().is_merge() {
-                    self.toggle_folding();
-                    EventResult::Consumed(None)
-                } else {
-                    EventResult::Ignored
+        match &self.focused {
+            HistoryFocus::History => match e {
+                Event::Key(Key::Esc) => {
+                    if self.search_input.is_some() {
+                        self.search_input = None;
+                        self.search_state.active = false;
+                        EventResult::Consumed(None)
+                    } else {
+                        EventResult::Ignored
+                    }
                 }
-            }
-            _ => {
-                log::warn!("History: Unexpected key {:?}", e);
-                EventResult::Ignored
-            }
+                Event::Char('/') => {
+                    let mut t = EditView::new();
+                    t.set_enabled(true);
+                    self.search_input = Some(t);
+                    self.focused = HistoryFocus::Search;
+                    self.search_input
+                        .as_mut()
+                        .unwrap()
+                        .take_focus(Direction::down());
+                    EventResult::Consumed(None)
+                }
+                Event::Char(' ') => {
+                    if self.selected_item().is_merge() {
+                        self.toggle_folding();
+                        EventResult::Consumed(None)
+                    } else {
+                        EventResult::Ignored
+                    }
+                }
+                _ => EventResult::Ignored,
+            },
+            HistoryFocus::Search => match e {
+                Event::Key(Key::Esc) => {
+                    self.focused = HistoryFocus::History;
+                    self.search_state.active = false;
+                    self.search_input = None;
+
+                    EventResult::Consumed(None)
+                }
+                Event::Key(Key::Enter) => {
+                    self.focused = HistoryFocus::History;
+                    self.search_input.as_mut().unwrap().disable();
+                    let needle = self
+                        .search_input
+                        .as_ref()
+                        .unwrap()
+                        .get_content()
+                        .to_string();
+                    self.search_state.active = true;
+                    self.search_state.needle = needle;
+                    EventResult::Consumed(None)
+                }
+                _ => self.search_input.as_mut().unwrap().on_event(e),
+            },
         }
     }
 
-    fn take_focus(&mut self, _: Direction) -> bool {
-        true
+    fn take_focus(&mut self, d: Direction) -> bool {
+        match self.focused {
+            HistoryFocus::History => true,
+            HistoryFocus::Search => self.search_input.as_mut().unwrap().take_focus(d),
+        }
     }
 
     fn important_area(&self, view_size: Vec2) -> Rect {
