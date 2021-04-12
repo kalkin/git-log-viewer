@@ -135,6 +135,53 @@ impl History {
         }
         buf
     }
+
+    fn calc_max_name_date(&self, height: usize) -> (usize, usize) {
+        let mut max_author = 5;
+        let mut max_date = 5;
+        {
+            let mut iter = self.history.iter();
+            for _ in 0..height {
+                if let Some(commit) = iter.next() {
+                    if commit.author_rel_date().len() > max_date {
+                        let t = commit.author_rel_date().as_str();
+                        max_date = UnicodeWidthStr::width(t);
+                    }
+                    if commit.author_name().len() > max_author {
+                        let t = commit.author_name().as_str();
+                        max_author = UnicodeWidthStr::width(t);
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+        (max_author, max_date)
+    }
+
+    fn toggle_folding(&mut self) {
+        let pos = self.selected + 1;
+        if self.selected_item().is_folded() {
+            let children: Vec<Commit> = glv_core::child_history(
+                &self.working_dir,
+                self.selected_item(),
+                self.subtree_modules.as_ref(),
+            );
+            for (i, c) in children.iter().cloned().enumerate() {
+                self.history.insert(pos + i, c);
+            }
+        } else {
+            while let Some(c) = self.history.get(pos) {
+                if c.level() > self.selected_item().level() {
+                    self.history.remove(pos);
+                } else {
+                    break;
+                }
+            }
+        }
+        let cur = self.history.get_mut(self.selected).unwrap();
+        cur.folded(!cur.is_folded());
+    }
 }
 
 impl cursive::view::View for History {
@@ -275,53 +322,5 @@ impl ScrollableSelectable for History {
 
     fn selected_item(&self) -> &Commit {
         self.history.get(self.selected).as_ref().unwrap()
-    }
-}
-
-impl History {
-    fn calc_max_name_date(&self, height: usize) -> (usize, usize) {
-        let mut max_author = 5;
-        let mut max_date = 5;
-        {
-            let mut iter = self.history.iter();
-            for _ in 0..height {
-                if let Some(commit) = iter.next() {
-                    if commit.author_rel_date().len() > max_date {
-                        let t = commit.author_rel_date().as_str();
-                        max_date = UnicodeWidthStr::width(t);
-                    }
-                    if commit.author_name().len() > max_author {
-                        let t = commit.author_name().as_str();
-                        max_author = UnicodeWidthStr::width(t);
-                    }
-                } else {
-                    break;
-                }
-            }
-        }
-        (max_author, max_date)
-    }
-    fn toggle_folding(&mut self) {
-        let pos = self.selected + 1;
-        if self.selected_item().is_folded() {
-            let children: Vec<Commit> = glv_core::child_history(
-                &self.working_dir,
-                self.selected_item(),
-                self.subtree_modules.as_ref(),
-            );
-            for (i, c) in children.iter().cloned().enumerate() {
-                self.history.insert(pos + i, c);
-            }
-        } else {
-            while let Some(c) = self.history.get(pos) {
-                if c.level() > self.selected_item().level() {
-                    self.history.remove(pos);
-                } else {
-                    break;
-                }
-            }
-        }
-        let cur = self.history.get_mut(self.selected).unwrap();
-        cur.folded(!cur.is_folded());
     }
 }
