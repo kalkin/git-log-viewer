@@ -20,6 +20,11 @@ pub struct WidthConfig {
     pub max_modules: usize,
 }
 
+struct SearchMatch {
+    start: usize,
+    end: usize,
+}
+
 impl<'a, 'b> HistoryEntry<'a, 'b> {
     pub fn new(
         default_style: Style,
@@ -44,6 +49,19 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         } else {
             result.append_styled(text, style);
         }
+        result
+    }
+
+    fn search_text(haystack: &str, needle: &str) -> Vec<SearchMatch> {
+        let mut result = Vec::new();
+        let indices = haystack.match_indices(needle);
+        for (i, s) in indices {
+            result.push(SearchMatch {
+                start: i,
+                end: i + s.len(),
+            })
+        }
+
         result
     }
 
@@ -172,15 +190,15 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
     ) -> SpannedString<Style> {
         let mut cur = 0;
         let mut tmp = SpannedString::new();
-        let indices = text.match_indices(search_state.needle.as_str());
-        for (i, s) in indices {
-            assert!(i >= cur);
-            if cur < i {
-                tmp.append_styled(&text[cur..i], style)
+        let indices = <HistoryEntry<'a, 'b>>::search_text(text, search_state.needle.as_str());
+        for s in indices {
+            assert!(s.start >= cur);
+            if cur < s.start {
+                tmp.append_styled(&text[cur..s.start], style)
             }
-            cur = i + s.len();
+            cur = s.end;
 
-            tmp.append_styled(s, search_state.style())
+            tmp.append_styled(&text[s.start..s.end], search_state.style());
         }
         if cur < text.len() - 1 {
             tmp.append_styled(&text[cur..], style)
