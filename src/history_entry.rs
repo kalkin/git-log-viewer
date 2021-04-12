@@ -35,7 +35,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         }
     }
 
-    pub fn author_name(&self) -> SpannedString<Style> {
+    pub fn name(&self) -> SpannedString<Style> {
         let style = name_style(&self.default_style);
         let text = glv_core::adjust_string(self.commit.author_name(), self.width_config.max_author);
         let mut result = SpannedString::new();
@@ -47,7 +47,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         result
     }
 
-    pub fn author_rel_date(&self) -> SpannedString<Style> {
+    pub fn date(&self) -> SpannedString<Style> {
         let style = date_style(&self.default_style);
         let text =
             glv_core::adjust_string(self.commit.author_rel_date(), self.width_config.max_date);
@@ -56,7 +56,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         result
     }
 
-    pub fn short_id(&self) -> SpannedString<Style> {
+    pub fn id(&self) -> SpannedString<Style> {
         let style = id_style(&self.default_style);
         let text = self.commit.short_id();
         let mut result;
@@ -143,6 +143,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
             result = SpannedString::new();
             result.append_styled(text, style);
         }
+
         result
     }
 

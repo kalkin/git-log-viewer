@@ -82,19 +82,19 @@ impl History {
         let sc = HistoryEntry::new(style, commit, &self.search_state, width_config);
 
         {
-            buf.append(sc.short_id());
+            buf.append(sc.id());
             buf.append_styled(" ", style);
         }
 
         {
             // Author date
-            buf.append(sc.author_rel_date());
+            buf.append(sc.date());
             buf.append_styled(" ", style);
         }
 
         {
             // Author name
-            buf.append(sc.author_name());
+            buf.append(sc.name());
             buf.append_styled(" ", style);
         }
 
