@@ -100,32 +100,7 @@ impl History {
 
         buf.append_styled(commit.icon(), style);
 
-        for _ in 0..commit.level() {
-            buf.append_styled("│ ", style)
-        }
-        if commit.bellow().is_none() {
-            buf.append_styled("◉", style)
-        } else if commit.is_commit_link() {
-            buf.append_styled("⭞", style)
-        } else {
-            buf.append_styled("●", style)
-        }
-
-        if commit.is_merge() {
-            if commit.subject().starts_with("Update :") || commit.subject().contains(" Import ") {
-                if commit.is_fork_point() {
-                    buf.append_styled("⇤┤", style);
-                } else {
-                    buf.append_styled("⇤╮", style);
-                }
-            } else if commit.is_fork_point() {
-                buf.append_styled("─┤", style);
-            } else {
-                buf.append_styled("─┐", style)
-            }
-        } else if commit.is_fork_point() {
-            buf.append_styled("─┘", style)
-        }
+        buf.append(sc.graph());
         buf.append_styled(" ", style);
 
         if let Some(modules) = sc.modules() {

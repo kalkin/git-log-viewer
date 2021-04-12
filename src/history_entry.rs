@@ -91,6 +91,42 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         Some(<HistoryEntry<'a, 'b>>::highlight_search(style, &text, &self.search_state))
     }
 
+    pub fn graph(&self) -> SpannedString<Style> {
+        let style = self.default_style;
+        let mut result = SpannedString::new();
+        for _ in 0..self.commit.level() {
+            result.append_styled("│ ", style)
+        }
+
+        if self.commit.bellow().is_none() {
+            result.append_styled("◉", style)
+        } else if self.commit.is_commit_link() {
+            result.append_styled("⭞", style)
+        } else {
+            result.append_styled("●", style)
+        }
+
+        if self.commit.is_merge() {
+            if self.commit.subject().starts_with("Update :")
+                || self.commit.subject().contains(" Import ")
+            {
+                if self.commit.is_fork_point() {
+                    result.append_styled("⇤┤", style);
+                } else {
+                    result.append_styled("⇤╮", style);
+                }
+            } else if self.commit.is_fork_point() {
+                result.append_styled("─┤", style);
+            } else {
+                result.append_styled("─┐", style)
+            }
+        } else if self.commit.is_fork_point() {
+            result.append_styled("─┘", style)
+        }
+
+        result
+    }
+
     pub fn subject(&self) -> SpannedString<Style> {
         let style = self.default_style;
         let text = if let Some(v) = self.commit.short_subject() {
