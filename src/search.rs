@@ -30,6 +30,13 @@ pub struct SearchableCommit<'a, 'b> {
     commit: &'a Commit,
     default_style: Style,
     search_state: &'b SearchState,
+    width_config: WidthConfig,
+}
+
+pub struct WidthConfig {
+    pub max_author: usize,
+    pub max_date: usize,
+    pub max_modules: usize,
 }
 
 impl<'a, 'b> SearchableCommit<'a, 'b> {
@@ -37,17 +44,19 @@ impl<'a, 'b> SearchableCommit<'a, 'b> {
         default_style: Style,
         commit: &'a Commit,
         search_state: &'b SearchState,
+        width_config: WidthConfig,
     ) -> SearchableCommit<'a, 'b> {
         SearchableCommit {
             commit,
             default_style,
             search_state,
+            width_config,
         }
     }
 
-    pub fn author_name(&self, max: usize) -> SpannedString<Style> {
+    pub fn author_name(&self) -> SpannedString<Style> {
         let style = name_style(&self.default_style);
-        let text = glv_core::adjust_string(self.commit.author_name(), max);
+        let text = glv_core::adjust_string(self.commit.author_name(), self.width_config.max_author);
         let mut result = SpannedString::new();
         if self.search_state.active {
             result = <SearchableCommit<'a, 'b>>::highlight_search(style, &text, &self.search_state);
@@ -57,9 +66,10 @@ impl<'a, 'b> SearchableCommit<'a, 'b> {
         result
     }
 
-    pub fn author_rel_date(&self, max: usize) -> SpannedString<Style> {
+    pub fn author_rel_date(&self) -> SpannedString<Style> {
         let style = date_style(&self.default_style);
-        let text = glv_core::adjust_string(self.commit.author_rel_date(), max);
+        let text =
+            glv_core::adjust_string(self.commit.author_rel_date(), self.width_config.max_date);
         let mut result = SpannedString::new();
         result.append_styled(text, style);
         result
@@ -78,7 +88,7 @@ impl<'a, 'b> SearchableCommit<'a, 'b> {
         result
     }
 
-    pub fn modules(&self, max: usize) -> Option<SpannedString<Style>> {
+    pub fn modules(&self) -> Option<SpannedString<Style>> {
         let style = mod_style(&self.default_style);
         let mut text;
         match (
@@ -89,7 +99,7 @@ impl<'a, 'b> SearchableCommit<'a, 'b> {
                 text = ":".to_string();
                 let subtree_modules = self.commit.subtree_modules();
                 text.push_str(&subtree_modules.join(" :"));
-                if text.width() > max {
+                if text.width() > self.width_config.max_modules {
                     text = format!("({} modules)", subtree_modules.len());
                 }
             }

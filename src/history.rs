@@ -9,7 +9,7 @@ use unicode_width::UnicodeWidthStr;
 use posix_errors::PosixError;
 
 use crate::scroll::{MoveDirection, ScrollableSelectable};
-use crate::search::{SearchState, SearchableCommit};
+use crate::search::{SearchState, SearchableCommit, WidthConfig};
 use crate::style::DEFAULT_STYLE;
 use git_subtrees_improved::{subtrees, SubtreeConfig};
 use glv_core::*;
@@ -72,8 +72,13 @@ impl History {
             style.effects |= Effect::Reverse;
         }
         let mut buf = SpannedString::new();
+        let width_config = WidthConfig {
+            max_author: render_config.max_author,
+            max_date: render_config.max_date,
+            max_modules: modules_width(),
+        };
 
-        let sc = SearchableCommit::new(style, commit, &self.search_state);
+        let sc = SearchableCommit::new(style, commit, &self.search_state, width_config);
 
         {
             buf.append(sc.short_id());
@@ -82,13 +87,13 @@ impl History {
 
         {
             // Author date
-            buf.append(sc.author_rel_date(render_config.max_date));
+            buf.append(sc.author_rel_date());
             buf.append_styled(" ", style);
         }
 
         {
             // Author name
-            buf.append(sc.author_name(render_config.max_author));
+            buf.append(sc.author_name());
             buf.append_styled(" ", style);
         }
 
@@ -122,7 +127,7 @@ impl History {
         }
         buf.append_styled(" ", style);
 
-        if let Some(modules) = sc.modules(modules_width()) {
+        if let Some(modules) = sc.modules() {
             buf.append(modules);
             buf.append_styled(" ", style);
         }
