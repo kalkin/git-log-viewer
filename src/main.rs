@@ -12,8 +12,9 @@ mod detail;
 mod history;
 mod raw;
 mod scroll;
-mod views;
+mod search;
 mod style;
+mod views;
 
 const USAGE: &str = "
 glv - Git Log Viewer a TUI application with support for folding merges
@@ -54,7 +55,9 @@ fn main() {
     //.full_width()
     //.scrollable();
 
-    let working_dir = args.flag_workdir.unwrap_or(git_wrapper::top_level().unwrap());
+    let working_dir = args
+        .flag_workdir
+        .unwrap_or(git_wrapper::top_level().unwrap());
     let revision = args.arg_revision.unwrap_or("HEAD".to_string());
     let history = history::History::new(&working_dir, &revision).unwrap();
     // let main = CustomScrollView::new(history);

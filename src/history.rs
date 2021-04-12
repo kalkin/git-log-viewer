@@ -8,8 +8,8 @@ use unicode_width::UnicodeWidthStr;
 use posix_errors::PosixError;
 
 use crate::scroll::{MoveDirection, ScrollableSelectable};
-use crate::style::{date_style, id_style, name_style, ref_style};
-use crate::style::{mod_style, DEFAULT_STYLE};
+use crate::search::{SearchState, SearchableCommit};
+use crate::style::DEFAULT_STYLE;
 use git_subtrees_improved::{subtrees, SubtreeConfig};
 use glv_core::*;
 
@@ -20,6 +20,7 @@ pub struct History {
     length: usize,
     working_dir: String,
     subtree_modules: Vec<SubtreeConfig>,
+    search_state: SearchState,
 }
 
 struct RenderConfig {
@@ -43,6 +44,7 @@ impl History {
         )?;
         let length = history_length(working_dir, range, vec![])?;
         assert!(!history.is_empty());
+        let search_state = SearchState::new(DEFAULT_STYLE.to_owned());
         Ok(History {
             range: range.to_string(),
             history,
@@ -50,34 +52,36 @@ impl History {
             length,
             working_dir: working_dir.to_string(),
             subtree_modules,
+            search_state,
         })
     }
 
-    fn render_commit(commit: &Commit, render_config: RenderConfig) -> SpannedString<Style> {
+    fn render_commit(&self, commit: &Commit, render_config: RenderConfig) -> SpannedString<Style> {
         let mut style = *DEFAULT_STYLE;
         if render_config.highlight {
             style.effects |= Effect::Reverse;
         }
         let mut buf = SpannedString::new();
-        let id_style = id_style(&style);
-        let name_style = name_style(&style);
-        let date_style = date_style(&style);
-        let mod_style = mod_style(&style);
 
-        buf.append_styled(commit.short_id(), id_style);
-        buf.append_styled(" ", style);
+        let sc = SearchableCommit::new(style, commit, &self.search_state);
 
         {
-            let date = glv_core::adjust_string(commit.author_rel_date(), render_config.max_date);
-            buf.append_styled(date, date_style);
+            buf.append(sc.short_id());
+            buf.append_styled(" ", style);
         }
-        buf.append_styled(" ", style);
 
         {
-            let name = glv_core::adjust_string(commit.author_name(), render_config.max_author);
-            buf.append_styled(name, name_style);
+            // Author date
+            buf.append(sc.author_rel_date(render_config.max_date));
+            buf.append_styled(" ", style);
         }
-        buf.append_styled(" ", style);
+
+        {
+            // Author name
+            buf.append(sc.author_name(render_config.max_author));
+            buf.append_styled(" ", style);
+        }
+
         buf.append_styled(commit.icon(), style);
 
         for _ in 0..commit.level() {
@@ -108,31 +112,17 @@ impl History {
         }
         buf.append_styled(" ", style);
 
-        if !commit.subtree_modules().is_empty() {
-            let mut modules_text: String = ":".to_string();
-            let subtree_modules = commit.subtree_modules();
-            modules_text.push_str(&subtree_modules.join(" :"));
-            if modules_text.width() > modules_width() {
-                modules_text = format!("({} modules)", subtree_modules.len());
-            }
-            buf.append_styled(modules_text, mod_style);
-            buf.append_styled(" ", style);
-        } else if let Some(v) = commit.subject_module() {
-            buf.append_styled(v, mod_style);
+        if let Some(modules) = sc.modules(modules_width()) {
+            buf.append(modules);
             buf.append_styled(" ", style);
         }
 
-        if let Some(subject) = commit.short_subject() {
-            buf.append_styled(subject, style);
-        } else {
-            buf.append_styled(commit.subject(), style);
+        {
+            buf.append(sc.subject());
+            buf.append_styled(" ", style);
         }
-        buf.append_styled(" ", style);
-        for r in commit.references() {
-            buf.append_styled("«", ref_style(&style));
-            buf.append_styled(r.to_string(), ref_style(&style));
-            buf.append_styled("» ", ref_style(&style));
-        }
+        buf.append(sc.references());
+
         buf
     }
 
@@ -213,7 +203,7 @@ impl cursive::view::View for History {
                     max_date,
                     highlight: x == self.selected,
                 };
-                buf = History::render_commit(commit, render_config);
+                buf = self.render_commit(commit, render_config);
                 let t = SpannedStr::from(&buf);
                 printer.print_styled((0, x), t);
             } else {
@@ -255,6 +245,7 @@ impl cursive::view::View for History {
 
     fn on_event(&mut self, e: Event) -> EventResult {
         match e {
+            Event::Char('/') => EventResult::Consumed(None),
             Event::Char(' ') => {
                 if self.selected_item().is_merge() {
                     self.toggle_folding();
