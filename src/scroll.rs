@@ -79,7 +79,7 @@ where
 
     fn on_event(&mut self, event: Event) -> EventResult {
         match event {
-            Event::Key(Key::Up) => {
+            Event::Key(Key::Up) | Event::Char('k') => {
                 if self.inner.move_focus(1, MoveDirection::Up) {
                     let sel = self.inner.selected_pos();
                     if sel < self.view_port.top {
@@ -90,7 +90,7 @@ where
                 }
                 EventResult::Consumed(None)
             }
-            Event::Key(Key::Down) => {
+            Event::Key(Key::Down)| Event::Char('j') => {
                 if self.inner.move_focus(1, MoveDirection::Down) {
                     let sel = self.inner.selected_pos();
                     if sel >= self.view_port.bottom {

@@ -282,6 +282,40 @@ impl cursive::view::View for History {
                         .take_focus(Direction::down());
                     EventResult::Consumed(None)
                 }
+                Event::Char('l') | Event::Key(Key::Right) => {
+                    if self.selected_item().is_merge() && self.selected_item().is_folded() {
+                        self.toggle_folding();
+                    } else if self.selected < self.history.len() - 1 {
+                        let mut cur = 0;
+                        for c in self.history[self.selected..].iter() {
+                            if c.is_merge() && c.is_folded() {
+                                break;
+                            }
+                            cur += 1;
+                        }
+                        if cur != 0 {
+                            self.move_focus(cur, MoveDirection::Down);
+                        }
+                    }
+                    EventResult::Consumed(None)
+                }
+                Event::Char('h') | Event::Key(Key::Left) => {
+                    if self.selected_item().is_merge() && !self.selected_item().is_folded() {
+                        self.toggle_folding();
+                    } else if self.selected_item().level() > 0 {
+                        // move to last parent node
+                        let mut cur = self.selected;
+                        let expected_level = self.selected_item().level() - 1;
+                        for c in self.history[0..cur].iter().rev() {
+                            if c.level() == expected_level {
+                                break;
+                            }
+                            cur -= 1;
+                        }
+                        self.move_focus(self.selected - cur + 1, MoveDirection::Up);
+                    }
+                    EventResult::Consumed(None)
+                }
                 Event::Char(' ') => {
                     if self.selected_item().is_merge() {
                         self.toggle_folding();
