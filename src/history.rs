@@ -2,7 +2,6 @@ use cursive::direction::Direction;
 use cursive::event::{Event, EventResult, Key};
 use cursive::theme::*;
 use cursive::utils::span::{SpannedStr, SpannedString};
-use cursive::views::EditView;
 use cursive::{Printer, Rect, Vec2, XY};
 use unicode_width::UnicodeWidthStr;
 
@@ -10,15 +9,10 @@ use posix_errors::PosixError;
 
 use crate::history_entry::{HistoryEntry, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
-use crate::search::SearchState;
+use crate::search::{SearchDirection, SearchState};
 use crate::style::DEFAULT_STYLE;
 use git_subtrees_improved::{subtrees, SubtreeConfig};
 use glv_core::*;
-
-enum HistoryFocus {
-    History,
-    Search,
-}
 
 pub struct History {
     range: String,
@@ -28,8 +22,6 @@ pub struct History {
     working_dir: String,
     subtree_modules: Vec<SubtreeConfig>,
     search_state: SearchState,
-    search_input: Option<EditView>,
-    focused: HistoryFocus,
 }
 
 struct RenderConfig {
@@ -62,8 +54,6 @@ impl History {
             working_dir: working_dir.to_string(),
             subtree_modules,
             search_state,
-            search_input: None,
-            focused: HistoryFocus::History,
         })
     }
 
@@ -194,6 +184,72 @@ impl History {
             }
         }
     }
+
+    fn search_backward(&mut self) {
+        for i in (0..self.selected).rev() {
+            let c = self.history.get(i).unwrap();
+            if c.search_matches(&self.search_state.needle, true) {
+                let delta = self.selected - i;
+                if delta > 0 {
+                    self.move_focus(delta, MoveDirection::Up);
+                    break;
+                }
+            }
+        }
+    }
+
+    fn search_forward(&mut self) {
+        let start = self.selected;
+        let end = self.history.len();
+        for i in start..end {
+            let c = self.history.get(i).unwrap();
+            if c.search_matches(&self.search_state.needle, true) {
+                let delta = i - self.selected;
+                if delta > 0 {
+                    self.move_focus(delta, MoveDirection::Down);
+                    return;
+                }
+            }
+        }
+        let mut start = self.history.len();
+        while self.fill_up(100) {
+            let end = self.history.len();
+            for i in start..end {
+                let c = self.history.get(i).unwrap();
+                if c.search_matches(&self.search_state.needle, true) {
+                    let delta = i - self.selected;
+                    if delta > 0 {
+                        self.move_focus(delta, MoveDirection::Down);
+                    }
+                    return;
+                }
+            }
+
+            start = self.history.len();
+        }
+    }
+
+    fn fill_up(&mut self, max: usize) -> bool {
+        let skip = self.history.len();
+        let range = self.range.as_str();
+        let working_dir = self.working_dir.as_str();
+        let above_commit = self.history.last();
+        if let Ok(mut tmp) = commits_for_range(
+            working_dir,
+            range,
+            0,
+            above_commit,
+            self.subtree_modules.as_ref(),
+            vec![],
+            Some(skip),
+            Some(max),
+        ) {
+            let result = tmp.len() > 0;
+            self.history.append(tmp.as_mut());
+            return result;
+        }
+        false
+    }
 }
 
 impl cursive::view::View for History {
@@ -204,25 +260,7 @@ impl cursive::view::View for History {
             "Wrong `draw()` call. Selected '{}' is not visible",
             self.selected
         );
-        if let Some(input) = &self.search_input {
-            let history_printer = printer.inner_size(Vec2 {
-                x: printer.size.x,
-                y: printer.size.y - 1,
-            });
-            let search_printer = printer
-                .offset(Vec2 {
-                    x: printer.content_offset.x,
-                    y: printer.content_offset.y + history_printer.size.y,
-                })
-                .inner_size(Vec2 {
-                    x: printer.size.x,
-                    y: 1,
-                });
-            self.render_history(&history_printer);
-            input.draw(&search_printer);
-        } else {
-            self.render_history(printer)
-        }
+        self.render_history(printer)
     }
 
     fn layout(&mut self, size: Vec2) {
@@ -230,25 +268,7 @@ impl cursive::view::View for History {
         let end = self.selected + size.y;
         if end >= self.history.len() - 1 && end < self.length {
             let max = end + 1 - self.history.len();
-            let skip = self.history.len();
-            let range = self.range.as_str();
-            let working_dir = self.working_dir.as_str();
-            let above_commit = self.history.last();
-            let mut tmp = commits_for_range(
-                working_dir,
-                range,
-                0,
-                above_commit,
-                self.subtree_modules.as_ref(),
-                vec![],
-                Some(skip),
-                Some(max),
-            )
-            .unwrap();
-            self.history.append(tmp.as_mut());
-        }
-        if let Some(input) = self.search_input.as_mut() {
-            input.layout(Vec2 { x: size.x, y: 1 });
+            self.fill_up(max);
         }
     }
 
@@ -260,103 +280,38 @@ impl cursive::view::View for History {
     }
 
     fn on_event(&mut self, e: Event) -> EventResult {
-        match &self.focused {
-            HistoryFocus::History => match e {
-                Event::Key(Key::Esc) => {
-                    if self.search_input.is_some() {
-                        self.search_input = None;
-                        self.search_state.active = false;
-                        EventResult::Consumed(None)
-                    } else {
-                        EventResult::Ignored
-                    }
-                }
-                Event::Char('/') => {
-                    let mut t = EditView::new();
-                    t.set_enabled(true);
-                    self.search_input = Some(t);
-                    self.focused = HistoryFocus::Search;
-                    self.search_input
-                        .as_mut()
-                        .unwrap()
-                        .take_focus(Direction::down());
-                    EventResult::Consumed(None)
-                }
-                Event::Char('l') | Event::Key(Key::Right) => {
-                    if self.selected_item().is_merge() && self.selected_item().is_folded() {
-                        self.toggle_folding();
-                    } else if self.selected < self.history.len() - 1 {
-                        let mut cur = 0;
-                        for c in self.history[self.selected..].iter() {
-                            if c.is_merge() && c.is_folded() {
-                                break;
-                            }
-                            cur += 1;
+        match e {
+            Event::Char('h') | Event::Key(Key::Left) => {
+                if self.selected_item().is_merge() && !self.selected_item().is_folded() {
+                    self.toggle_folding();
+                } else if self.selected_item().level() > 0 {
+                    // move to last parent node
+                    let mut cur = self.selected;
+                    let expected_level = self.selected_item().level() - 1;
+                    for c in self.history[0..cur].iter().rev() {
+                        if c.level() == expected_level {
+                            break;
                         }
-                        if cur != 0 {
-                            self.move_focus(cur, MoveDirection::Down);
-                        }
+                        cur -= 1;
                     }
+                    self.move_focus(self.selected - cur + 1, MoveDirection::Up);
+                }
+                EventResult::Consumed(None)
+            }
+            Event::Char(' ') => {
+                if self.selected_item().is_merge() {
+                    self.toggle_folding();
                     EventResult::Consumed(None)
+                } else {
+                    EventResult::Ignored
                 }
-                Event::Char('h') | Event::Key(Key::Left) => {
-                    if self.selected_item().is_merge() && !self.selected_item().is_folded() {
-                        self.toggle_folding();
-                    } else if self.selected_item().level() > 0 {
-                        // move to last parent node
-                        let mut cur = self.selected;
-                        let expected_level = self.selected_item().level() - 1;
-                        for c in self.history[0..cur].iter().rev() {
-                            if c.level() == expected_level {
-                                break;
-                            }
-                            cur -= 1;
-                        }
-                        self.move_focus(self.selected - cur + 1, MoveDirection::Up);
-                    }
-                    EventResult::Consumed(None)
-                }
-                Event::Char(' ') => {
-                    if self.selected_item().is_merge() {
-                        self.toggle_folding();
-                        EventResult::Consumed(None)
-                    } else {
-                        EventResult::Ignored
-                    }
-                }
-                _ => EventResult::Ignored,
-            },
-            HistoryFocus::Search => match e {
-                Event::Key(Key::Esc) => {
-                    self.focused = HistoryFocus::History;
-                    self.search_state.active = false;
-                    self.search_input = None;
-
-                    EventResult::Consumed(None)
-                }
-                Event::Key(Key::Enter) => {
-                    self.focused = HistoryFocus::History;
-                    self.search_input.as_mut().unwrap().disable();
-                    let needle = self
-                        .search_input
-                        .as_ref()
-                        .unwrap()
-                        .get_content()
-                        .to_string();
-                    self.search_state.active = true;
-                    self.search_state.needle = needle;
-                    EventResult::Consumed(None)
-                }
-                _ => self.search_input.as_mut().unwrap().on_event(e),
-            },
+            }
+            _ => EventResult::Ignored,
         }
     }
 
-    fn take_focus(&mut self, d: Direction) -> bool {
-        match self.focused {
-            HistoryFocus::History => true,
-            HistoryFocus::Search => self.search_input.as_mut().unwrap().take_focus(d),
-        }
+    fn take_focus(&mut self, _: Direction) -> bool {
+        true
     }
 
     fn important_area(&self, view_size: Vec2) -> Rect {
@@ -401,6 +356,15 @@ impl ScrollableSelectable for History {
             false
         }
     }
+
+    fn search(&mut self, search_state: SearchState) {
+        self.search_state = search_state;
+        match self.search_state.direction {
+            SearchDirection::Forward => self.search_forward(),
+            SearchDirection::Backward => self.search_backward(),
+        }
+    }
+
     fn selected_pos(&self) -> usize {
         self.selected
     }

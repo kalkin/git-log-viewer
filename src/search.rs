@@ -1,9 +1,17 @@
 use cursive::theme::{BaseColor, Color, ColorType, Effect, Style};
 
+#[derive(Clone)]
+pub enum SearchDirection {
+    Forward,
+    Backward,
+}
+
+#[derive(Clone)]
 pub struct SearchState {
     pub active: bool,
     pub needle: String,
     style: Style,
+    pub direction: SearchDirection,
 }
 
 impl SearchState {
@@ -16,6 +24,7 @@ impl SearchState {
             active: false,
             needle: "".to_string(),
             style,
+            direction: SearchDirection::Forward,
         }
     }
 

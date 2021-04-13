@@ -41,7 +41,13 @@ impl View for CommitDetailView {
 
     fn on_event(&mut self, e: Event) -> EventResult {
         assert!(self.content.is_some());
-        self.content.as_mut().unwrap().on_event(e)
+        match e {
+            Event::Char('/') | Event::Char('?') => {
+                log::warn!("Search in diff view NIY");
+                EventResult::Consumed(None)
+            }
+            _ => self.content.as_mut().unwrap().on_event(e),
+        }
     }
 }
 
