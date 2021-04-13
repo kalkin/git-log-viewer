@@ -84,6 +84,15 @@ impl DetailView for CommitDetailView {
         }
         // Committer lines }
 
+        // Modules
+        if !detail.subtree_modules().is_empty() {
+            content.append(color_span(
+                "Modules:         ",
+                &detail.subtree_modules().join(", "),
+                date_style(&DEFAULT_STYLE)));
+        }
+
+        // Subject
         content.append("\n");
         content.append(SpannedString::styled(
             format!(" {}\n", detail.subject()),
