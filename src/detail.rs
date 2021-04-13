@@ -1,4 +1,3 @@
-use std::io::Write;
 use std::process::{Command, Stdio};
 
 use cursive::event::{Event, EventResult};
@@ -119,11 +118,11 @@ fn git_diff(commit: &Commit) -> Vec<SpannedString<Style>> {
     let working_dir = &git_wrapper::top_level().unwrap()[..];
     let default = Oid { 0: "".to_string() };
     let bellow = commit.bellow().unwrap_or(&default);
-    let rev = format!("{}..{}", commit.id().0, bellow.0);
-    if let Ok(_) = which::which("delta") {
-        let proc = git_wrapper::git_cmd_out(
-            working_dir.to_string(),
-            vec![
+    let rev = format!("{}..{}", bellow.0, commit.id().0);
+    if which::which("delta").is_ok() {
+        let proc = Command::new("git")
+            .args(&["-C", working_dir])
+            .args(&[
                 "diff",
                 "--color=always",
                 "--stat",
@@ -131,27 +130,17 @@ fn git_diff(commit: &Commit) -> Vec<SpannedString<Style>> {
                 "-M",
                 "--full-index",
                 &rev,
-            ],
-        )
-        .unwrap();
-
-        if let Ok(mut delta_p) = Command::new("delta")
-            .arg("--paging=never")
-            .stdin(Stdio::piped())
+            ])
             .stdout(Stdio::piped())
             .spawn()
-        {
-            delta_p
-                .stdin
-                .as_mut()
-                .unwrap()
-                .write_all(proc.stdout.as_slice())
-                .unwrap();
+            .unwrap();
 
-            raw::parse_spans(delta_p.wait_with_output().unwrap().stdout)
-        } else {
-            raw::parse_spans(proc.stdout)
-        }
+        let delta_p = Command::new("delta")
+            .arg("--paging=never")
+            .stdin(Stdio::from(proc.stdout.unwrap()))
+            .output()
+            .unwrap();
+        raw::parse_spans(delta_p.stdout)
     } else {
         let proc = git_wrapper::git_cmd_out(
             working_dir.to_string(),
