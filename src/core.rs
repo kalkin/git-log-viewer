@@ -303,11 +303,11 @@ impl Commit {
                 break;
             }
         }
-        let reg = Regex::new(r"^\w+\((.+)\): .+").unwrap();
+        let reg = Regex::new(r"^\w+\((.+)\): .+").expect("Valid regex");
         let mut subject_module = None;
         let mut short_subject = None;
         if let Some(caps) = reg.captures(&subject) {
-            let x = caps.get(1).unwrap();
+            let x = caps.get(1).expect("Expected 1 capture group");
             subject_module = Some(x.as_str().to_string());
             let mut f = subject.clone();
             f.truncate(x.start() - 1);
@@ -368,7 +368,7 @@ impl Commit {
             working_dir.to_string(),
             vec!["rev-list", REV_FORMAT, "--max-count=1", git_ref],
         )?;
-        let data = String::from_utf8(proc.stdout).unwrap();
+        let data = String::from_utf8(proc.stdout).expect("Valid UTF-8");
         Commit::new(
             working_dir,
             &data,
@@ -450,9 +450,8 @@ pub fn child_history(
     commit: &Commit,
     subtree_modules: &[SubtreeConfig],
 ) -> Vec<Commit> {
-    assert!(commit.is_merge, "Expected merge commit");
-    let bellow = commit.bellow.as_ref().unwrap();
-    let first_child = commit.children.get(0).unwrap();
+    let bellow = commit.bellow.as_ref().expect("Expected merge commit");
+    let first_child = commit.children.get(0).expect("Expected merge commit");
     let end = merge_base(working_dir, bellow, first_child);
     let revision;
     if let Ok(v) = &end {
@@ -474,10 +473,13 @@ pub fn child_history(
     )
     .unwrap();
     let end_commit = result.last().unwrap();
-    if end.is_ok() && end_commit.bellow.is_some() && end_commit.bellow.as_ref().unwrap() != bellow {
+    if end.is_ok()
+        && end_commit.bellow.is_some()
+        && end_commit.bellow.as_ref().expect("Expected merge commit") != bellow
+    {
         let link = to_commit(
             working_dir,
-            end_commit.bellow.as_ref().unwrap(),
+            end_commit.bellow.as_ref().expect("Expected merge commit"),
             level,
             true,
             Some(&end_commit),
@@ -502,7 +504,8 @@ fn to_commit(
         vec!["rev-list", REV_FORMAT, "-1", &oid.0],
     );
     let tmp = String::from_utf8(output.unwrap().stdout);
-    let lines: Vec<&str> = tmp.as_ref().unwrap().lines().collect();
+    let lines: Vec<&str> = tmp.as_ref().expect("Valid UTF-8").lines().collect();
+    // XXX FIXME lines? really?
     assert!(lines.len() >= 2);
     Commit::new(
         working_dir,
@@ -519,7 +522,7 @@ fn merge_base(working_dir: &str, p1: &Oid, p2: &Oid) -> Result<Oid, PosixError> 
     let output =
         git_wrapper::git_cmd_out(working_dir.to_string(), vec!["merge-base", &p1.0, &p2.0]);
     let tmp = String::from_utf8(output?.stdout)
-        .unwrap()
+        .expect("Valid UTF-8")
         .trim_end()
         .to_string();
     Ok(Oid { 0: tmp })
@@ -572,12 +575,15 @@ lazy_static! {
 }
 
 fn config() -> Ini {
-    let xdg_dirs = xdg::BaseDirectories::with_prefix("glv").unwrap();
+    let xdg_dirs = xdg::BaseDirectories::with_prefix("glv").expect("Expected BaseDirectories");
     let mut result = Ini::new();
     match xdg_dirs.find_config_file("config") {
         None => {}
         Some(config_path) => {
-            result.load(config_path.to_str().unwrap()).unwrap();
+            let path = config_path
+                .to_str()
+                .expect("A path convertible to an UTF-8 string");
+            result.load(path).expect("Loaded INI file");
         }
     }
     result
