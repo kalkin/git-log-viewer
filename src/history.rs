@@ -9,7 +9,7 @@ use posix_errors::PosixError;
 
 use crate::history_entry::{HistoryEntry, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
-use crate::search::{SearchDirection, SearchState};
+use crate::search::{search_recursive, SearchDirection, SearchState};
 use crate::style::DEFAULT_STYLE;
 use git_subtrees_improved::{subtrees, SubtreeConfig};
 use glv_core::*;
@@ -202,13 +202,13 @@ impl History {
         let start = self.selected;
         let end = self.length;
         for i in start..end {
-            let mut commit_option = self.history.get(i);
+            let mut commit_option = self.history.get_mut(i);
             // Check if we need to fill_up data
             if commit_option.is_none() {
                 if !self.fill_up(50) {
                     panic!("WTF?: No data to fill up during search")
                 } else {
-                    commit_option = self.history.get(i);
+                    commit_option = self.history.get_mut(i);
                 }
             }
             let c = commit_option.unwrap();
@@ -216,6 +216,26 @@ impl History {
                 let delta = i - self.selected;
                 if delta > 0 {
                     self.move_focus(delta, MoveDirection::Down);
+                    return;
+                }
+            } else if c.is_merge() && c.is_folded() {
+                if let Some((pos, mut commits)) = search_recursive(
+                    &self.working_dir,
+                    c,
+                    &self.subtree_modules,
+                    &self.search_state,
+                ) {
+                    c.folded(false);
+                    let needle_position = i + pos;
+                    let mut insert_position = i;
+                    for c in commits.iter_mut() {
+                        insert_position += 1;
+                        self.history.insert(insert_position, c.to_owned());
+                    }
+                    let delta = needle_position - self.selected + 1;
+                    if delta > 0 {
+                        self.move_focus(delta, MoveDirection::Down);
+                    }
                     return;
                 }
             }
