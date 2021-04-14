@@ -39,7 +39,7 @@ impl SearchState {
 pub fn search_recursive(
     working_dir: &str,
     commit: &Commit,
-    subtree_modules: &Vec<SubtreeConfig>,
+    subtree_modules: &[SubtreeConfig],
     search_state: &SearchState,
 ) -> Option<(usize, Vec<Commit>)> {
     assert!(commit.is_merge(), "Expected a merge commit");
