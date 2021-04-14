@@ -22,7 +22,7 @@ const USAGE: &str = "
 glv - Git Log Viewer a TUI application with support for folding merges
 
 Usage:
-    glv [-w DIR|--workdir=DIR] [<revision>] [ -h | --help ]
+    glv [-w DIR|--workdir=DIR] [<revision>] [ -h | --help ] [-- <path>...]
 
 Options:
     -w DIR, --workdir=DIR   Directory where the git repository is.
@@ -36,6 +36,7 @@ Arguments:
 struct Args {
     flag_workdir: Option<String>,
     arg_revision: Option<String>,
+    arg_path: Vec<String>,
 }
 
 fn main() {
@@ -51,7 +52,7 @@ fn main() {
         .flag_workdir
         .unwrap_or_else(|| git_wrapper::top_level().unwrap());
     let revision = args.arg_revision.unwrap_or("HEAD".to_string());
-    let history = history::History::new(&working_dir, &revision).unwrap();
+    let history = history::History::new(&working_dir, &revision, args.arg_path).unwrap();
     // let main = CustomScrollView::new(history);
     let main = CustomScrollView::new(history);
     let aside = CommitDetailView::new();

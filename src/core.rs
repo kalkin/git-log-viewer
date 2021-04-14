@@ -407,13 +407,13 @@ pub fn history_length(
         .expect("Failed to parse commit length"))
 }
 
-pub fn commits_for_range(
+pub fn commits_for_range<T: AsRef<str>>(
     working_dir: &str,
     rev_range: &str,
     level: u8,
     above_commit: Option<&Commit>,
     subtree_modules: &[SubtreeConfig],
-    paths: Vec<&str>,
+    paths: &[T],
     skip: Option<usize>,
     max: Option<usize>,
 ) -> Result<Vec<Commit>, PosixError> {
@@ -430,14 +430,16 @@ pub fn commits_for_range(
         tmp2 = format!("--max-count={}", val);
         args.push(&tmp2);
     }
+
+    args.push(rev_range);
+
     if !paths.is_empty() {
         args.push("--");
         for p in paths {
-            args.push(p);
+            args.push(p.as_ref());
         }
     }
 
-    args.push(rev_range);
     let output = git_wrapper::rev_list(working_dir, args)?;
     let lines = output.split('\u{1e}');
     let mut result: Vec<Commit> = Vec::new();
@@ -473,13 +475,14 @@ pub fn child_history(
     }
     let level = commit.level + 1;
     let above_commit = commit;
+    let paths: &[&str] = &[];
     let mut result = commits_for_range(
         working_dir,
         revision.as_str(),
         level,
         Some(above_commit),
         subtree_modules,
-        vec![],
+        paths,
         None,
         None,
     )

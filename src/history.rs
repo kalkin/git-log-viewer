@@ -23,6 +23,7 @@ pub struct History {
     working_dir: String,
     subtree_modules: Vec<SubtreeConfig>,
     search_state: SearchState,
+    paths: Vec<String>,
 }
 
 struct RenderConfig {
@@ -32,15 +33,15 @@ struct RenderConfig {
 }
 
 impl History {
-    pub fn new(working_dir: &str, range: &str) -> Result<History, PosixError> {
-        let subtree_modules = subtrees(working_dir)?;
+    pub fn new(working_dir: &str, range: &str, paths: Vec<String>) -> Result<History, PosixError> {
+        let subtree_modules = monorepo::subtrees(working_dir)?;
         let history = commits_for_range(
             working_dir,
             range,
             0,
             None,
             subtree_modules.as_ref(),
-            vec![],
+            paths.as_ref(),
             Some(0),
             Some(25),
         )?;
@@ -55,6 +56,7 @@ impl History {
             working_dir: working_dir.to_string(),
             subtree_modules,
             search_state,
+            paths,
         })
     }
 
@@ -306,7 +308,7 @@ impl History {
             0,
             above_commit,
             self.subtree_modules.as_ref(),
-            vec![],
+            self.paths.as_ref(),
             Some(skip),
             Some(max),
         ) {
