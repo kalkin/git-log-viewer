@@ -308,7 +308,33 @@ impl cursive::view::View for History {
                         cur -= 1;
                     }
                     self.move_focus(self.selected - cur + 1, MoveDirection::Up);
+                } else {
+                    // move to last merge
+                    let mut cur = self.selected;
+                    for c in self.history[0..cur].iter().rev() {
+                        if c.is_merge() {
+                            break;
+                        }
+                        cur -= 1;
+                    }
+                    self.move_focus(self.selected - cur + 1, MoveDirection::Up);
                 }
+                EventResult::Consumed(None)
+            }
+            Event::Char('l') | Event::Key(Key::Right) => {
+                if self.selected_item().is_merge() && self.selected_item().is_folded() {
+                    self.toggle_folding()
+                } else {
+                    let mut cur = self.selected;
+                    for c in self.history[cur + 1..].iter() {
+                        if c.is_merge() {
+                            break;
+                        }
+                        cur += 1;
+                    }
+                    self.move_focus(cur - self.selected + 1, MoveDirection::Down);
+                }
+
                 EventResult::Consumed(None)
             }
             Event::Char(' ') => {
