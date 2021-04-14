@@ -237,7 +237,7 @@ impl History {
             Some(skip),
             Some(max),
         ) {
-            let result = tmp.len() > 0;
+            let result = !tmp.is_empty();
             self.history.append(tmp.as_mut());
             return result;
         }
