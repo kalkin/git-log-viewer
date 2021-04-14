@@ -46,19 +46,9 @@ fn main() {
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
 
-    //let tmp = git_log();
-    //let content = TextContent::new("");
-    //for line in tmp {
-    //content.append(line);
-    //}
-
-    //let diff_view = TextView::new_with_content(content)
-    //.full_width()
-    //.scrollable();
-
     let working_dir = args
         .flag_workdir
-        .unwrap_or(git_wrapper::top_level().unwrap());
+        .unwrap_or_else(|| git_wrapper::top_level().unwrap());
     let revision = args.arg_revision.unwrap_or("HEAD".to_string());
     let history = history::History::new(&working_dir, &revision).unwrap();
     // let main = CustomScrollView::new(history);
@@ -66,9 +56,6 @@ fn main() {
     let aside = CommitDetailView::new();
     let spl_view = DynamicSplitView::new(main, aside);
 
-    // let ll = LinearLayout::vertical().child(history_log);
-    //.child(diff_view);
-    // siv.add_fullscreen_layer(spl_view.full_screen());
     siv.add_fullscreen_layer(spl_view);
     siv.add_global_callback('q', |s| s.quit());
 
