@@ -200,9 +200,18 @@ impl History {
 
     fn search_forward(&mut self) {
         let start = self.selected;
-        let end = self.history.len();
+        let end = self.length;
         for i in start..end {
-            let c = self.history.get(i).unwrap();
+            let mut commit_option = self.history.get(i);
+            // Check if we need to fill_up data
+            if commit_option.is_none() {
+                if !self.fill_up(50) {
+                    panic!("WTF?: No data to fill up during search")
+                } else {
+                    commit_option = self.history.get(i);
+                }
+            }
+            let c = commit_option.unwrap();
             if c.search_matches(&self.search_state.needle, true) {
                 let delta = i - self.selected;
                 if delta > 0 {
@@ -210,22 +219,6 @@ impl History {
                     return;
                 }
             }
-        }
-        let mut start = self.history.len();
-        while self.fill_up(100) {
-            let end = self.history.len();
-            for i in start..end {
-                let c = self.history.get(i).unwrap();
-                if c.search_matches(&self.search_state.needle, true) {
-                    let delta = i - self.selected;
-                    if delta > 0 {
-                        self.move_focus(delta, MoveDirection::Down);
-                    }
-                    return;
-                }
-            }
-
-            start = self.history.len();
         }
     }
 
