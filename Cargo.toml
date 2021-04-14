@@ -1,6 +1,6 @@
 [package]
 name = "glv"
-version = "0.1.0"
+version = "3.0.0-alpha.1"
 authors = ["Bahtiar `kalkin-` Gadimov <bahtiar@gadimov.de>"]
 edition = "2018"
 description = "Git log viewer supporting un/folding merges"
