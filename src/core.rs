@@ -12,6 +12,12 @@ lazy_static! {
     static ref CONFIG: Ini = config();
 }
 
+macro_rules! regex {
+    ($r:literal) => {
+        Regex::new($r).expect("Valid RegEx")
+    };
+}
+
 #[derive(derive_more::Display, derive_more::FromStr, Clone, Eq, PartialEq)]
 #[display(fmt = "{}", self.0)]
 pub struct Oid(pub String);
@@ -303,7 +309,7 @@ impl Commit {
                 break;
             }
         }
-        let reg = Regex::new(r"^\w+\((.+)\): .+").expect("Valid regex");
+        let reg = regex!(r"^\w+\((.+)\): .+");
         let mut subject_module = None;
         let mut short_subject = None;
         if let Some(caps) = reg.captures(&subject) {
@@ -530,47 +536,41 @@ fn merge_base(working_dir: &str, p1: &Oid, p2: &Oid) -> Result<Oid, PosixError> 
 
 lazy_static! {
     static ref REGEXES: Vec<(Regex, &'static str)> = vec![
-        (Regex::new(r"(?i)^Revert:?\s*").unwrap(), " "),
-        (Regex::new(r"(?i)^archive:?\s*").unwrap(), "\u{f53b} "),
-        (Regex::new(r"(?i)^issue:?\s*").unwrap(), "\u{f145} "),
-        (Regex::new(r"(?i)^BREAKING CHANGE:?\s*").unwrap(), "⚠ "),
-        (Regex::new(r"(?i)^fixup!\s+").unwrap(), "\u{f0e3} "),
-        (Regex::new(r"(?i)^ADD:\s?[a-z0-9]+").unwrap(), " "),
-        (Regex::new(r"(?i)^ref(actor)?:?\s*").unwrap(), "↺ "),
-        (Regex::new(r"(?i)^lang:?\s*").unwrap(), "\u{fac9}"),
-        (Regex::new(r"(?i)^deps(\(.+\))?:?\s*").unwrap(), "\u{f487} "),
-        (Regex::new(r"(?i)^config:?\s*").unwrap(), "\u{f462} "),
-        (Regex::new(r"(?i)^test(\(.+\))?:?\s*").unwrap(), "\u{f45e} "),
-        (Regex::new(r"(?i)^ci(\(.+\))?:?\s*").unwrap(), "\u{f085} "),
-        (Regex::new(r"(?i)^perf(\(.+\))?:?\s*").unwrap(), "\u{f9c4}"),
+        (regex!(r"(?i)^Revert:?\s*"), " "),
+        (regex!(r"(?i)^archive:?\s*"), "\u{f53b} "),
+        (regex!(r"(?i)^issue:?\s*"), "\u{f145} "),
+        (regex!(r"(?i)^BREAKING CHANGE:?\s*"), "⚠ "),
+        (regex!(r"(?i)^fixup!\s+"), "\u{f0e3} "),
+        (regex!(r"(?i)^ADD:\s?[a-z0-9]+"), " "),
+        (regex!(r"(?i)^ref(actor)?:?\s*"), "↺ "),
+        (regex!(r"(?i)^lang:?\s*"), "\u{fac9}"),
+        (regex!(r"(?i)^deps(\(.+\))?:?\s*"), "\u{f487} "),
+        (regex!(r"(?i)^config:?\s*"), "\u{f462} "),
+        (regex!(r"(?i)^test(\(.+\))?:?\s*"), "\u{f45e} "),
+        (regex!(r"(?i)^ci(\(.+\))?:?\s*"), "\u{f085} "),
+        (regex!(r"(?i)^perf(\(.+\))?:?\s*"), "\u{f9c4}"),
         (
-            Regex::new(r"(?i)^(bug)?fix(ing|ed)?(\(.+\))?[/:\s]+").unwrap(),
+            regex!(r"(?i)^(bug)?fix(ing|ed)?(\(.+\))?[/:\s]+"),
             "\u{f188} "
         ),
-        (Regex::new(r"(?i)^doc(s|umentation)?:?\s*").unwrap(), "✎ "),
-        (
-            Regex::new(r"(?i)^improve(ment)?:?\s*").unwrap(),
-            "\u{e370} "
-        ),
-        (Regex::new(r"(?i)^CHANGE/?:?\s*").unwrap(), "\u{e370} "),
-        (Regex::new(r"(?i)^hotfix:?\s*").unwrap(), "\u{f490} "),
-        (Regex::new(r"(?i)^feat:?\s*").unwrap(), "➕"),
-        (Regex::new(r"(?i)^add:?\s*").unwrap(), "➕"),
-        (
-            Regex::new(r"(?i)^(release|bump):?\s*").unwrap(),
-            "\u{f412} "
-        ),
-        (Regex::new(r"(?i)^build:?\s*").unwrap(), "🔨"),
-        (Regex::new(r"(?i).*\bchangelog\b.*").unwrap(), "✎ "),
-        (Regex::new(r"(?i)^refactor:?\s*").unwrap(), "↺ "),
-        (Regex::new(r"(?i)^.* Import .*").unwrap(), "⮈ "),
-        (Regex::new(r"(?i)^Split .*").unwrap(), "\u{f403} "),
-        (Regex::new(r"(?i)^Remove:?\s+.*").unwrap(), "\u{f48e} "),
-        (Regex::new(r"(?i)^Update :\w+.*").unwrap(), "\u{f419} "),
-        (Regex::new(r"(?i)^style:?\s*").unwrap(), "♥ "),
-        (Regex::new(r"(?i)^DONE:?\s?[a-z0-9]+").unwrap(), "\u{f41d} "),
-        (Regex::new(r"(?i)^rename?\s*").unwrap(), "\u{f044} "),
-        (Regex::new(r"(?i).*").unwrap(), "  "),
+        (regex!(r"(?i)^doc(s|umentation)?:?\s*"), "✎ "),
+        (regex!(r"(?i)^improve(ment)?:?\s*"), "\u{e370} "),
+        (regex!(r"(?i)^CHANGE/?:?\s*"), "\u{e370} "),
+        (regex!(r"(?i)^hotfix:?\s*"), "\u{f490} "),
+        (regex!(r"(?i)^feat:?\s*"), "➕"),
+        (regex!(r"(?i)^add:?\s*"), "➕"),
+        (regex!(r"(?i)^(release|bump):?\s*"), "\u{f412} "),
+        (regex!(r"(?i)^build:?\s*"), "🔨"),
+        (regex!(r"(?i).*\bchangelog\b.*"), "✎ "),
+        (regex!(r"(?i)^refactor:?\s*"), "↺ "),
+        (regex!(r"(?i)^.* Import .*"), "⮈ "),
+        (regex!(r"(?i)^Split .*"), "\u{f403} "),
+        (regex!(r"(?i)^Remove:?\s+.*"), "\u{f48e} "),
+        (regex!(r"(?i)^Update :\w+.*"), "\u{f419} "),
+        (regex!(r"(?i)^style:?\s*"), "♥ "),
+        (regex!(r"(?i)^DONE:?\s?[a-z0-9]+"), "\u{f41d} "),
+        (regex!(r"(?i)^rename?\s*"), "\u{f044} "),
+        (regex!(r"(?i).*"), "  "),
     ];
 }
 
