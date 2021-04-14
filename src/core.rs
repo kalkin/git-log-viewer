@@ -18,6 +18,12 @@ macro_rules! regex {
     };
 }
 
+macro_rules! next_string {
+    ($split:expr) => {
+        $split.next().expect("Another split").to_string();
+    };
+}
+
 #[derive(derive_more::Display, derive_more::FromStr, Clone, Eq, PartialEq)]
 #[display(fmt = "{}", self.0)]
 pub struct Oid(pub String);
@@ -219,24 +225,24 @@ impl Commit {
         let mut split = data.split('\x1f');
         split.next(); // skip commit: XXXX line
         let id = Oid {
-            0: split.next().unwrap().to_string(),
+            0: next_string!(split),
         };
 
-        let short_id = split.next().unwrap().to_string();
+        let short_id = next_string!(split);
         let mut parents_record: Vec<&str> = split.next().unwrap().split(' ').collect();
-        let references_record = split.next().unwrap();
+        let references_record = next_string!(split);
 
-        let author_name = split.next().unwrap().to_string();
-        let author_email = split.next().unwrap().to_string();
-        let author_date = split.next().unwrap().to_string();
-        let author_rel_date = split.next().unwrap().to_string();
+        let author_name = next_string!(split);
+        let author_email = next_string!(split);
+        let author_date = next_string!(split);
+        let author_rel_date = next_string!(split);
 
-        let committer_name = split.next().unwrap().to_string();
-        let committer_email = split.next().unwrap().to_string();
-        let committer_date = split.next().unwrap().to_string();
-        let committer_rel_date = split.next().unwrap().to_string();
-        let subject = split.next().unwrap().to_string();
-        let body = split.next().unwrap().to_string();
+        let committer_name = next_string!(split);
+        let committer_email = next_string!(split);
+        let committer_date = next_string!(split);
+        let committer_rel_date = next_string!(split);
+        let subject = next_string!(split);
+        let body = next_string!(split);
 
         let mut is_head = false;
 
