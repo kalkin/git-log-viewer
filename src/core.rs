@@ -460,10 +460,14 @@ pub fn child_history(
 ) -> Vec<Commit> {
     let bellow = commit.bellow.as_ref().expect("Expected merge commit");
     let first_child = commit.children.get(0).expect("Expected merge commit");
-    let end = merge_base(working_dir, bellow, first_child);
+    let end = merge_base(working_dir, bellow, first_child).expect("merge-base invocation");
     let revision;
-    if let Ok(v) = &end {
-        revision = format!("{}..{}", v.0, first_child.0);
+    if let Some(v) = &end {
+        if v == first_child {
+            revision = first_child.0.clone();
+        } else {
+            revision = format!("{}..{}", v.0, first_child.0);
+        }
     } else {
         revision = first_child.0.clone();
     }
@@ -480,8 +484,10 @@ pub fn child_history(
         None,
     )
     .unwrap_or_else(|_| panic!("Expected child commits for range {}", revision));
-    let end_commit = result.last().unwrap();
-    if end.is_ok()
+    let end_commit = result
+        .last()
+        .unwrap_or_else(|| panic!("No child commits for range {}", revision));
+    if end.is_some()
         && end_commit.bellow.is_some()
         && end_commit.bellow.as_ref().expect("Expected merge commit") != bellow
     {
@@ -514,7 +520,7 @@ fn to_commit(
     let tmp = String::from_utf8(output.unwrap().stdout);
     let lines: Vec<&str> = tmp.as_ref().expect("Valid UTF-8").lines().collect();
     // XXX FIXME lines? really?
-    assert!(lines.len() >= 2);
+    assert!(lines.len() >= 2, "Did not got enough data for {}", oid);
     Commit::new(
         working_dir,
         lines.get(1).unwrap(),
@@ -525,14 +531,18 @@ fn to_commit(
     )
 }
 
-fn merge_base(working_dir: &str, p1: &Oid, p2: &Oid) -> Result<Oid, PosixError> {
+pub fn merge_base(working_dir: &str, p1: &Oid, p2: &Oid) -> Result<Option<Oid>, PosixError> {
     let output =
         git_wrapper::git_cmd_out(working_dir.to_string(), vec!["merge-base", &p1.0, &p2.0]);
     let tmp = String::from_utf8(output?.stdout)
         .expect("Valid UTF-8")
         .trim_end()
         .to_string();
-    Ok(Oid { 0: tmp })
+    if tmp.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(Oid { 0: tmp }))
+    }
 }
 
 lazy_static! {
