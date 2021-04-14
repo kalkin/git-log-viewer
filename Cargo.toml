@@ -3,6 +3,7 @@ name = "glv"
 version = "0.1.0"
 authors = ["Bahtiar `kalkin-` Gadimov <bahtiar@gadimov.de>"]
 edition = "2018"
+description = "Git log viewer supporting un/folding merges"
 
 [[test]]
 name = "cucumber"
@@ -12,7 +13,6 @@ harness = false # Allows Cucumber to print output instead of libtest
 configparser = "2"
 cursive = "0.16"
 derive_more = "0.99"
-docopt = "1"
 git-wrapper = { path = "../git-wrapper" }
 log = "0.4"
 lazy_static = "1.4"
@@ -30,3 +30,9 @@ xdg = "^2.1"
 cucumber_rust = { git = "https://github.com/bbqsrc/cucumber-rust", branch = "main" }
 tempfile = "3"
 tokio = { version = "1.2.0", features = ["rt-multi-thread", "macros", "time"] }
+
+
+[dependencies.clap]
+version = "^2.33"
+default-features = false
+features = ["suggestions", "color", "wrap_help"]

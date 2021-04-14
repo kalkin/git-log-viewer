@@ -1,12 +1,10 @@
+use clap::*;
 use cursive::theme::PaletteColor::*;
 use cursive::{Cursive, CursiveExt};
 
 use crate::detail::CommitDetailView;
 use crate::scroll::CustomScrollView;
 use crate::views::DynamicSplitView;
-
-use docopt::Docopt;
-use serde::Deserialize;
 
 mod core;
 mod detail;
@@ -18,42 +16,43 @@ mod search;
 mod style;
 mod views;
 
-const USAGE: &str = "
-glv - Git Log Viewer a TUI application with support for folding merges
-
-Usage:
-    glv [-w DIR|--workdir=DIR] [<revision>] [ -h | --help ] [-- <path>...]
-
-Options:
-    -w DIR, --workdir=DIR   Directory where the git repository is.
-    -h, --help              Show this usage.
-
-Arguments:
-    <revision>                A branch, tag or commit
-";
-
-#[derive(Debug, Deserialize)]
-struct Args {
-    flag_workdir: Option<String>,
-    arg_revision: Option<String>,
-    arg_path: Vec<String>,
-}
-
 fn main() {
+    let working_dir: String;
+    let mut paths = Vec::new();
+
+    let w_arg = Arg::with_name("working_dir")
+        .long("working-dir")
+        .short("w")
+        .takes_value(true)
+        .help("Directory where the git repository is.");
+    let rev_arg = Arg::with_name("REVISION")
+        .help("Branch, tag or commit id")
+        .default_value("HEAD")
+        .required(false);
+    let paths_arg = Arg::with_name("path")
+        .help("Show only commits touching the paths")
+        .multiple(true)
+        .last(true);
+    let app = app_from_crate!().arg(w_arg).arg(rev_arg).arg(paths_arg);
+
+    let matches = app.get_matches();
+
+    if let Some(wd) = matches.value_of("working_dir") {
+        working_dir = wd.to_string();
+    } else {
+        working_dir = git_wrapper::top_level().unwrap();
+    }
+    let revision = matches.value_of("REVISION").unwrap();
+
+    if let Some(p) = matches.values_of("path") {
+        paths = p.map(|s| s.to_string()).collect();
+    }
+
     cursive::logger::init();
     // Creates the cursive root - required for every application.
     let mut siv = Cursive::new();
 
-    let args: Args = Docopt::new(USAGE)
-        .and_then(|d| d.deserialize())
-        .unwrap_or_else(|e| e.exit());
-
-    let working_dir = args
-        .flag_workdir
-        .unwrap_or_else(|| git_wrapper::top_level().unwrap());
-    let revision = args.arg_revision.unwrap_or("HEAD".to_string());
-    let history = history::History::new(&working_dir, &revision, args.arg_path).unwrap();
-    // let main = CustomScrollView::new(history);
+    let history = history::History::new(&working_dir, &revision, paths).unwrap();
     let main = CustomScrollView::new(history);
     let aside = CommitDetailView::new();
     let spl_view = DynamicSplitView::new(main, aside);

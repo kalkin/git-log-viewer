@@ -1,6 +1,5 @@
 use cursive::theme::{BaseColor, Color, ColorType, Effect, Style};
 
-use crate::core::{child_history, Commit};
 use git_subtrees_improved::SubtreeConfig;
 use git_wrapper::is_ancestor;
 

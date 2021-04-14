@@ -34,7 +34,7 @@ struct RenderConfig {
 
 impl History {
     pub fn new(working_dir: &str, range: &str, paths: Vec<String>) -> Result<History, PosixError> {
-        let subtree_modules = monorepo::subtrees(working_dir)?;
+        let subtree_modules = subtrees(working_dir)?;
         let history = commits_for_range(
             working_dir,
             range,
