@@ -221,7 +221,7 @@ impl Commit {
         is_commit_link: bool,
         above_commit: Option<&Commit>,
         subtree_modules: &[SubtreeConfig],
-    ) -> Result<Commit, PosixError> {
+    ) -> Self {
         let mut split = data.split('\x1f');
         split.next(); // skip commit: XXXX line
         let id = Oid {
@@ -297,7 +297,8 @@ impl Commit {
                     let proc = git_cmd_out(
                         working_dir.to_string(),
                         vec!["merge-base", "--is-ancestor", &id.0, &parent_child],
-                    )?;
+                    )
+                    .expect("Execute merge-base");
 
                     is_fork_point = proc.status.success();
                 }
@@ -329,7 +330,7 @@ impl Commit {
 
         let modules = changed_modules(working_dir, &id.0, subtree_modules);
 
-        Ok(Commit {
+        Commit {
             id,
             short_id,
 
@@ -365,7 +366,7 @@ impl Commit {
             references,
             tags,
             subtree_modules: modules,
-        })
+        }
     }
 
     pub fn new_from_id(
@@ -381,14 +382,14 @@ impl Commit {
             vec!["rev-list", REV_FORMAT, "--max-count=1", git_ref],
         )?;
         let data = String::from_utf8(proc.stdout).expect("Valid UTF-8");
-        Commit::new(
+        Ok(Commit::new(
             working_dir,
             &data,
             level,
             is_commit_link,
             above_commit,
             subtree_modules.as_ref(),
-        )
+        ))
     }
 }
 
@@ -450,7 +451,7 @@ pub fn commits_for_range(
         if data.is_empty() {
             break;
         }
-        let commit = Commit::new(working_dir, data, level, false, above, subtree_modules).unwrap();
+        let commit = Commit::new(working_dir, data, level, false, above, subtree_modules);
         result.push(commit);
         above = result.last();
     }
@@ -483,7 +484,7 @@ pub fn child_history(
         None,
         None,
     )
-    .unwrap();
+    .unwrap_or_else(|_| panic!("Expected child commits for range {}", revision));
     let end_commit = result.last().unwrap();
     if end.is_ok()
         && end_commit.bellow.is_some()
@@ -527,7 +528,6 @@ fn to_commit(
         above,
         subtree_modules,
     )
-    .unwrap()
 }
 
 fn merge_base(working_dir: &str, p1: &Oid, p2: &Oid) -> Result<Oid, PosixError> {
