@@ -3,7 +3,7 @@ use cursive::event::{Event, EventResult, Key};
 use cursive::views::EditView;
 use cursive::{Printer, Vec2, View};
 
-use glv_core::Commit;
+use crate::core::Commit;
 
 use crate::search::{SearchDirection, SearchState};
 use crate::style::DEFAULT_STYLE;

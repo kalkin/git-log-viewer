@@ -2,7 +2,7 @@ use cursive::theme::Style;
 use cursive::utils::span::SpannedString;
 use unicode_width::UnicodeWidthStr;
 
-use glv_core::Commit;
+use crate::core::{adjust_string, Commit};
 
 use crate::search::SearchState;
 use crate::style::{date_style, id_style, mod_style, name_style, ref_style};
@@ -53,7 +53,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
     }
 
     fn name(&self) -> String {
-        glv_core::adjust_string(self.commit.author_name(), self.width_config.max_author)
+        adjust_string(self.commit.author_name(), self.width_config.max_author)
     }
 
     fn search_text(haystack: &str, needle: &str) -> Vec<SearchMatch> {
@@ -78,7 +78,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
     }
 
     fn date(&self) -> String {
-        glv_core::adjust_string(self.commit.author_rel_date(), self.width_config.max_date)
+        adjust_string(self.commit.author_rel_date(), self.width_config.max_date)
     }
 
     pub fn id_span(&self) -> SpannedString<Style> {
@@ -117,7 +117,11 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
             (false, false) => return None,
         };
 
-        Some(<HistoryEntry<'a, 'b>>::highlight_search(style, &text, &self.search_state))
+        Some(<HistoryEntry<'a, 'b>>::highlight_search(
+            style,
+            &text,
+            &self.search_state,
+        ))
     }
 
     pub fn graph_span(&self) -> SpannedString<Style> {

@@ -8,6 +8,7 @@ use crate::views::DynamicSplitView;
 use docopt::Docopt;
 use serde::Deserialize;
 
+mod core;
 mod detail;
 mod history;
 mod history_entry;

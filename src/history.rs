@@ -7,12 +7,12 @@ use unicode_width::UnicodeWidthStr;
 
 use posix_errors::PosixError;
 
+use crate::core::*;
 use crate::history_entry::{HistoryEntry, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
 use crate::search::{search_recursive, SearchDirection, SearchState};
 use crate::style::DEFAULT_STYLE;
 use git_subtrees_improved::{subtrees, SubtreeConfig};
-use glv_core::*;
 
 pub struct History {
     range: String,
@@ -133,7 +133,7 @@ impl History {
     fn toggle_folding(&mut self) {
         let pos = self.selected + 1;
         if self.selected_item().is_folded() {
-            let children: Vec<Commit> = glv_core::child_history(
+            let children: Vec<Commit> = child_history(
                 &self.working_dir,
                 self.selected_item(),
                 self.subtree_modules.as_ref(),
@@ -157,8 +157,8 @@ impl History {
     fn render_history(&self, printer: &Printer) {
         let start = printer.content_offset.y;
         let end = start + printer.size.y;
-        let configured_max_author = glv_core::author_name_width();
-        let configured_max_date = glv_core::author_rel_date_width();
+        let configured_max_author = author_name_width();
+        let configured_max_date = author_rel_date_width();
         let (mut max_author, mut max_date) = self.calc_max_name_date(end);
         if configured_max_author != 0 && max_author > configured_max_author {
             max_author = configured_max_author;

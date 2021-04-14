@@ -7,9 +7,8 @@ use cursive::utils::span::SpannedString;
 use cursive::views::{ScrollView, TextContent, TextView};
 use cursive::{Printer, Vec2, View};
 
-use glv_core::Commit;
-use glv_core::Oid;
-
+use crate::core::Commit;
+use crate::core::Oid;
 use crate::raw;
 use crate::style::{bold_style, date_style, DEFAULT_STYLE};
 use crate::style::{id_style, name_style};
@@ -94,7 +93,8 @@ impl DetailView for CommitDetailView {
             content.append(color_span(
                 "Modules:         ",
                 &detail.subtree_modules().join(", "),
-                date_style(&DEFAULT_STYLE)));
+                date_style(&DEFAULT_STYLE),
+            ));
         }
 
         // Subject

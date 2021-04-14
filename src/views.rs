@@ -1,7 +1,7 @@
 use cursive::event::{Event, EventResult, Key};
 use cursive::{Printer, Rect, Vec2, View};
 
-use glv_core::Commit;
+use crate::core::Commit;
 
 use crate::scroll::ScrollableSelectable;
 

@@ -4,19 +4,29 @@ version = "0.1.0"
 authors = ["Bahtiar `kalkin-` Gadimov <bahtiar@gadimov.de>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[test]]
+name = "cucumber"
+harness = false # Allows Cucumber to print output instead of libtest
 
 [dependencies]
 configparser = "2"
 cursive = "0.16"
+derive_more = "0.99"
 docopt = "1"
 git-wrapper = { path = "../git-wrapper" }
-glv-core = { path = "../glv-core" }
 log = "0.4"
 lazy_static = "1.4"
 git-subtrees-improved = { path = "../git-subtrees-improved" }
 serde = { version = "1", features = ["derive"] }
 vte = "0.10.0"
 posix-errors = { path = "../posix-errors" }
+regex = "1"
+unicode-segmentation = "1.7.1"
 unicode-width = "0.1.7"
 which = "4"
+xdg = "^2.1"
+
+[dev-dependencies]
+cucumber_rust = { git = "https://github.com/bbqsrc/cucumber-rust", branch = "main" }
+tempfile = "3"
+tokio = { version = "1.2.0", features = ["rt-multi-thread", "macros", "time"] }

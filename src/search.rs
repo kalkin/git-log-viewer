@@ -1,7 +1,7 @@
 use cursive::theme::{BaseColor, Color, ColorType, Effect, Style};
 
-use glv_core::{child_history, Commit};
-use monorepo::SubtreeConfig;
+use crate::core::{child_history, Commit};
+use git_subtrees_improved::SubtreeConfig;
 
 #[derive(Clone)]
 pub enum SearchDirection {
