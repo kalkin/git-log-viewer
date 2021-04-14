@@ -5,7 +5,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 use git_subtrees_improved::{changed_modules, SubtreeConfig};
-use git_wrapper::git_cmd_out;
+use git_wrapper::{git_cmd_out, is_ancestor};
 use posix_errors::PosixError;
 
 lazy_static! {
@@ -294,13 +294,8 @@ impl Commit {
             } else if commit.children[0] != id {
                 let parent_child = commit.children[0].to_string();
                 if commit.is_merge {
-                    let proc = git_cmd_out(
-                        working_dir.to_string(),
-                        vec!["merge-base", "--is-ancestor", &id.0, &parent_child],
-                    )
-                    .expect("Execute merge-base");
-
-                    is_fork_point = proc.status.success();
+                    is_fork_point = is_ancestor(working_dir, &id.0, &parent_child)
+                        .expect("Execute merge-base --is-ancestor");
                 }
                 above = Some(commit.id.clone());
             } else {
