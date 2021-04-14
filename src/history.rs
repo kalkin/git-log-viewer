@@ -5,12 +5,13 @@ use cursive::utils::span::{SpannedStr, SpannedString};
 use cursive::{Printer, Rect, Vec2, XY};
 use unicode_width::UnicodeWidthStr;
 
+use git_wrapper::is_ancestor;
 use posix_errors::PosixError;
 
 use crate::core::*;
 use crate::history_entry::{HistoryEntry, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
-use crate::search::{search_recursive, SearchDirection, SearchState};
+use crate::search::{search_link_recursive, search_recursive, SearchDirection, SearchState};
 use crate::style::DEFAULT_STYLE;
 use git_subtrees_improved::{subtrees, SubtreeConfig};
 
@@ -242,6 +243,58 @@ impl History {
         }
     }
 
+    pub(crate) fn search_link_target(&mut self) {
+        let link = self.selected_item().clone();
+        let start = self.selected;
+        let end = self.length;
+        for i in start..end {
+            let mut commit_option = self.history.get_mut(i);
+            // Check if we need to fill_up data
+            if commit_option.is_none() {
+                if !self.fill_up(50) {
+                    panic!("WTF?: No data to fill up during search")
+                } else {
+                    commit_option = self.history.get_mut(i);
+                }
+            }
+            let c = commit_option.unwrap();
+            if c.is_commit_link() {
+                continue;
+            }
+
+            if c.id() == link.id() {
+                let delta = i - self.selected;
+                if delta > 0 {
+                    self.move_focus(delta, MoveDirection::Down);
+                    return;
+                }
+            } else if c.is_merge() && c.is_folded() {
+                let bellow = &c.bellow().expect("Expected Merge").to_string();
+                let link_id = &link.id().to_string();
+                // Heuristic skip examining merge if link is ancestor of the first child
+                if is_ancestor(self.working_dir.as_str(), link_id, bellow).unwrap() {
+                    continue;
+                }
+                if let Some((pos, mut commits)) =
+                    search_link_recursive(&self.working_dir, c, &self.subtree_modules, &link)
+                {
+                    c.folded(false);
+                    let needle_position = i + pos;
+                    let mut insert_position = i;
+                    for c in commits.iter_mut() {
+                        insert_position += 1;
+                        self.history.insert(insert_position, c.to_owned());
+                    }
+                    let delta = needle_position - self.selected + 1;
+                    if delta > 0 {
+                        self.move_focus(delta, MoveDirection::Down);
+                    }
+                    return;
+                }
+            }
+        }
+    }
+
     fn fill_up(&mut self, max: usize) -> bool {
         let skip = self.history.len();
         let range = self.range.as_str();
@@ -322,7 +375,9 @@ impl cursive::view::View for History {
                 EventResult::Consumed(None)
             }
             Event::Char('l') | Event::Key(Key::Right) => {
-                if self.selected_item().is_merge() && self.selected_item().is_folded() {
+                if self.selected_item().is_commit_link() {
+                    self.search_link_target();
+                } else if self.selected_item().is_merge() && self.selected_item().is_folded() {
                     self.toggle_folding()
                 } else {
                     let mut cur = self.selected;
@@ -338,12 +393,12 @@ impl cursive::view::View for History {
                 EventResult::Consumed(None)
             }
             Event::Char(' ') => {
-                if self.selected_item().is_merge() {
+                if self.selected_item().is_commit_link() {
+                    self.search_link_target();
+                } else if self.selected_item().is_merge() {
                     self.toggle_folding();
-                    EventResult::Consumed(None)
-                } else {
-                    EventResult::Ignored
                 }
+                EventResult::Consumed(None)
             }
             _ => EventResult::Ignored,
         }
