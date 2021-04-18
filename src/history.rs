@@ -98,18 +98,21 @@ impl History {
 
     fn toggle_folding(&mut self) {
         let pos = self.selected + 1;
-        if self.selected_item().is_folded() {
+        if self.selected_entry().is_folded() {
             let children: Vec<Commit> = child_history(
                 &self.working_dir,
                 self.selected_item(),
                 self.subtree_modules.as_ref(),
             );
             for (i, c) in children.iter().cloned().enumerate() {
-                self.history.insert(pos + i, HistoryEntry::new(c));
+                self.history.insert(
+                    pos + i,
+                    HistoryEntry::new(c, self.selected_entry().level() + 1),
+                );
             }
         } else {
             while let Some(e) = self.history.get(pos) {
-                if e.level() > self.selected_item().level() {
+                if e.level() > self.selected_entry().level() {
                     self.history.remove(pos);
                 } else {
                     break;
@@ -192,12 +195,13 @@ impl History {
                     &self.search_state,
                 ) {
                     e.folded(false);
+                    let level = e.level() + 1;
                     let needle_position = i + pos;
                     let mut insert_position = i;
                     for c in commits.iter_mut() {
                         insert_position += 1;
-                        self.history
-                            .insert(insert_position, HistoryEntry::new(c.to_owned()));
+                        let entry = HistoryEntry::new(c.to_owned(), level);
+                        self.history.insert(insert_position, entry);
                     }
                     let delta = needle_position - self.selected + 1;
                     if delta > 0 {
@@ -248,12 +252,13 @@ impl History {
                     &link,
                 ) {
                     e.folded(false);
+                    let level = e.level() + 1;
                     let needle_position = i + pos;
                     let mut insert_position = i;
                     for c in commits.iter_mut() {
                         insert_position += 1;
                         self.history
-                            .insert(insert_position, HistoryEntry::new(c.to_owned()));
+                            .insert(insert_position, HistoryEntry::new(c.to_owned(), level));
                     }
                     let delta = needle_position - self.selected + 1;
                     if delta > 0 {
@@ -278,7 +283,6 @@ impl History {
         if let Ok(tmp) = commits_for_range(
             working_dir,
             range,
-            0,
             above_commit,
             self.subtree_modules.as_ref(),
             self.paths.as_ref(),
@@ -286,12 +290,15 @@ impl History {
             Some(max),
         ) {
             let result = !tmp.is_empty();
-            for e in tmp.into_iter().map(HistoryEntry::new) {
+            for e in tmp.into_iter().map(|c| HistoryEntry::new(c, 0)) {
                 self.history.push(e);
             }
             return result;
         }
         false
+    }
+    fn selected_entry(&self) -> &HistoryEntry {
+        self.history.get(self.selected).unwrap()
     }
 }
 
@@ -329,12 +336,12 @@ impl cursive::view::View for History {
     fn on_event(&mut self, e: Event) -> EventResult {
         match e {
             Event::Char('h') | Event::Key(Key::Left) => {
-                if self.selected_item().is_merge() && !self.selected_item().is_folded() {
+                if self.selected_entry().is_merge() && !self.selected_entry().is_folded() {
                     self.toggle_folding();
-                } else if self.selected_item().level() > 0 {
+                } else if self.selected_entry().level() > 0 {
                     // move to last parent node
                     let mut cur = self.selected;
-                    let expected_level = self.selected_item().level() - 1;
+                    let expected_level = self.selected_entry().level() - 1;
                     for c in self.history[0..cur].iter().rev() {
                         if c.level() == expected_level {
                             break;

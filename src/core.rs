@@ -53,7 +53,6 @@ pub struct Commit {
     folded: bool,
     bellow: Option<Oid>,
     children: Vec<Oid>,
-    level: u8,
     is_commit_link: bool,
     is_fork_point: bool,
     is_head: bool,
@@ -168,9 +167,6 @@ impl Commit {
     pub fn is_folded(&self) -> bool {
         self.folded
     }
-    pub fn level(&self) -> u8 {
-        self.level
-    }
     pub fn references(&self) -> &Vec<GitRef> {
         &self.references
     }
@@ -196,7 +192,6 @@ impl Commit {
     pub fn new(
         working_dir: &str,
         data: &str,
-        level: u8,
         is_commit_link: bool,
         is_fork_point: bool,
         subtree_modules: &[SubtreeConfig],
@@ -297,7 +292,6 @@ impl Commit {
 
             bellow,
             children,
-            level,
 
             is_commit_link,
             is_fork_point,
@@ -345,7 +339,6 @@ pub fn history_length(
 pub fn commits_for_range<T: AsRef<str>>(
     working_dir: &str,
     rev_range: &str,
-    level: u8,
     above_commit: Option<&Commit>,
     subtree_modules: &[SubtreeConfig],
     paths: &[T],
@@ -383,7 +376,7 @@ pub fn commits_for_range<T: AsRef<str>>(
         if data.is_empty() {
             break;
         }
-        let mut commit = Commit::new(working_dir, data, level, false, false, subtree_modules);
+        let mut commit = Commit::new(working_dir, data, false, false, subtree_modules);
         commit.calc_is_fork_point(working_dir, &above);
         result.push(commit);
         above = result.last();
@@ -409,13 +402,11 @@ pub fn child_history(
     } else {
         revision = first_child.0.clone();
     }
-    let level = commit.level + 1;
     let above_commit = commit;
     let paths: &[&str] = &[];
     let mut result = commits_for_range(
         working_dir,
         revision.as_str(),
-        level,
         Some(above_commit),
         subtree_modules,
         paths,
@@ -433,7 +424,6 @@ pub fn child_history(
         let mut link = to_commit(
             working_dir,
             end_commit.bellow.as_ref().expect("Expected merge commit"),
-            level,
             true,
             false,
             subtree_modules,
@@ -449,7 +439,6 @@ pub fn child_history(
 fn to_commit(
     working_dir: &str,
     oid: &Oid,
-    level: u8,
     is_commit_link: bool,
     is_fork_point: bool,
     subtree_modules: &[SubtreeConfig],
@@ -465,7 +454,6 @@ fn to_commit(
     Commit::new(
         working_dir,
         lines.get(1).unwrap(),
-        level,
         is_commit_link,
         is_fork_point,
         subtree_modules,

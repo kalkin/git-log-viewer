@@ -26,6 +26,7 @@ pub enum SubtreeType {
 
 pub struct HistoryEntry {
     commit: Commit,
+    level: u8,
     subtree_type: SubtreeType,
     subject_module: Option<String>,
     subject: String,
@@ -44,7 +45,7 @@ struct SearchMatch {
 }
 
 impl<'a> HistoryEntry {
-    pub fn new(commit: Commit) -> Self {
+    pub fn new(commit: Commit, level: u8) -> Self {
         let mut subtree_type = SubtreeType::None;
         if commit.subject().starts_with("Update :") {
             subtree_type = SubtreeType::Update
@@ -59,6 +60,7 @@ impl<'a> HistoryEntry {
 
         HistoryEntry {
             commit,
+            level,
             subject,
             subject_module,
             subtree_type,
@@ -93,7 +95,7 @@ impl<'a> HistoryEntry {
     }
 
     pub fn level(&self) -> u8 {
-        self.commit.level()
+        self.level
     }
 
     pub fn is_commit_link(&self) -> bool {
@@ -170,7 +172,7 @@ impl<'a> HistoryEntry {
     fn graph_span(&self) -> SpannedString<Style> {
         let style = self.default_style();
         let mut result = SpannedString::new();
-        for _ in 0..self.commit.level() {
+        for _ in 0..self.level {
             result.append_styled("│ ", style)
         }
 
