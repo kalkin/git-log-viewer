@@ -1,11 +1,11 @@
-use cursive::theme::Style;
+use cursive::theme::{Effect, Style};
 use cursive::utils::span::SpannedString;
 use regex::Regex;
 use unicode_width::UnicodeWidthStr;
 
 use crate::core::{adjust_string, Commit};
 use crate::search::SearchState;
-use crate::style::{date_style, id_style, mod_style, name_style, ref_style};
+use crate::style::{date_style, id_style, mod_style, name_style, ref_style, DEFAULT_STYLE};
 
 #[derive(Eq, PartialEq)]
 pub enum SubtreeType {
@@ -15,14 +15,12 @@ pub enum SubtreeType {
     None,
 }
 
-pub struct HistoryEntry<'a, 'b, 'c> {
+pub struct HistoryEntry<'a> {
     commit: &'a Commit,
-    default_style: Style,
-    search_state: &'b SearchState,
     subtree_type: SubtreeType,
     subject_module: Option<String>,
     subject: String,
-    width_config: &'c WidthConfig,
+    selected: bool,
 }
 
 pub struct WidthConfig {
@@ -36,13 +34,8 @@ struct SearchMatch {
     end: usize,
 }
 
-impl<'a, 'b, 'c> HistoryEntry<'a, 'b, 'c> {
-    pub fn new(
-        default_style: Style,
-        commit: &'a Commit,
-        search_state: &'b SearchState,
-        width_config: &'c WidthConfig,
-    ) -> HistoryEntry<'a, 'b, 'c> {
+impl<'a> HistoryEntry<'a> {
+    pub fn new(commit: &'a Commit) -> Self {
         let mut subtree_type = SubtreeType::None;
         if commit.subject().starts_with("Update :") {
             subtree_type = SubtreeType::Update
@@ -57,29 +50,41 @@ impl<'a, 'b, 'c> HistoryEntry<'a, 'b, 'c> {
 
         HistoryEntry {
             commit,
-            default_style,
-            search_state,
             subject,
             subject_module,
             subtree_type,
-            width_config,
+            selected: false,
         }
     }
 
-    pub fn name_span(&self) -> SpannedString<Style> {
-        let style = name_style(&self.default_style);
-        let text = self.name();
+    fn name_span(
+        &self,
+        search_state: Option<&SearchState>,
+        max_len: usize,
+    ) -> SpannedString<Style> {
+        let style = name_style(&self.default_style());
+        let text = adjust_string(self.commit.author_name(), max_len);
         let mut result = SpannedString::new();
-        if self.search_state.active {
-            result = <HistoryEntry<'a, 'b, 'c>>::highlight_search(style, &text, &self.search_state);
+        if let Some(needle) = search_state {
+            result = HistoryEntry::highlight_search(style, &text, needle);
         } else {
             result.append_styled(text, style);
         }
         result
     }
 
-    fn name(&self) -> String {
-        adjust_string(self.commit.author_name(), self.width_config.max_author)
+    pub fn selected(&mut self, t: bool) {
+        self.selected = t;
+    }
+
+    fn default_style(&self) -> Style {
+        if self.selected {
+            let mut style = *DEFAULT_STYLE;
+            style.effects |= Effect::Reverse;
+            style
+        } else {
+            *DEFAULT_STYLE
+        }
     }
 
     fn search_text(haystack: &str, needle: &str) -> Vec<SearchMatch> {
@@ -95,24 +100,20 @@ impl<'a, 'b, 'c> HistoryEntry<'a, 'b, 'c> {
         result
     }
 
-    pub fn date_span(&self) -> SpannedString<Style> {
-        let style = date_style(&self.default_style);
-        let text = self.date();
+    fn date_span(&self, max_len: usize) -> SpannedString<Style> {
+        let style = date_style(&self.default_style());
+        let text = adjust_string(self.commit.author_rel_date(), max_len);
         let mut result = SpannedString::new();
         result.append_styled(text, style);
         result
     }
 
-    fn date(&self) -> String {
-        adjust_string(self.commit.author_rel_date(), self.width_config.max_date)
-    }
-
-    pub fn id_span(&self) -> SpannedString<Style> {
-        let style = id_style(&self.default_style);
-        let text = self.id();
+    fn id_span(&self, search_state: Option<&SearchState>) -> SpannedString<Style> {
+        let style = id_style(&self.default_style());
+        let text = self.commit.short_id();
         let mut result;
-        if self.search_state.active {
-            result = <HistoryEntry<'a, 'b, 'c>>::highlight_search(style, &text, &self.search_state);
+        if let Some(needle) = search_state {
+            result = HistoryEntry::highlight_search(style, &text, needle);
         } else {
             result = SpannedString::new();
             result.append_styled(text, style);
@@ -120,12 +121,12 @@ impl<'a, 'b, 'c> HistoryEntry<'a, 'b, 'c> {
         result
     }
 
-    fn id(&self) -> &String {
-        self.commit.short_id()
-    }
-
-    pub fn modules_span(&self) -> Option<SpannedString<Style>> {
-        let style = mod_style(&self.default_style);
+    fn modules_span(
+        &self,
+        search_state: Option<&SearchState>,
+        max_len: usize,
+    ) -> Option<SpannedString<Style>> {
+        let style = mod_style(&self.default_style());
         let mut text;
         match (
             !self.commit.subtree_modules().is_empty(),
@@ -135,7 +136,7 @@ impl<'a, 'b, 'c> HistoryEntry<'a, 'b, 'c> {
                 text = ":".to_string();
                 let subtree_modules = self.commit.subtree_modules();
                 text.push_str(&subtree_modules.join(" :"));
-                if text.width() > self.width_config.max_modules {
+                if text.width() > max_len {
                     text = format!("({} modules)", subtree_modules.len());
                 }
             }
@@ -143,15 +144,15 @@ impl<'a, 'b, 'c> HistoryEntry<'a, 'b, 'c> {
             (false, false) => return None,
         };
 
-        Some(<HistoryEntry<'a, 'b, 'c>>::highlight_search(
-            style,
-            &text,
-            &self.search_state,
-        ))
+        Some(if let Some(needle) = search_state {
+            HistoryEntry::highlight_search(style, &text, needle)
+        } else {
+            SpannedString::styled(text, style)
+        })
     }
 
-    pub fn graph_span(&self) -> SpannedString<Style> {
-        let style = self.default_style;
+    fn graph_span(&self) -> SpannedString<Style> {
+        let style = self.default_style();
         let mut result = SpannedString::new();
         for _ in 0..self.commit.level() {
             result.append_styled("│ ", style)
@@ -185,14 +186,13 @@ impl<'a, 'b, 'c> HistoryEntry<'a, 'b, 'c> {
         result
     }
 
-    pub fn subject_span(&self) -> SpannedString<Style> {
-        let style = self.default_style;
-        let text = self.subject();
+    fn subject_span(&self, search_state: Option<&SearchState>) -> SpannedString<Style> {
+        let style = self.default_style();
+        let text = &self.subject;
 
         let mut result;
-        if self.search_state.active {
-            let search_state = self.search_state;
-            result = <HistoryEntry<'a, 'b, 'c>>::highlight_search(style, &text, search_state);
+        if let Some(needle) = search_state {
+            result = HistoryEntry::highlight_search(style, &text, needle);
         } else {
             result = SpannedString::new();
             result.append_styled(text, style);
@@ -201,22 +201,14 @@ impl<'a, 'b, 'c> HistoryEntry<'a, 'b, 'c> {
         result
     }
 
-    fn subject(&self) -> &String {
-        &self.subject
-    }
-
-    pub fn references_span(&self) -> SpannedString<Style> {
-        let style = ref_style(&self.default_style);
+    fn references_span(&self, search_state: Option<&SearchState>) -> SpannedString<Style> {
+        let style = ref_style(&self.default_style());
         let mut result = SpannedString::new();
         for r in self.commit.references() {
             result.append_styled('«', style);
-            if self.search_state.active {
-                let search_state = self.search_state;
-                let tmp: SpannedString<Style> = <HistoryEntry<'a, 'b, 'c>>::highlight_search(
-                    style,
-                    &r.to_string(),
-                    search_state,
-                );
+            if let Some(needle) = search_state {
+                let tmp: SpannedString<Style> =
+                    HistoryEntry::highlight_search(style, &r.to_string(), needle);
                 result.append::<SpannedString<Style>>(tmp);
             } else {
                 result.append_styled(&r.to_string(), style);
@@ -233,7 +225,7 @@ impl<'a, 'b, 'c> HistoryEntry<'a, 'b, 'c> {
     ) -> SpannedString<Style> {
         let mut cur = 0;
         let mut tmp = SpannedString::new();
-        let indices = <HistoryEntry<'a, 'b, 'c>>::search_text(text, search_state.needle.as_str());
+        let indices = HistoryEntry::search_text(text, search_state.needle.as_str());
         for s in indices {
             assert!(s.start >= cur);
             if cur < s.start {
@@ -247,6 +239,50 @@ impl<'a, 'b, 'c> HistoryEntry<'a, 'b, 'c> {
             tmp.append_styled(&text[cur..], style)
         }
         tmp
+    }
+
+    pub fn render(
+        &self,
+        search_state: Option<&SearchState>,
+        widths: WidthConfig,
+    ) -> SpannedString<Style> {
+        let style = self.default_style();
+        let mut buf = SpannedString::new();
+
+        {
+            buf.append(self.id_span(search_state));
+            buf.append_styled(" ", style);
+        }
+
+        {
+            // Author date
+            buf.append(self.date_span(widths.max_date));
+            buf.append_styled(" ", style);
+        }
+
+        {
+            // Author name
+            buf.append(self.name_span(search_state, widths.max_author));
+            buf.append_styled(" ", style);
+        }
+
+        buf.append_styled(self.commit.icon(), style);
+
+        buf.append(self.graph_span());
+        buf.append_styled(" ", style);
+
+        if let Some(modules) = self.modules_span(search_state, widths.max_modules) {
+            buf.append(modules);
+            buf.append_styled(" ", style);
+        }
+
+        {
+            buf.append(self.subject_span(search_state));
+            buf.append_styled(" ", style);
+        }
+        buf.append(self.references_span(search_state));
+
+        buf
     }
 }
 

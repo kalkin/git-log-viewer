@@ -5,6 +5,7 @@ use cursive::utils::span::{SpannedStr, SpannedString};
 use cursive::{Printer, Rect, Vec2, XY};
 use unicode_width::UnicodeWidthStr;
 
+use git_subtrees_improved::{subtrees, SubtreeConfig};
 use git_wrapper::is_ancestor;
 use posix_errors::PosixError;
 
@@ -13,7 +14,6 @@ use crate::history_entry::{HistoryEntry, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
 use crate::search::{search_link_recursive, search_recursive, SearchDirection, SearchState};
 use crate::style::DEFAULT_STYLE;
-use git_subtrees_improved::{subtrees, SubtreeConfig};
 
 pub struct History {
     range: String,
@@ -35,22 +35,11 @@ struct RenderConfig {
 impl History {
     pub fn new(working_dir: &str, range: &str, paths: Vec<String>) -> Result<History, PosixError> {
         let subtree_modules = subtrees(working_dir)?;
-        let history = commits_for_range(
-            working_dir,
-            range,
-            0,
-            None,
-            subtree_modules.as_ref(),
-            paths.as_ref(),
-            Some(0),
-            Some(25),
-        )?;
         let length = history_length(working_dir, range, vec![])?;
-        assert!(!history.is_empty());
         let search_state = SearchState::new(DEFAULT_STYLE.to_owned());
         Ok(History {
             range: range.to_string(),
-            history,
+            history: vec![],
             selected: 0,
             length,
             working_dir: working_dir.to_string(),
@@ -65,49 +54,22 @@ impl History {
         if render_config.highlight {
             style.effects |= Effect::Reverse;
         }
-        let mut buf = SpannedString::new();
+        let search_state = if self.search_state.active {
+            Some(&self.search_state)
+        } else {
+            None
+        };
+
         let width_config = WidthConfig {
             max_author: render_config.max_author,
             max_date: render_config.max_date,
             max_modules: modules_width(),
         };
 
-        let sc = HistoryEntry::new(style, commit, &self.search_state, &width_config);
+        let mut sc = HistoryEntry::new(commit);
+        sc.selected(render_config.highlight);
 
-        {
-            buf.append(sc.id_span());
-            buf.append_styled(" ", style);
-        }
-
-        {
-            // Author date
-            buf.append(sc.date_span());
-            buf.append_styled(" ", style);
-        }
-
-        {
-            // Author name
-            buf.append(sc.name_span());
-            buf.append_styled(" ", style);
-        }
-
-        buf.append_styled(commit.icon(), style);
-
-        buf.append(sc.graph_span());
-        buf.append_styled(" ", style);
-
-        if let Some(modules) = sc.modules_span() {
-            buf.append(modules);
-            buf.append_styled(" ", style);
-        }
-
-        {
-            buf.append(sc.subject_span());
-            buf.append_styled(" ", style);
-        }
-        buf.append(sc.references_span());
-
-        buf
+        sc.render(search_state, width_config)
     }
 
     fn calc_max_name_date(&self, height: usize) -> (usize, usize) {
@@ -334,7 +296,7 @@ impl cursive::view::View for History {
     fn layout(&mut self, size: Vec2) {
         // Always prefetch commits for one page from selected
         let end = self.selected + size.y;
-        if end >= self.history.len() - 1 && end < self.length {
+        if self.history.is_empty() || (end >= self.history.len() - 1 && end < self.length) {
             let max = end + 1 - self.history.len();
             self.fill_up(max);
         }
