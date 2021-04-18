@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 use cursive::direction::Direction;
 use cursive::event::{Event, EventResult, Key};
 use cursive::theme::*;
@@ -12,7 +14,7 @@ use posix_errors::PosixError;
 use crate::core::*;
 use crate::history_entry::{HistoryEntry, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
-use crate::search::{search_link_recursive, search_recursive, SearchDirection, SearchState};
+use crate::search::{search_link_recursive, SearchDirection, SearchState};
 use crate::style::DEFAULT_STYLE;
 
 pub struct History {
@@ -157,7 +159,7 @@ impl History {
     fn search_backward(&mut self) {
         for i in (0..self.selected).rev() {
             let e = self.history.get(i).unwrap();
-            if e.commit().search_matches(&self.search_state.needle, true) {
+            if e.search_matches(&self.search_state.needle, true) {
                 let delta = self.selected - i;
                 if delta > 0 {
                     self.move_focus(delta, MoveDirection::Up);
@@ -171,36 +173,30 @@ impl History {
         let start = self.selected;
         let end = self.length;
         for i in start..end {
-            let mut commit_option = self.history.get_mut(i);
+            let mut commit_option = self.history.get(i);
             // Check if we need to fill_up data
             if commit_option.is_none() {
                 if !self.fill_up(50) {
                     panic!("WTF?: No data to fill up during search")
                 } else {
-                    commit_option = self.history.get_mut(i);
+                    commit_option = self.history.get(i);
                 }
             }
             let e = commit_option.unwrap();
-            if e.commit().search_matches(&self.search_state.needle, true) {
+            if e.search_matches(&self.search_state.needle, true) {
                 let delta = i - self.selected;
                 if delta > 0 {
                     self.move_focus(delta, MoveDirection::Down);
                     return;
                 }
             } else if e.is_merge() && e.is_folded() {
-                if let Some((pos, mut commits)) = search_recursive(
-                    &self.working_dir,
-                    e.commit(),
-                    &self.subtree_modules,
-                    &self.search_state,
-                ) {
-                    e.folded(false);
-                    let level = e.level() + 1;
+                let x = self.search_recursive(e);
+                if let Some((pos, mut entries)) = x {
+                    self.history.get_mut(i).unwrap().folded(false);
                     let needle_position = i + pos;
                     let mut insert_position = i;
-                    for c in commits.iter_mut() {
+                    for entry in entries.into_iter() {
                         insert_position += 1;
-                        let entry = HistoryEntry::new(c.to_owned(), level);
                         self.history.insert(insert_position, entry);
                     }
                     let delta = needle_position - self.selected + 1;
@@ -211,6 +207,35 @@ impl History {
                 }
             }
         }
+    }
+
+    fn search_recursive(&self, entry: &HistoryEntry) -> Option<(usize, Vec<HistoryEntry>)> {
+        assert!(entry.is_merge(), "Expected a merge commit");
+        let level = entry.level() + 1;
+        let mut entries: Vec<HistoryEntry> = child_history(
+            &self.working_dir,
+            entry.commit(),
+            self.subtree_modules.borrow(),
+        )
+        .into_iter()
+        .map(|c| HistoryEntry::new(c, level))
+        .collect();
+        for (i, e) in entries.iter_mut().enumerate() {
+            if e.search_matches(&self.search_state.needle, true) {
+                return Some((i, entries));
+            } else if e.is_merge() {
+                if let Some((pos, children)) = self.search_recursive(e) {
+                    let needle_position = i + pos;
+                    let mut insert_position = i;
+                    for child in children.into_iter() {
+                        insert_position += 1;
+                        entries.insert(insert_position, child);
+                    }
+                    return Some((needle_position, entries));
+                }
+            }
+        }
+        None
     }
 
     pub(crate) fn search_link_target(&mut self) {

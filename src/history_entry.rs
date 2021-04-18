@@ -61,7 +61,7 @@ impl<'a> HistoryEntry {
 
         HistoryEntry {
             commit,
-            folded: false,
+            folded: true,
             level,
             subject,
             subject_module,
@@ -129,6 +129,38 @@ impl<'a> HistoryEntry {
         }
 
         result
+    }
+
+    /// Check if string is contained any where in commit data
+    pub fn search_matches(&self, needle: &str, ignore_case: bool) -> bool {
+        let mut candidates = vec![
+            self.commit.author_name(),
+            self.commit.short_id(),
+            &self.commit.id().0,
+            self.commit.author_name(),
+            self.commit.author_email(),
+            self.commit.committer_name(),
+            self.commit.committer_email(),
+            &self.subject,
+        ];
+
+        let x = self.commit.subtree_modules();
+        candidates.extend(x);
+
+        for r in self.commit.references().iter() {
+            candidates.push(&r.0);
+        }
+
+        for cand in candidates {
+            if ignore_case {
+                if cand.to_lowercase().contains(&needle.to_lowercase()) {
+                    return true;
+                }
+            } else {
+                return cand.contains(needle);
+            }
+        }
+        false
     }
 
     fn date_span(&self, max_len: usize) -> SpannedString<Style> {

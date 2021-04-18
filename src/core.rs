@@ -111,38 +111,6 @@ impl Commit {
         &self.id
     }
 
-    /// Check if string is contained any where in commit data
-    pub fn search_matches(&self, needle: &str, ignore_case: bool) -> bool {
-        let mut candidates = vec![
-            &self.author_name,
-            &self.short_id,
-            &self.id.0,
-            &self.author_name,
-            &self.author_email,
-            &self.committer_name,
-            &self.committer_email,
-            &self.subject,
-        ];
-
-        let x = self.subtree_modules();
-        candidates.extend(x);
-
-        for r in self.references.iter() {
-            candidates.push(&r.0);
-        }
-
-        for cand in candidates {
-            if ignore_case {
-                if cand.to_lowercase().contains(&needle.to_lowercase()) {
-                    return true;
-                }
-            } else {
-                return cand.contains(needle);
-            }
-        }
-        false
-    }
-
     pub fn icon(&self) -> &String {
         &self.icon
     }
