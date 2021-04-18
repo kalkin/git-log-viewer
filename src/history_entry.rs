@@ -3,14 +3,22 @@ use cursive::utils::span::SpannedString;
 use unicode_width::UnicodeWidthStr;
 
 use crate::core::{adjust_string, Commit};
-
 use crate::search::SearchState;
 use crate::style::{date_style, id_style, mod_style, name_style, ref_style};
+
+#[derive(Eq, PartialEq)]
+pub enum SubtreeType {
+    Update,
+    Import,
+    Split,
+    None,
+}
 
 pub struct HistoryEntry<'a, 'b> {
     commit: &'a Commit,
     default_style: Style,
     search_state: &'b SearchState,
+    subtree_type: SubtreeType,
     width_config: WidthConfig,
 }
 
@@ -32,10 +40,18 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         search_state: &'b SearchState,
         width_config: WidthConfig,
     ) -> HistoryEntry<'a, 'b> {
+        let mut subtree_type = SubtreeType::None;
+        if commit.subject().starts_with("Update :") {
+            subtree_type = SubtreeType::Update
+        } else if commit.subject().starts_with("Import :") {
+            subtree_type = SubtreeType::IMPORT
+        }
+
         HistoryEntry {
             commit,
             default_style,
             search_state,
+            subtree_type,
             width_config,
         }
     }
@@ -140,8 +156,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         }
 
         if self.commit.is_merge() {
-            if self.commit.subject().starts_with("Update :")
-                || self.commit.subject().contains(" Import ")
+            if self.subtree_type == SubtreeType::Import || self.subtree_type == SubtreeType::Update
             {
                 if self.commit.is_fork_point() {
                     result.append_styled("⇤┤", style);
