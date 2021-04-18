@@ -1,5 +1,6 @@
 use cursive::theme::Style;
 use cursive::utils::span::SpannedString;
+use regex::Regex;
 use unicode_width::UnicodeWidthStr;
 
 use crate::core::{adjust_string, Commit};
@@ -19,6 +20,8 @@ pub struct HistoryEntry<'a, 'b> {
     default_style: Style,
     search_state: &'b SearchState,
     subtree_type: SubtreeType,
+    subject_module: Option<String>,
+    subject: String,
     width_config: WidthConfig,
 }
 
@@ -49,10 +52,15 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
             subtree_type = SubtreeType::Split
         }
 
+        let (subject_module, short_subject) = split_subject(&commit.subject());
+        let subject = short_subject.unwrap_or_else(|| commit.subject().clone());
+
         HistoryEntry {
             commit,
             default_style,
             search_state,
+            subject,
+            subject_module,
             subtree_type,
             width_config,
         }
@@ -121,7 +129,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         let mut text;
         match (
             !self.commit.subtree_modules().is_empty(),
-            self.commit.subject_module().is_some(),
+            self.subject_module.is_some(),
         ) {
             (true, _) => {
                 text = ":".to_string();
@@ -131,7 +139,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
                     text = format!("({} modules)", subtree_modules.len());
                 }
             }
-            (false, true) => text = self.commit.subject_module().unwrap().clone(),
+            (false, true) => text = self.subject_module.as_ref().unwrap().clone(),
             (false, false) => return None,
         };
 
@@ -194,11 +202,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
     }
 
     fn subject(&self) -> &String {
-        if let Some(v) = self.commit.short_subject() {
-            v
-        } else {
-            self.commit.subject()
-        }
+        &self.subject
     }
 
     pub fn references_span(&self) -> SpannedString<Style> {
@@ -241,4 +245,19 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         }
         tmp
     }
+}
+
+pub fn split_subject(subject: &String) -> (Option<String>, Option<String>) {
+    let reg = regex!(r"^\w+\((.+)\): .+");
+    let mut subject_module = None;
+    let mut short_subject = None;
+    if let Some(caps) = reg.captures(&subject) {
+        let x = caps.get(1).expect("Expected 1 capture group");
+        subject_module = Some(x.as_str().to_string());
+        let mut f = subject.clone();
+        f.truncate(x.start() - 1);
+        f.push_str(&subject.clone().split_off(x.end() + 1));
+        short_subject = Some(f);
+    }
+    (subject_module, short_subject)
 }

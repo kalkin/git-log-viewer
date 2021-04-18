@@ -12,6 +12,7 @@ lazy_static! {
     static ref CONFIG: Ini = config();
 }
 
+#[macro_export]
 macro_rules! regex {
     ($r:literal) => {
         Regex::new($r).expect("Valid RegEx")
@@ -45,8 +46,6 @@ pub struct Commit {
     committer_date: String,
     committer_rel_date: String,
     subject: String,
-    subject_module: Option<String>,
-    short_subject: Option<String>,
     body: String,
 
     icon: String,
@@ -136,14 +135,6 @@ impl Commit {
             &self.subject,
         ];
 
-        if let Some(short_subject) = self.short_subject.as_ref() {
-            candidates.push(short_subject);
-        }
-
-        if let Some(subject_module) = self.subject_module.as_ref() {
-            candidates.push(subject_module)
-        }
-
         let x = self.subtree_modules();
         candidates.extend(x);
 
@@ -194,13 +185,6 @@ impl Commit {
     pub fn subject(&self) -> &String {
         &self.subject
     }
-    pub fn subject_module(&self) -> Option<&String> {
-        self.subject_module.as_ref()
-    }
-    pub fn short_subject(&self) -> Option<&String> {
-        self.short_subject.as_ref()
-    }
-
     pub fn subtree_modules(&self) -> &[String] {
         self.subtree_modules.as_slice()
     }
@@ -311,18 +295,6 @@ impl Commit {
                 break;
             }
         }
-        let reg = regex!(r"^\w+\((.+)\): .+");
-        let mut subject_module = None;
-        let mut short_subject = None;
-        if let Some(caps) = reg.captures(&subject) {
-            let x = caps.get(1).expect("Expected 1 capture group");
-            subject_module = Some(x.as_str().to_string());
-            let mut f = subject.clone();
-            f.truncate(x.start() - 1);
-            f.push_str(&subject.clone().split_off(x.end() + 1));
-            short_subject = Some(f);
-        }
-
         let modules = changed_modules(working_dir, &id.0, subtree_modules);
 
         Commit {
@@ -340,8 +312,6 @@ impl Commit {
             committer_rel_date,
 
             subject,
-            subject_module,
-            short_subject,
             body,
 
             icon,

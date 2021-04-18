@@ -6,6 +6,7 @@ use crate::detail::CommitDetailView;
 use crate::scroll::CustomScrollView;
 use crate::views::DynamicSplitView;
 
+#[macro_use]
 mod core;
 mod detail;
 mod history;
