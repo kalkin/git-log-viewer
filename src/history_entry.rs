@@ -26,6 +26,7 @@ pub enum SubtreeType {
 
 pub struct HistoryEntry {
     commit: Commit,
+    folded: bool,
     level: u8,
     subtree_type: SubtreeType,
     subject_module: Option<String>,
@@ -60,6 +61,7 @@ impl<'a> HistoryEntry {
 
         HistoryEntry {
             commit,
+            folded: false,
             level,
             subject,
             subject_module,
@@ -83,11 +85,11 @@ impl<'a> HistoryEntry {
     }
 
     pub fn folded(&mut self, t: bool) {
-        self.commit.folded(t);
+        self.folded = t;
     }
 
     pub fn is_folded(&self) -> bool {
-        self.commit.is_folded()
+        self.folded
     }
 
     pub fn is_merge(&self) -> bool {

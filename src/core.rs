@@ -50,7 +50,6 @@ pub struct Commit {
 
     icon: String,
 
-    folded: bool,
     bellow: Option<Oid>,
     children: Vec<Oid>,
     is_commit_link: bool,
@@ -108,10 +107,6 @@ impl Commit {
         &self.children
     }
 
-    pub fn folded(&mut self, p0: bool) {
-        self.folded = p0;
-    }
-
     pub fn id(&self) -> &Oid {
         &self.id
     }
@@ -164,9 +159,7 @@ impl Commit {
     pub fn is_commit_link(&self) -> bool {
         self.is_commit_link
     }
-    pub fn is_folded(&self) -> bool {
-        self.folded
-    }
+
     pub fn references(&self) -> &Vec<GitRef> {
         &self.references
     }
@@ -287,8 +280,6 @@ impl Commit {
             body,
 
             icon,
-
-            folded: true,
 
             bellow,
             children,

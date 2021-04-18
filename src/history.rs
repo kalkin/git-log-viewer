@@ -365,7 +365,7 @@ impl cursive::view::View for History {
             Event::Char('l') | Event::Key(Key::Right) => {
                 if self.selected_item().is_commit_link() {
                     self.search_link_target();
-                } else if self.selected_item().is_merge() && self.selected_item().is_folded() {
+                } else if self.selected_item().is_merge() && self.selected_entry().is_folded() {
                     self.toggle_folding()
                 } else {
                     let mut cur = self.selected;
