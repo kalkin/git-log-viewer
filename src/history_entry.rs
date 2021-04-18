@@ -15,14 +15,14 @@ pub enum SubtreeType {
     None,
 }
 
-pub struct HistoryEntry<'a, 'b> {
+pub struct HistoryEntry<'a, 'b, 'c> {
     commit: &'a Commit,
     default_style: Style,
     search_state: &'b SearchState,
     subtree_type: SubtreeType,
     subject_module: Option<String>,
     subject: String,
-    width_config: WidthConfig,
+    width_config: &'c WidthConfig,
 }
 
 pub struct WidthConfig {
@@ -36,13 +36,13 @@ struct SearchMatch {
     end: usize,
 }
 
-impl<'a, 'b> HistoryEntry<'a, 'b> {
+impl<'a, 'b, 'c> HistoryEntry<'a, 'b, 'c> {
     pub fn new(
         default_style: Style,
         commit: &'a Commit,
         search_state: &'b SearchState,
-        width_config: WidthConfig,
-    ) -> HistoryEntry<'a, 'b> {
+        width_config: &'c WidthConfig,
+    ) -> HistoryEntry<'a, 'b, 'c> {
         let mut subtree_type = SubtreeType::None;
         if commit.subject().starts_with("Update :") {
             subtree_type = SubtreeType::Update
@@ -71,7 +71,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         let text = self.name();
         let mut result = SpannedString::new();
         if self.search_state.active {
-            result = <HistoryEntry<'a, 'b>>::highlight_search(style, &text, &self.search_state);
+            result = <HistoryEntry<'a, 'b, 'c>>::highlight_search(style, &text, &self.search_state);
         } else {
             result.append_styled(text, style);
         }
@@ -112,7 +112,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         let text = self.id();
         let mut result;
         if self.search_state.active {
-            result = <HistoryEntry<'a, 'b>>::highlight_search(style, &text, &self.search_state);
+            result = <HistoryEntry<'a, 'b, 'c>>::highlight_search(style, &text, &self.search_state);
         } else {
             result = SpannedString::new();
             result.append_styled(text, style);
@@ -143,7 +143,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
             (false, false) => return None,
         };
 
-        Some(<HistoryEntry<'a, 'b>>::highlight_search(
+        Some(<HistoryEntry<'a, 'b, 'c>>::highlight_search(
             style,
             &text,
             &self.search_state,
@@ -192,7 +192,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         let mut result;
         if self.search_state.active {
             let search_state = self.search_state;
-            result = <HistoryEntry<'a, 'b>>::highlight_search(style, &text, search_state);
+            result = <HistoryEntry<'a, 'b, 'c>>::highlight_search(style, &text, search_state);
         } else {
             result = SpannedString::new();
             result.append_styled(text, style);
@@ -212,8 +212,11 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
             result.append_styled('«', style);
             if self.search_state.active {
                 let search_state = self.search_state;
-                let tmp: SpannedString<Style> =
-                    <HistoryEntry<'a, 'b>>::highlight_search(style, &r.to_string(), search_state);
+                let tmp: SpannedString<Style> = <HistoryEntry<'a, 'b, 'c>>::highlight_search(
+                    style,
+                    &r.to_string(),
+                    search_state,
+                );
                 result.append::<SpannedString<Style>>(tmp);
             } else {
                 result.append_styled(&r.to_string(), style);
@@ -230,7 +233,7 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
     ) -> SpannedString<Style> {
         let mut cur = 0;
         let mut tmp = SpannedString::new();
-        let indices = <HistoryEntry<'a, 'b>>::search_text(text, search_state.needle.as_str());
+        let indices = <HistoryEntry<'a, 'b, 'c>>::search_text(text, search_state.needle.as_str());
         for s in indices {
             assert!(s.start >= cur);
             if cur < s.start {
@@ -260,4 +263,8 @@ pub fn split_subject(subject: &String) -> (Option<String>, Option<String>) {
         short_subject = Some(f);
     }
     (subject_module, short_subject)
+}
+
+pub trait DisplayableCommit {
+    fn commit(&self) -> &Commit;
 }

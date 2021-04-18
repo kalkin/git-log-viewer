@@ -72,7 +72,7 @@ impl History {
             max_modules: modules_width(),
         };
 
-        let sc = HistoryEntry::new(style, commit, &self.search_state, width_config);
+        let sc = HistoryEntry::new(style, commit, &self.search_state, &width_config);
 
         {
             buf.append(sc.id_span());
