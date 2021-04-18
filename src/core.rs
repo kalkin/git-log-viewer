@@ -51,7 +51,6 @@ pub struct Commit {
     icon: String,
 
     folded: bool,
-    above: Option<Oid>,
     bellow: Option<Oid>,
     children: Vec<Oid>,
     level: u8,
@@ -66,10 +65,6 @@ pub struct Commit {
 }
 
 impl Commit {
-    pub fn above(&self) -> Option<&Oid> {
-        self.above.as_ref()
-    }
-
     pub fn author_name(&self) -> &String {
         &self.author_name
     }
@@ -203,7 +198,7 @@ impl Commit {
         data: &str,
         level: u8,
         is_commit_link: bool,
-        above_commit: Option<&Commit>,
+        is_fork_point: bool,
         subtree_modules: &[SubtreeConfig],
     ) -> Self {
         let mut split = data.split('\x1f');
@@ -270,24 +265,6 @@ impl Commit {
             children.push(Oid(c.to_string()));
         }
 
-        let above;
-        let mut is_fork_point = false;
-        if let Some(commit) = above_commit {
-            if commit.children.is_empty() {
-                above = None;
-            } else if commit.children[0] != id {
-                let parent_child = commit.children[0].to_string();
-                if commit.is_merge {
-                    is_fork_point = is_ancestor(working_dir, &id.0, &parent_child)
-                        .expect("Execute merge-base --is-ancestor");
-                }
-                above = Some(commit.id.clone());
-            } else {
-                above = Some(commit.id.clone());
-            }
-        } else {
-            above = None;
-        }
         let mut icon = " ".to_string();
         for (reg, c) in REGEXES.iter() {
             if reg.is_match(&subject) {
@@ -318,7 +295,6 @@ impl Commit {
 
             folded: true,
 
-            above,
             bellow,
             children,
             level,
@@ -334,27 +310,16 @@ impl Commit {
         }
     }
 
-    pub fn new_from_id(
-        working_dir: &str,
-        git_ref: &str,
-        level: u8,
-        is_commit_link: bool,
-        above_commit: Option<&Commit>,
-        subtree_modules: Vec<SubtreeConfig>,
-    ) -> Result<Commit, PosixError> {
-        let proc = git_cmd_out(
-            working_dir.to_string(),
-            vec!["rev-list", REV_FORMAT, "--max-count=1", git_ref],
-        )?;
-        let data = String::from_utf8(proc.stdout).expect("Valid UTF-8");
-        Ok(Commit::new(
-            working_dir,
-            &data,
-            level,
-            is_commit_link,
-            above_commit,
-            subtree_modules.as_ref(),
-        ))
+    fn calc_is_fork_point(&mut self, working_dir: &str, above: &Option<&Commit>) {
+        if let Some(c) = above {
+            if !c.children.is_empty() && c.children[0] != self.id {
+                let parent_child = c.children[0].to_string();
+                if c.is_merge {
+                    self.is_fork_point = is_ancestor(working_dir, &self.id.0, &parent_child)
+                        .expect("Execute merge-base --is-ancestor");
+                }
+            }
+        }
     }
 }
 
@@ -418,7 +383,8 @@ pub fn commits_for_range<T: AsRef<str>>(
         if data.is_empty() {
             break;
         }
-        let commit = Commit::new(working_dir, data, level, false, above, subtree_modules);
+        let mut commit = Commit::new(working_dir, data, level, false, false, subtree_modules);
+        commit.calc_is_fork_point(working_dir, &above);
         result.push(commit);
         above = result.last();
     }
@@ -464,14 +430,16 @@ pub fn child_history(
         && end_commit.bellow.is_some()
         && end_commit.bellow.as_ref().expect("Expected merge commit") != bellow
     {
-        let link = to_commit(
+        let mut link = to_commit(
             working_dir,
             end_commit.bellow.as_ref().expect("Expected merge commit"),
             level,
             true,
-            Some(&end_commit),
+            false,
             subtree_modules,
         );
+
+        link.calc_is_fork_point(working_dir, &Some(end_commit));
         result.push(link);
     }
 
@@ -483,7 +451,7 @@ fn to_commit(
     oid: &Oid,
     level: u8,
     is_commit_link: bool,
-    above: Option<&Commit>,
+    is_fork_point: bool,
     subtree_modules: &[SubtreeConfig],
 ) -> Commit {
     let output = git_cmd_out(
@@ -499,7 +467,7 @@ fn to_commit(
         lines.get(1).unwrap(),
         level,
         is_commit_link,
-        above,
+        is_fork_point,
         subtree_modules,
     )
 }
