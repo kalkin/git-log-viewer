@@ -44,7 +44,9 @@ impl<'a, 'b> HistoryEntry<'a, 'b> {
         if commit.subject().starts_with("Update :") {
             subtree_type = SubtreeType::Update
         } else if commit.subject().starts_with("Import :") {
-            subtree_type = SubtreeType::IMPORT
+            subtree_type = SubtreeType::Import
+        } else if commit.subject().starts_with("Split '") {
+            subtree_type = SubtreeType::Split
         }
 
         HistoryEntry {
