@@ -17,7 +17,7 @@ use crate::style::DEFAULT_STYLE;
 
 pub struct History {
     range: String,
-    history: Vec<Commit>,
+    history: Vec<HistoryEntry>,
     selected: usize,
     length: usize,
     working_dir: String,
@@ -49,7 +49,11 @@ impl History {
         })
     }
 
-    fn render_commit(&self, commit: &Commit, render_config: RenderConfig) -> SpannedString<Style> {
+    fn render_commit(
+        &self,
+        entry: &HistoryEntry,
+        render_config: RenderConfig,
+    ) -> SpannedString<Style> {
         let mut style = *DEFAULT_STYLE;
         if render_config.highlight {
             style.effects |= Effect::Reverse;
@@ -66,10 +70,7 @@ impl History {
             max_modules: modules_width(),
         };
 
-        let mut sc = HistoryEntry::new(commit);
-        sc.selected(render_config.highlight);
-
-        sc.render(search_state, width_config)
+        entry.render(search_state, width_config)
     }
 
     fn calc_max_name_date(&self, height: usize) -> (usize, usize) {
@@ -78,13 +79,13 @@ impl History {
         {
             let mut iter = self.history.iter();
             for _ in 0..height {
-                if let Some(commit) = iter.next() {
-                    if commit.author_rel_date().len() > max_date {
-                        let t = commit.author_rel_date().as_str();
+                if let Some(entry) = iter.next() {
+                    if entry.commit().author_rel_date().len() > max_date {
+                        let t = entry.commit().author_rel_date().as_str();
                         max_date = UnicodeWidthStr::width(t);
                     }
-                    if commit.author_name().len() > max_author {
-                        let t = commit.author_name().as_str();
+                    if entry.commit().author_name().len() > max_author {
+                        let t = entry.commit().author_name().as_str();
                         max_author = UnicodeWidthStr::width(t);
                     }
                 } else {
@@ -104,11 +105,11 @@ impl History {
                 self.subtree_modules.as_ref(),
             );
             for (i, c) in children.iter().cloned().enumerate() {
-                self.history.insert(pos + i, c);
+                self.history.insert(pos + i, HistoryEntry::new(c));
             }
         } else {
-            while let Some(c) = self.history.get(pos) {
-                if c.level() > self.selected_item().level() {
+            while let Some(e) = self.history.get(pos) {
+                if e.level() > self.selected_item().level() {
                     self.history.remove(pos);
                 } else {
                     break;
@@ -134,14 +135,14 @@ impl History {
         }
 
         for x in start..end {
-            if let Some(commit) = self.history.get(x) {
+            if let Some(entry) = self.history.get(x) {
                 let buf;
                 let render_config = RenderConfig {
                     max_author,
                     max_date,
                     highlight: x == self.selected,
                 };
-                buf = self.render_commit(commit, render_config);
+                buf = self.render_commit(entry, render_config);
                 let t = SpannedStr::from(&buf);
                 printer.print_styled((0, x), t);
             } else {
@@ -152,8 +153,8 @@ impl History {
 
     fn search_backward(&mut self) {
         for i in (0..self.selected).rev() {
-            let c = self.history.get(i).unwrap();
-            if c.search_matches(&self.search_state.needle, true) {
+            let e = self.history.get(i).unwrap();
+            if e.commit().search_matches(&self.search_state.needle, true) {
                 let delta = self.selected - i;
                 if delta > 0 {
                     self.move_focus(delta, MoveDirection::Up);
@@ -176,26 +177,27 @@ impl History {
                     commit_option = self.history.get_mut(i);
                 }
             }
-            let c = commit_option.unwrap();
-            if c.search_matches(&self.search_state.needle, true) {
+            let e = commit_option.unwrap();
+            if e.commit().search_matches(&self.search_state.needle, true) {
                 let delta = i - self.selected;
                 if delta > 0 {
                     self.move_focus(delta, MoveDirection::Down);
                     return;
                 }
-            } else if c.is_merge() && c.is_folded() {
+            } else if e.is_merge() && e.is_folded() {
                 if let Some((pos, mut commits)) = search_recursive(
                     &self.working_dir,
-                    c,
+                    e.commit(),
                     &self.subtree_modules,
                     &self.search_state,
                 ) {
-                    c.folded(false);
+                    e.folded(false);
                     let needle_position = i + pos;
                     let mut insert_position = i;
                     for c in commits.iter_mut() {
                         insert_position += 1;
-                        self.history.insert(insert_position, c.to_owned());
+                        self.history
+                            .insert(insert_position, HistoryEntry::new(c.to_owned()));
                     }
                     let delta = needle_position - self.selected + 1;
                     if delta > 0 {
@@ -221,33 +223,37 @@ impl History {
                     commit_option = self.history.get_mut(i);
                 }
             }
-            let c = commit_option.unwrap();
-            if c.is_commit_link() {
+            let e = commit_option.unwrap();
+            if e.is_commit_link() {
                 continue;
             }
 
-            if c.id() == link.id() {
+            if e.commit().id() == link.id() {
                 let delta = i - self.selected;
                 if delta > 0 {
                     self.move_focus(delta, MoveDirection::Down);
                     return;
                 }
-            } else if c.is_merge() && c.is_folded() {
-                let bellow = &c.bellow().expect("Expected Merge").to_string();
+            } else if e.is_merge() && e.is_folded() {
+                let bellow = &e.commit().bellow().expect("Expected Merge").to_string();
                 let link_id = &link.id().to_string();
                 // Heuristic skip examining merge if link is ancestor of the first child
                 if is_ancestor(self.working_dir.as_str(), link_id, bellow).unwrap() {
                     continue;
                 }
-                if let Some((pos, mut commits)) =
-                    search_link_recursive(&self.working_dir, c, &self.subtree_modules, &link)
-                {
-                    c.folded(false);
+                if let Some((pos, mut commits)) = search_link_recursive(
+                    &self.working_dir,
+                    e.commit(),
+                    &self.subtree_modules,
+                    &link,
+                ) {
+                    e.folded(false);
                     let needle_position = i + pos;
                     let mut insert_position = i;
                     for c in commits.iter_mut() {
                         insert_position += 1;
-                        self.history.insert(insert_position, c.to_owned());
+                        self.history
+                            .insert(insert_position, HistoryEntry::new(c.to_owned()));
                     }
                     let delta = needle_position - self.selected + 1;
                     if delta > 0 {
@@ -263,8 +269,13 @@ impl History {
         let skip = self.history.len();
         let range = self.range.as_str();
         let working_dir = self.working_dir.as_str();
-        let above_commit = self.history.last();
-        if let Ok(mut tmp) = commits_for_range(
+
+        let mut above_commit = None;
+        if let Some(v) = self.history.last() {
+            above_commit = Some(v.commit());
+        }
+
+        if let Ok(tmp) = commits_for_range(
             working_dir,
             range,
             0,
@@ -275,7 +286,9 @@ impl History {
             Some(max),
         ) {
             let result = !tmp.is_empty();
-            self.history.append(tmp.as_mut());
+            for e in tmp.into_iter().map(HistoryEntry::new) {
+                self.history.push(e);
+            }
             return result;
         }
         false
@@ -299,6 +312,10 @@ impl cursive::view::View for History {
         if self.history.is_empty() || (end >= self.history.len() - 1 && end < self.length) {
             let max = end + 1 - self.history.len();
             self.fill_up(max);
+        }
+
+        for (i, c) in self.history.iter_mut().enumerate() {
+            c.selected(i == self.selected);
         }
     }
 
@@ -428,6 +445,6 @@ impl ScrollableSelectable for History {
     }
 
     fn selected_item(&self) -> &Commit {
-        self.history.get(self.selected).as_ref().unwrap()
+        self.history.get(self.selected).as_ref().unwrap().commit()
     }
 }

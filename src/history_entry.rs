@@ -24,8 +24,8 @@ pub enum SubtreeType {
     None,
 }
 
-pub struct HistoryEntry<'a> {
-    commit: &'a Commit,
+pub struct HistoryEntry {
+    commit: Commit,
     subtree_type: SubtreeType,
     subject_module: Option<String>,
     subject: String,
@@ -43,8 +43,8 @@ struct SearchMatch {
     end: usize,
 }
 
-impl<'a> HistoryEntry<'a> {
-    pub fn new(commit: &'a Commit) -> Self {
+impl<'a> HistoryEntry {
+    pub fn new(commit: Commit) -> Self {
         let mut subtree_type = SubtreeType::None;
         if commit.subject().starts_with("Update :") {
             subtree_type = SubtreeType::Update
@@ -74,6 +74,30 @@ impl<'a> HistoryEntry<'a> {
         let style = name_style(&self.default_style());
         let text = adjust_string(self.commit.author_name(), max_len);
         search_if_needed!(text, style, search_state)
+    }
+
+    pub fn commit(&self) -> &Commit {
+        &self.commit
+    }
+
+    pub fn folded(&mut self, t: bool) {
+        self.commit.folded(t);
+    }
+
+    pub fn is_folded(&self) -> bool {
+        self.commit.is_folded()
+    }
+
+    pub fn is_merge(&self) -> bool {
+        self.commit.is_merge()
+    }
+
+    pub fn level(&self) -> u8 {
+        self.commit.level()
+    }
+
+    pub fn is_commit_link(&self) -> bool {
+        self.commit.is_commit_link()
     }
 
     pub fn selected(&mut self, t: bool) {
