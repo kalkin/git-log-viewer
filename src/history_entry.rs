@@ -7,6 +7,15 @@ use crate::core::{adjust_string, Commit};
 use crate::search::SearchState;
 use crate::style::{date_style, id_style, mod_style, name_style, ref_style, DEFAULT_STYLE};
 
+macro_rules! search_if_needed {
+    ($text:expr,$style:expr,$optional_search_state:expr) => {
+        if let Some(search_state) = $optional_search_state {
+            HistoryEntry::highlight_search($style, &$text, search_state)
+        } else {
+            SpannedString::styled($text, $style)
+        }
+    };
+}
 #[derive(Eq, PartialEq)]
 pub enum SubtreeType {
     Update,
@@ -64,13 +73,7 @@ impl<'a> HistoryEntry<'a> {
     ) -> SpannedString<Style> {
         let style = name_style(&self.default_style());
         let text = adjust_string(self.commit.author_name(), max_len);
-        let mut result = SpannedString::new();
-        if let Some(needle) = search_state {
-            result = HistoryEntry::highlight_search(style, &text, needle);
-        } else {
-            result.append_styled(text, style);
-        }
-        result
+        search_if_needed!(text, style, search_state)
     }
 
     pub fn selected(&mut self, t: bool) {
@@ -111,14 +114,7 @@ impl<'a> HistoryEntry<'a> {
     fn id_span(&self, search_state: Option<&SearchState>) -> SpannedString<Style> {
         let style = id_style(&self.default_style());
         let text = self.commit.short_id();
-        let mut result;
-        if let Some(needle) = search_state {
-            result = HistoryEntry::highlight_search(style, &text, needle);
-        } else {
-            result = SpannedString::new();
-            result.append_styled(text, style);
-        }
-        result
+        search_if_needed!(text, style, search_state)
     }
 
     fn modules_span(
@@ -144,11 +140,7 @@ impl<'a> HistoryEntry<'a> {
             (false, false) => return None,
         };
 
-        Some(if let Some(needle) = search_state {
-            HistoryEntry::highlight_search(style, &text, needle)
-        } else {
-            SpannedString::styled(text, style)
-        })
+        Some(search_if_needed!(text, style, search_state))
     }
 
     fn graph_span(&self) -> SpannedString<Style> {
@@ -189,16 +181,7 @@ impl<'a> HistoryEntry<'a> {
     fn subject_span(&self, search_state: Option<&SearchState>) -> SpannedString<Style> {
         let style = self.default_style();
         let text = &self.subject;
-
-        let mut result;
-        if let Some(needle) = search_state {
-            result = HistoryEntry::highlight_search(style, &text, needle);
-        } else {
-            result = SpannedString::new();
-            result.append_styled(text, style);
-        }
-
-        result
+        search_if_needed!(text, style, search_state)
     }
 
     fn references_span(&self, search_state: Option<&SearchState>) -> SpannedString<Style> {
