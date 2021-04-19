@@ -3,6 +3,8 @@ use cursive::utils::span::SpannedString;
 use regex::Regex;
 use unicode_width::UnicodeWidthStr;
 
+use git_subtrees_improved::{changed_modules, SubtreeConfig};
+
 use crate::core::{adjust_string, Commit};
 use crate::search::SearchState;
 use crate::style::{date_style, id_style, mod_style, name_style, ref_style, DEFAULT_STYLE};
@@ -32,6 +34,8 @@ pub struct HistoryEntry {
     subject_module: Option<String>,
     subject: String,
     selected: bool,
+    subtree_modules: Vec<String>,
+    working_dir: String,
 }
 
 pub struct WidthConfig {
@@ -46,7 +50,12 @@ struct SearchMatch {
 }
 
 impl<'a> HistoryEntry {
-    pub fn new(commit: Commit, level: u8) -> Self {
+    pub fn new(
+        working_dir: String,
+        commit: Commit,
+        level: u8,
+        all_subtrees: &Vec<SubtreeConfig>,
+    ) -> Self {
         let mut subtree_type = SubtreeType::None;
         if commit.subject().starts_with("Update :") {
             subtree_type = SubtreeType::Update
@@ -59,14 +68,18 @@ impl<'a> HistoryEntry {
         let (subject_module, short_subject) = split_subject(&commit.subject());
         let subject = short_subject.unwrap_or_else(|| commit.subject().clone());
 
+        let subtree_modules =
+            changed_modules(&working_dir, &commit.id().to_string(), &all_subtrees);
         HistoryEntry {
             commit,
             folded: true,
             level,
             subject,
+            selected: false,
             subject_module,
             subtree_type,
-            selected: false,
+            subtree_modules,
+            working_dir,
         }
     }
 
@@ -144,7 +157,7 @@ impl<'a> HistoryEntry {
             &self.subject,
         ];
 
-        let x = self.commit.subtree_modules();
+        let x = &self.subtree_modules;
         candidates.extend(x);
 
         for r in self.commit.references().iter() {
@@ -185,12 +198,12 @@ impl<'a> HistoryEntry {
         let style = mod_style(&self.default_style());
         let mut text;
         match (
-            !self.commit.subtree_modules().is_empty(),
+            !self.subtree_modules.is_empty(),
             self.subject_module.is_some(),
         ) {
             (true, _) => {
                 text = ":".to_string();
-                let subtree_modules = self.commit.subtree_modules();
+                let subtree_modules = &self.subtree_modules;
                 text.push_str(&subtree_modules.join(" :"));
                 if text.width() > max_len {
                     text = format!("({} modules)", subtree_modules.len());

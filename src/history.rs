@@ -103,13 +103,18 @@ impl History {
         if self.selected_entry().is_folded() {
             let children: Vec<Commit> = child_history(
                 &self.working_dir,
-                self.selected_item(),
+                self.selected_commit(),
                 self.subtree_modules.as_ref(),
             );
             for (i, c) in children.iter().cloned().enumerate() {
                 self.history.insert(
                     pos + i,
-                    HistoryEntry::new(c, self.selected_entry().level() + 1),
+                    HistoryEntry::new(
+                        self.working_dir.clone(),
+                        c,
+                        self.selected_entry().level() + 1,
+                        &self.subtree_modules,
+                    ),
                 );
             }
         } else {
@@ -218,7 +223,7 @@ impl History {
             self.subtree_modules.borrow(),
         )
         .into_iter()
-        .map(|c| HistoryEntry::new(c, level))
+        .map(|c| HistoryEntry::new(self.working_dir.clone(), c, level, &self.subtree_modules))
         .collect();
         for (i, e) in entries.iter_mut().enumerate() {
             if e.search_matches(&self.search_state.needle, true) {
@@ -282,8 +287,15 @@ impl History {
                     let mut insert_position = i;
                     for c in commits.iter_mut() {
                         insert_position += 1;
-                        self.history
-                            .insert(insert_position, HistoryEntry::new(c.to_owned(), level));
+                        self.history.insert(
+                            insert_position,
+                            HistoryEntry::new(
+                                self.working_dir.clone(),
+                                c.to_owned(),
+                                level,
+                                &self.subtree_modules,
+                            ),
+                        );
                     }
                     let delta = needle_position - self.selected + 1;
                     if delta > 0 {
@@ -309,13 +321,17 @@ impl History {
             working_dir,
             range,
             above_commit,
-            self.subtree_modules.as_ref(),
             self.paths.as_ref(),
             Some(skip),
             Some(max),
         ) {
             let result = !tmp.is_empty();
-            for e in tmp.into_iter().map(|c| HistoryEntry::new(c, 0)) {
+            let working_dir = self.working_dir.clone();
+            let subtrees = &self.subtree_modules;
+            for e in tmp
+                .into_iter()
+                .map(|c| HistoryEntry::new(working_dir.clone(), c, 0, subtrees))
+            {
                 self.history.push(e);
             }
             return result;
@@ -324,6 +340,10 @@ impl History {
     }
     fn selected_entry(&self) -> &HistoryEntry {
         self.history.get(self.selected).unwrap()
+    }
+
+    fn selected_commit(&self) -> &Commit {
+        self.history.get(self.selected).as_ref().unwrap().commit()
     }
 }
 

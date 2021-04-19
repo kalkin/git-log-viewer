@@ -59,7 +59,6 @@ pub struct Commit {
     branches: Vec<GitRef>,
     references: Vec<GitRef>,
     tags: Vec<GitRef>,
-    subtree_modules: Vec<String>,
 }
 
 impl Commit {
@@ -137,9 +136,6 @@ impl Commit {
     pub fn subject(&self) -> &String {
         &self.subject
     }
-    pub fn subtree_modules(&self) -> &[String] {
-        self.subtree_modules.as_slice()
-    }
 
     pub fn tags(&self) -> &Vec<GitRef> {
         &self.tags
@@ -150,13 +146,7 @@ const REV_FORMAT: &str =
     "--format=%x1f%H%x1f%h%x1f%P%x1f%D%x1f%aN%x1f%aE%x1f%aI%x1f%ar%x1f%cN%x1f%cE%x1f%cI%x1f%cr%x1f%s%x1f%b%x1e";
 
 impl Commit {
-    pub fn new(
-        working_dir: &str,
-        data: &str,
-        is_commit_link: bool,
-        is_fork_point: bool,
-        subtree_modules: &[SubtreeConfig],
-    ) -> Self {
+    pub fn new(data: &str, is_commit_link: bool, is_fork_point: bool) -> Self {
         let mut split = data.split('\x1f');
         split.next(); // skip commit: XXXX line
         let id = Oid {
@@ -228,7 +218,6 @@ impl Commit {
                 break;
             }
         }
-        let modules = changed_modules(working_dir, &id.0, subtree_modules);
 
         Commit {
             id,
@@ -259,7 +248,6 @@ impl Commit {
             branches,
             references,
             tags,
-            subtree_modules: modules,
         }
     }
 
@@ -299,7 +287,6 @@ pub fn commits_for_range<T: AsRef<str>>(
     working_dir: &str,
     rev_range: &str,
     above_commit: Option<&Commit>,
-    subtree_modules: &[SubtreeConfig],
     paths: &[T],
     skip: Option<usize>,
     max: Option<usize>,
@@ -335,7 +322,7 @@ pub fn commits_for_range<T: AsRef<str>>(
         if data.is_empty() {
             break;
         }
-        let mut commit = Commit::new(working_dir, data, false, false, subtree_modules);
+        let mut commit = Commit::new(data, false, false);
         commit.calc_is_fork_point(working_dir, &above);
         result.push(commit);
         above = result.last();
@@ -367,7 +354,6 @@ pub fn child_history(
         working_dir,
         revision.as_str(),
         Some(above_commit),
-        subtree_modules,
         paths,
         None,
         None,
@@ -385,7 +371,6 @@ pub fn child_history(
             end_commit.bellow.as_ref().expect("Expected merge commit"),
             true,
             false,
-            subtree_modules,
         );
 
         link.calc_is_fork_point(working_dir, &Some(end_commit));
@@ -395,13 +380,7 @@ pub fn child_history(
     result
 }
 
-fn to_commit(
-    working_dir: &str,
-    oid: &Oid,
-    is_commit_link: bool,
-    is_fork_point: bool,
-    subtree_modules: &[SubtreeConfig],
-) -> Commit {
+fn to_commit(working_dir: &str, oid: &Oid, is_commit_link: bool, is_fork_point: bool) -> Commit {
     let output = git_cmd_out(
         working_dir.to_string(),
         vec!["rev-list", REV_FORMAT, "-1", &oid.0],
@@ -410,13 +389,7 @@ fn to_commit(
     let lines: Vec<&str> = tmp.as_ref().expect("Valid UTF-8").lines().collect();
     // XXX FIXME lines? really?
     assert!(lines.len() >= 2, "Did not got enough data for {}", oid);
-    Commit::new(
-        working_dir,
-        lines.get(1).unwrap(),
-        is_commit_link,
-        is_fork_point,
-        subtree_modules,
-    )
+    Commit::new(lines.get(1).unwrap(), is_commit_link, is_fork_point)
 }
 
 pub fn merge_base(working_dir: &str, p1: &Oid, p2: &Oid) -> Result<Option<Oid>, PosixError> {
