@@ -1,8 +1,7 @@
 use cursive::event::{Event, EventResult, Key};
 use cursive::{Printer, Rect, Vec2, View};
 
-use crate::core::Commit;
-
+use crate::history_entry::HistoryEntry;
 use crate::scroll::ScrollableSelectable;
 
 enum FocusedView {
@@ -167,5 +166,5 @@ where
 }
 
 pub trait DetailView {
-    fn set_detail(&mut self, detail: &Commit);
+    fn set_detail(&mut self, detail: &HistoryEntry);
 }

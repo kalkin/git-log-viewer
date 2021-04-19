@@ -496,7 +496,7 @@ impl ScrollableSelectable for History {
         self.selected
     }
 
-    fn selected_item(&self) -> &Commit {
-        self.history.get(self.selected).as_ref().unwrap().commit()
+    fn selected_item(&self) -> &HistoryEntry {
+        self.history.get(self.selected).as_ref().unwrap()
     }
 }

@@ -3,8 +3,7 @@ use cursive::event::{Event, EventResult, Key};
 use cursive::views::EditView;
 use cursive::{Printer, Vec2, View};
 
-use crate::core::Commit;
-
+use crate::history_entry::HistoryEntry;
 use crate::search::{SearchDirection, SearchState};
 use crate::style::DEFAULT_STYLE;
 
@@ -59,7 +58,7 @@ where
         self.inner.selected_pos()
     }
 
-    fn selected_item(&self) -> &Commit {
+    fn selected_item(&self) -> &HistoryEntry {
         self.inner.selected_item()
     }
 }
@@ -291,7 +290,7 @@ pub trait ScrollableSelectable {
     fn move_focus(&mut self, n: usize, direction: MoveDirection) -> bool;
     fn search(&mut self, search_state: SearchState);
     fn selected_pos(&self) -> usize;
-    fn selected_item(&self) -> &Commit;
+    fn selected_item(&self) -> &HistoryEntry;
 }
 
 #[derive(Eq, PartialEq)]

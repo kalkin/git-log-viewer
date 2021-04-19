@@ -13,6 +13,7 @@ use crate::raw;
 use crate::style::{bold_style, date_style, DEFAULT_STYLE};
 use crate::style::{id_style, name_style};
 use crate::views::DetailView;
+use crate::history_entry::HistoryEntry;
 
 pub struct CommitDetailView {
     content: Option<ScrollView<TextView>>,
@@ -51,7 +52,8 @@ impl View for CommitDetailView {
 }
 
 impl DetailView for CommitDetailView {
-    fn set_detail(&mut self, detail: &Commit) {
+    fn set_detail(&mut self, entry: &HistoryEntry) {
+        let detail = entry.commit();
         let content = TextContent::new("");
         content.append(color_span(
             "Commit:          ",
@@ -89,14 +91,14 @@ impl DetailView for CommitDetailView {
         // Committer lines }
 
         // Modules
-        // if !detail.subtree_modules().is_empty() {
-        //     content.append(color_span(
-        //         "Modules:         ",
-        //         &detail.subtree_modules().join(", "),
-        //         date_style(&DEFAULT_STYLE),
-        //     ));
-        // }
-        //
+        if !entry.subtree_modules().is_empty() {
+            content.append(color_span(
+                "Modules:         ",
+                &entry.subtree_modules().join(", "),
+                date_style(&DEFAULT_STYLE),
+            ));
+        }
+        
         // Subject
         content.append("\n");
         content.append(SpannedString::styled(

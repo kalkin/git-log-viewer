@@ -38,6 +38,12 @@ pub struct HistoryEntry {
     working_dir: String,
 }
 
+impl HistoryEntry {
+    pub(crate) fn subtree_modules(&self) -> &Vec<String> {
+        &self.subtree_modules
+    }
+}
+
 pub struct WidthConfig {
     pub max_author: usize,
     pub max_date: usize,
