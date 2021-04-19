@@ -28,6 +28,12 @@ pub enum SubtreeType {
     None,
 }
 
+#[derive(Eq, PartialEq)]
+pub enum SpecialSubject {
+    PrMerge,
+    None,
+}
+
 pub struct HistoryEntry {
     commit: Commit,
     folded: bool,
@@ -35,6 +41,7 @@ pub struct HistoryEntry {
     subtree_type: SubtreeType,
     subject_module: Option<String>,
     subject: String,
+    special_subject: SpecialSubject,
     selected: bool,
     pub subtree_modules: Vec<String>,
     url: Option<Url>,
@@ -79,12 +86,18 @@ impl HistoryEntry {
         if let Some(v) = url_hint {
             url = Some(v);
         }
+        let mut special_subject = SpecialSubject::None;
+        let reg = regex!(r"^Merge remote-tracking branch '.+/pr/\d+'$");
+        if reg.is_match(commit.subject()) {
+            special_subject = SpecialSubject::PrMerge
+        }
 
         HistoryEntry {
             commit,
             folded: true,
             level,
             subject,
+            special_subject,
             selected: false,
             subject_module,
             subtree_type,
@@ -157,6 +170,10 @@ impl HistoryEntry {
         }
 
         result
+    }
+
+    pub fn special_subject(&self) -> &SpecialSubject {
+        &self.special_subject
     }
 
     /// Check if string is contained any where in commit data
@@ -345,6 +362,10 @@ impl HistoryEntry {
         if let Some(modules) = self.modules_span(search_state, widths.max_modules) {
             buf.append(modules);
             buf.append_styled(" ", style);
+        }
+
+        if self.special_subject == SpecialSubject::PrMerge {
+            buf.append_styled("* ", id_style(&style));
         }
 
         {
