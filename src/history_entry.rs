@@ -30,7 +30,7 @@ pub enum SubtreeType {
 
 #[derive(Eq, PartialEq)]
 pub enum SpecialSubject {
-    PrMerge,
+    PrMerge(String),
     None,
 }
 
@@ -105,14 +105,14 @@ impl HistoryEntry {
 
     fn are_we_special(commit: &Commit) -> SpecialSubject {
         let mut special_subject = SpecialSubject::None;
-        let local_gh_merge = regex!(r"^Merge remote-tracking branch '.+/pr/\d+'$");
-        if local_gh_merge.is_match(commit.subject()) {
-            special_subject = SpecialSubject::PrMerge
+        let local_gh_merge = regex!(r"^Merge remote-tracking branch '.+/pr/(\d+)'$");
+        if let Some(caps) = local_gh_merge.captures(&commit.subject()) {
+            special_subject = SpecialSubject::PrMerge(caps.get(1).unwrap().as_str().to_string())
         }
 
-        let online_gh_merge = regex!(r"^Merge pull request #\d+ from .+$");
-        if online_gh_merge.is_match(commit.subject()) {
-            special_subject = SpecialSubject::PrMerge
+        let online_gh_merge = regex!(r"^Merge pull request #(\d+) from .+$");
+        if let Some(caps) = online_gh_merge.captures(&commit.subject()) {
+            special_subject = SpecialSubject::PrMerge(caps.get(1).unwrap().as_str().to_string())
         }
         special_subject
     }
@@ -373,9 +373,11 @@ impl HistoryEntry {
             buf.append(modules);
             buf.append_styled(" ", style);
         }
-
-        if self.special_subject == SpecialSubject::PrMerge {
-            buf.append_styled("* ", id_style(&style));
+        match &self.special_subject {
+            SpecialSubject::PrMerge(id) => {
+                buf.append_styled(format!("#{} ", id), id_style(&style));
+            }
+            SpecialSubject::None => {}
         }
 
         {
