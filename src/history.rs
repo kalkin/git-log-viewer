@@ -33,6 +33,7 @@ pub struct History {
     paths: Vec<String>,
     fork_point_thread: ForkPointThread,
     subtree_thread: SubtreesThread,
+    url: Option<String>,
 }
 
 struct RenderConfig {
@@ -48,7 +49,7 @@ impl History {
         let search_state = SearchState::new(DEFAULT_STYLE.to_owned());
         let fork_point_thread = ForkPointThread::new();
         let subtree_thread = SubtreesThread::new(working_dir.to_string(), subtree_modules.to_vec());
-
+        let url = git_wrapper::main_url(working_dir)?;
         Ok(History {
             range: range.to_string(),
             history: vec![],
@@ -60,6 +61,7 @@ impl History {
             paths,
             fork_point_thread,
             subtree_thread,
+            url,
         })
     }
 
@@ -139,6 +141,7 @@ impl History {
                     self.working_dir.clone(),
                     c,
                     self.selected_entry().level() + 1,
+                    self.selected_entry().url(),
                 );
                 self.history.insert(pos + i, entry);
                 above_commit = Some(self.history.get(pos + i).unwrap().commit());
@@ -267,7 +270,12 @@ impl History {
                     working_dir: self.working_dir.clone(),
                 });
             }
-            let e = HistoryEntry::new(self.working_dir.clone(), c, level);
+            let e = HistoryEntry::new(
+                self.working_dir.clone(),
+                c,
+                level,
+                self.selected_entry().url(),
+            );
             entries.push(e);
             above_commit = Some(entries.last().unwrap().commit());
         }
@@ -332,10 +340,15 @@ impl History {
                     let needle_position = i + pos;
                     let mut insert_position = i;
                     let mut above_commit = Some(e.commit());
+                    let url_hint = e.url().clone();
                     for c in commits.iter_mut() {
                         insert_position += 1;
-                        let entry =
-                            HistoryEntry::new(self.working_dir.clone(), c.to_owned(), level);
+                        let entry = HistoryEntry::new(
+                            self.working_dir.clone(),
+                            c.to_owned(),
+                            level,
+                            url_hint.clone(),
+                        );
                         self.history.insert(insert_position, entry);
                         above_commit = Some(self.history.get(insert_position).unwrap().commit());
                     }
@@ -374,6 +387,7 @@ impl History {
                 Some(self.history.last().unwrap().commit())
             };
             for c in tmp.into_iter() {
+                let url_hint = self.url.clone();
                 if !self.subtree_modules.is_empty() {
                     self.subtree_thread.send(SubtreeChangesRequest {
                         oid: c.id().clone(),
@@ -389,7 +403,7 @@ impl History {
                         working_dir: self.working_dir.clone(),
                     });
                 }
-                let entry = HistoryEntry::new(working_dir.clone(), c, 0);
+                let entry = HistoryEntry::new(working_dir.clone(), c, 0, url_hint);
                 self.history.push(entry);
                 above_commit = Some(self.history.last().unwrap().commit());
             }
