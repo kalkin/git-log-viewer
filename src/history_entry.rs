@@ -86,11 +86,7 @@ impl HistoryEntry {
         if let Some(v) = url_hint {
             url = Some(v);
         }
-        let mut special_subject = SpecialSubject::None;
-        let reg = regex!(r"^Merge remote-tracking branch '.+/pr/\d+'$");
-        if reg.is_match(commit.subject()) {
-            special_subject = SpecialSubject::PrMerge
-        }
+        let special_subject = HistoryEntry::are_we_special(&commit);
 
         HistoryEntry {
             commit,
@@ -105,6 +101,20 @@ impl HistoryEntry {
             url,
             working_dir,
         }
+    }
+
+    fn are_we_special(commit: &Commit) -> SpecialSubject {
+        let mut special_subject = SpecialSubject::None;
+        let local_gh_merge = regex!(r"^Merge remote-tracking branch '.+/pr/\d+'$");
+        if local_gh_merge.is_match(commit.subject()) {
+            special_subject = SpecialSubject::PrMerge
+        }
+
+        let online_gh_merge = regex!(r"^Merge pull request #\d+ from .+$");
+        if online_gh_merge.is_match(commit.subject()) {
+            special_subject = SpecialSubject::PrMerge
+        }
+        special_subject
     }
 
     fn name_span(
