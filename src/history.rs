@@ -244,7 +244,7 @@ impl History {
     }
 
     pub(crate) fn search_link_target(&mut self) {
-        let link = self.selected_item().clone();
+        let link = &self.selected_commit().id().clone();
         let start = self.selected;
         let end = self.length;
         for i in start..end {
@@ -262,7 +262,7 @@ impl History {
                 continue;
             }
 
-            if e.commit().id() == link.id() {
+            if e.commit().id() == link {
                 let delta = i - self.selected;
                 if delta > 0 {
                     self.move_focus(delta, MoveDirection::Down);
@@ -270,7 +270,7 @@ impl History {
                 }
             } else if e.is_merge() && e.is_folded() {
                 let bellow = &e.commit().bellow().expect("Expected Merge").to_string();
-                let link_id = &link.id().to_string();
+                let link_id = &link.to_string();
                 // Heuristic skip examining merge if link is ancestor of the first child
                 if is_ancestor(self.working_dir.as_str(), link_id, bellow).unwrap() {
                     continue;

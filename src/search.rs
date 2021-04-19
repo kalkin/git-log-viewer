@@ -3,7 +3,7 @@ use cursive::theme::{BaseColor, Color, ColorType, Effect, Style};
 use git_subtrees_improved::SubtreeConfig;
 use git_wrapper::is_ancestor;
 
-use crate::core::{child_history, merge_base, Commit};
+use crate::core::{child_history, Commit, Oid};
 
 #[derive(Clone)]
 pub enum SearchDirection {
@@ -42,17 +42,17 @@ pub fn search_link_recursive(
     working_dir: &str,
     commit: &Commit,
     subtree_modules: &[SubtreeConfig],
-    link: &Commit,
+    link: &Oid,
 ) -> Option<(usize, Vec<Commit>)> {
     assert!(commit.is_merge(), "Expected a merge commit");
 
     let mut commits = child_history(working_dir, commit, subtree_modules);
     for (i, c) in commits.iter_mut().enumerate() {
-        if !c.is_commit_link() && c.id() == link.id() {
+        if !c.is_commit_link() && c.id() == link {
             return Some((i, commits));
         } else if c.is_merge() {
             let bellow = &c.bellow().expect("Expected Merge").to_string();
-            let link_id = &link.id().to_string();
+            let link_id = &link.to_string();
             // Heuristic skip examining merge if link is ancestor of the first child
             if is_ancestor(working_dir, link_id, bellow).unwrap() {
                 continue;
