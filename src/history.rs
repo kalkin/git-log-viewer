@@ -9,6 +9,7 @@ use cursive::theme::*;
 use cursive::utils::span::{SpannedStr, SpannedString};
 use cursive::{Printer, Rect, Vec2, XY};
 use unicode_width::UnicodeWidthStr;
+use url::Url;
 
 use git_subtrees_improved::{subtrees, SubtreeConfig};
 use git_wrapper::is_ancestor;
@@ -33,7 +34,7 @@ pub struct History {
     paths: Vec<String>,
     fork_point_thread: ForkPointThread,
     subtree_thread: SubtreesThread,
-    url: Option<String>,
+    url: Option<Url>,
 }
 
 struct RenderConfig {
@@ -49,7 +50,18 @@ impl History {
         let search_state = SearchState::new(DEFAULT_STYLE.to_owned());
         let fork_point_thread = ForkPointThread::new();
         let subtree_thread = SubtreesThread::new(working_dir.to_string(), subtree_modules.to_vec());
-        let url = git_wrapper::main_url(working_dir)?;
+
+        let mut url: Option<Url> = None;
+        if let Some(v) = git_wrapper::main_url(working_dir)? {
+            match Url::parse(&v) {
+                Ok(u) => {
+                    url = Some(u);
+                }
+                Err(e) => {
+                    log::error!("Failed parsing url: {:?}", e);
+                }
+            }
+        }
         Ok(History {
             range: range.to_string(),
             history: vec![],

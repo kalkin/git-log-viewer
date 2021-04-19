@@ -2,6 +2,7 @@ use cursive::theme::{Effect, Style};
 use cursive::utils::span::SpannedString;
 use regex::Regex;
 use unicode_width::UnicodeWidthStr;
+use url::Url;
 
 use git_subtrees_improved::{changed_modules, SubtreeConfig};
 
@@ -36,7 +37,7 @@ pub struct HistoryEntry {
     subject: String,
     selected: bool,
     pub subtree_modules: Vec<String>,
-    url: Option<String>,
+    url: Option<Url>,
     working_dir: String,
 }
 
@@ -44,7 +45,7 @@ impl HistoryEntry {
     pub(crate) fn subtree_modules(&self) -> &Vec<String> {
         &self.subtree_modules
     }
-    pub(crate) fn url(&self) -> Option<String> {
+    pub(crate) fn url(&self) -> Option<Url> {
         self.url.clone()
     }
 }
@@ -61,7 +62,7 @@ struct SearchMatch {
 }
 
 impl HistoryEntry {
-    pub fn new(working_dir: String, mut commit: Commit, level: u8, url_hint: Option<String>) -> Self {
+    pub fn new(working_dir: String, mut commit: Commit, level: u8, url_hint: Option<Url>) -> Self {
         let mut subtree_type = SubtreeType::None;
         if commit.subject().starts_with("Update :") {
             subtree_type = SubtreeType::Update
@@ -78,6 +79,7 @@ impl HistoryEntry {
         if let Some(v) = url_hint {
             url = Some(v);
         }
+
         HistoryEntry {
             commit,
             folded: true,

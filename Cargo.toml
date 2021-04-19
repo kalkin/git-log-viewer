@@ -23,6 +23,7 @@ posix-errors = { path = "../posix-errors" }
 regex = "1"
 unicode-segmentation = "1.7.1"
 unicode-width = "0.1.7"
+url = "2"
 which = "4"
 xdg = "^2.1"
 
