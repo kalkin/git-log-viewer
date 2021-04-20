@@ -21,7 +21,7 @@ macro_rules! search_if_needed {
     };
 }
 #[derive(Eq, PartialEq)]
-pub enum SubtreeType {
+pub enum SubtreeOperation {
     Update,
     Import,
     Split,
@@ -38,7 +38,7 @@ pub struct HistoryEntry {
     commit: Commit,
     folded: bool,
     level: u8,
-    subtree_operation: SubtreeType,
+    subtree_operation: SubtreeOperation,
     subject_module: Option<String>,
     subject: String,
     special_subject: SpecialSubject,
@@ -79,13 +79,13 @@ struct SearchMatch {
 
 impl HistoryEntry {
     pub fn new(working_dir: String, mut commit: Commit, level: u8, url_hint: Option<Url>) -> Self {
-        let mut subtree_operation = SubtreeType::None;
+        let mut subtree_operation = SubtreeOperation::None;
         if commit.subject().starts_with("Update :") {
-            subtree_operation = SubtreeType::Update
+            subtree_operation = SubtreeOperation::Update
         } else if commit.subject().starts_with("Import :") {
-            subtree_operation = SubtreeType::Import
+            subtree_operation = SubtreeOperation::Import
         } else if commit.subject().starts_with("Split '") {
-            subtree_operation = SubtreeType::Split
+            subtree_operation = SubtreeOperation::Split
         }
 
         let (subject_module, short_subject) = split_subject(&commit.subject());
@@ -280,8 +280,8 @@ impl HistoryEntry {
         }
 
         if self.commit.is_merge() {
-            if self.subtree_operation == SubtreeType::Import
-                || self.subtree_operation == SubtreeType::Update
+            if self.subtree_operation == SubtreeOperation::Import
+                || self.subtree_operation == SubtreeOperation::Update
             {
                 if self.commit.is_fork_point() {
                     result.append_styled("⇤┤", style);
