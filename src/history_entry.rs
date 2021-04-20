@@ -43,16 +43,25 @@ pub struct HistoryEntry {
     subject: String,
     special_subject: SpecialSubject,
     selected: bool,
-    pub subtree_modules: Vec<String>,
+    pub subtree_modules: Vec<SubtreeConfig>,
     url: Option<Url>,
     working_dir: String,
 }
 
 impl HistoryEntry {
-    pub(crate) fn subtree_modules(&self) -> &Vec<String> {
+    pub(crate) fn subtree_modules(&self) -> &Vec<SubtreeConfig> {
         &self.subtree_modules
     }
     pub(crate) fn url(&self) -> Option<Url> {
+        if self.subtree_modules.len() == 1 {
+            let module = self.subtree_modules.first().unwrap();
+            if let Some(v) = module.upstream().or(module.origin()) {
+                if let Ok(u) = Url::parse(&v) {
+                    return Some(u);
+                }
+            }
+        }
+
         self.url.clone()
     }
 }
@@ -199,8 +208,8 @@ impl HistoryEntry {
             &self.subject,
         ];
 
-        let x = &self.subtree_modules;
-        candidates.extend(x);
+        let x: Vec<String> = self.subtree_modules.iter().map(|m| m.id()).collect();
+        candidates.extend(&x);
 
         for r in self.commit.references().iter() {
             candidates.push(&r.0);
@@ -245,7 +254,8 @@ impl HistoryEntry {
         ) {
             (true, _) => {
                 text = ":".to_string();
-                let subtree_modules = &self.subtree_modules;
+                let subtree_modules: Vec<String> =
+                    self.subtree_modules.iter().map(|m| m.id()).collect();
                 text.push_str(&subtree_modules.join(" :"));
                 if text.width() > max_len {
                     text = format!("({} modules)", subtree_modules.len());

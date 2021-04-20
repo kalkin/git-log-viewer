@@ -92,9 +92,11 @@ impl DetailView for CommitDetailView {
 
         // Modules
         if !entry.subtree_modules().is_empty() {
+            let module_names: Vec<String> =
+                entry.subtree_modules().iter().map(|m| m.id()).collect();
             content.append(color_span(
                 "Modules:         ",
-                &entry.subtree_modules().join(", "),
+                &module_names.join(", "),
                 date_style(&DEFAULT_STYLE),
             ));
         }

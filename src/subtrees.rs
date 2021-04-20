@@ -12,7 +12,7 @@ pub struct SubtreeChangesRequest {
 }
 pub struct SubtreeChangesResponse {
     pub oid: Oid,
-    pub subtrees: Vec<String>,
+    pub subtrees: Vec<SubtreeConfig>,
 }
 
 pub struct SubtreesThread {
