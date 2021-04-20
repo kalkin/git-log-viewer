@@ -9,11 +9,11 @@ use cursive::{Printer, Vec2, View};
 
 use crate::core::Commit;
 use crate::core::Oid;
+use crate::history_entry::HistoryEntry;
 use crate::raw;
 use crate::style::{bold_style, date_style, DEFAULT_STYLE};
 use crate::style::{id_style, name_style};
 use crate::views::DetailView;
-use crate::history_entry::HistoryEntry;
 
 pub struct CommitDetailView {
     content: Option<ScrollView<TextView>>,
@@ -98,7 +98,7 @@ impl DetailView for CommitDetailView {
                 date_style(&DEFAULT_STYLE),
             ));
         }
-        
+
         // Subject
         content.append("\n");
         content.append(SpannedString::styled(
