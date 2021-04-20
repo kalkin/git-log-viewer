@@ -44,7 +44,7 @@ pub struct HistoryEntry {
     special_subject: SpecialSubject,
     selected: bool,
     pub subtrees: Vec<SubtreeConfig>,
-    url: Option<Url>,
+    repo_url: Option<Url>,
     working_dir: String,
 }
 
@@ -61,8 +61,7 @@ impl HistoryEntry {
                 }
             }
         }
-
-        self.url.clone()
+        self.repo_url.clone()
     }
 }
 
@@ -78,7 +77,7 @@ struct SearchMatch {
 }
 
 impl HistoryEntry {
-    pub fn new(working_dir: String, mut commit: Commit, level: u8, url_hint: Option<Url>) -> Self {
+    pub fn new(working_dir: String, mut commit: Commit, level: u8, repo_url: Option<Url>) -> Self {
         let mut subtree_operation = SubtreeOperation::None;
         if commit.subject().starts_with("Update :") {
             subtree_operation = SubtreeOperation::Update
@@ -91,10 +90,6 @@ impl HistoryEntry {
         let (subject_module, short_subject) = split_subject(&commit.subject());
         let subject = short_subject.unwrap_or_else(|| commit.subject().clone());
 
-        let mut url = None;
-        if let Some(v) = url_hint {
-            url = Some(v);
-        }
         let special_subject = HistoryEntry::are_we_special(&commit);
 
         HistoryEntry {
@@ -107,7 +102,7 @@ impl HistoryEntry {
             subject_module,
             subtree_operation,
             subtrees: vec![],
-            url,
+            repo_url,
             working_dir,
         }
     }

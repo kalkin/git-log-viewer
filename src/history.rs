@@ -352,14 +352,14 @@ impl History {
                     let needle_position = i + pos;
                     let mut insert_position = i;
                     let mut above_commit = Some(e.commit());
-                    let url_hint = e.url().clone();
+                    let url = e.url();
                     for c in commits.iter_mut() {
                         insert_position += 1;
                         let entry = HistoryEntry::new(
                             self.working_dir.clone(),
                             c.to_owned(),
                             level,
-                            url_hint.clone(),
+                            url.clone(),
                         );
                         self.history.insert(insert_position, entry);
                         above_commit = Some(self.history.get(insert_position).unwrap().commit());
@@ -399,7 +399,7 @@ impl History {
                 Some(self.history.last().unwrap().commit())
             };
             for c in tmp.into_iter() {
-                let url_hint = self.url.clone();
+                let url = self.url.clone();
                 if !self.subtree_modules.is_empty() {
                     self.subtree_thread.send(SubtreeChangesRequest {
                         oid: c.id().clone(),
@@ -415,7 +415,7 @@ impl History {
                         working_dir: self.working_dir.clone(),
                     });
                 }
-                let entry = HistoryEntry::new(working_dir.clone(), c, 0, url_hint);
+                let entry = HistoryEntry::new(working_dir.clone(), c, 0, url);
                 self.history.push(entry);
                 above_commit = Some(self.history.last().unwrap().commit());
             }
