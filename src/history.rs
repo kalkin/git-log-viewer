@@ -467,7 +467,7 @@ impl cursive::view::View for History {
         while let Ok(v) = self.subtree_thread.try_recv() {
             for e in self.history.iter_mut() {
                 if e.commit().id() == &v.oid {
-                    e.subtree_modules = v.subtrees;
+                    e.subtrees = v.subtrees;
                     break;
                 }
             }

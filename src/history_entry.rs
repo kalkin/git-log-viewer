@@ -38,23 +38,23 @@ pub struct HistoryEntry {
     commit: Commit,
     folded: bool,
     level: u8,
-    subtree_type: SubtreeType,
+    subtree_operation: SubtreeType,
     subject_module: Option<String>,
     subject: String,
     special_subject: SpecialSubject,
     selected: bool,
-    pub subtree_modules: Vec<SubtreeConfig>,
+    pub subtrees: Vec<SubtreeConfig>,
     url: Option<Url>,
     working_dir: String,
 }
 
 impl HistoryEntry {
-    pub(crate) fn subtree_modules(&self) -> &Vec<SubtreeConfig> {
-        &self.subtree_modules
+    pub(crate) fn subtrees(&self) -> &Vec<SubtreeConfig> {
+        &self.subtrees
     }
     pub(crate) fn url(&self) -> Option<Url> {
-        if self.subtree_modules.len() == 1 {
-            let module = self.subtree_modules.first().unwrap();
+        if self.subtrees.len() == 1 {
+            let module = self.subtrees.first().unwrap();
             if let Some(v) = module.upstream().or(module.origin()) {
                 if let Ok(u) = Url::parse(&v) {
                     return Some(u);
@@ -79,13 +79,13 @@ struct SearchMatch {
 
 impl HistoryEntry {
     pub fn new(working_dir: String, mut commit: Commit, level: u8, url_hint: Option<Url>) -> Self {
-        let mut subtree_type = SubtreeType::None;
+        let mut subtree_operation = SubtreeType::None;
         if commit.subject().starts_with("Update :") {
-            subtree_type = SubtreeType::Update
+            subtree_operation = SubtreeType::Update
         } else if commit.subject().starts_with("Import :") {
-            subtree_type = SubtreeType::Import
+            subtree_operation = SubtreeType::Import
         } else if commit.subject().starts_with("Split '") {
-            subtree_type = SubtreeType::Split
+            subtree_operation = SubtreeType::Split
         }
 
         let (subject_module, short_subject) = split_subject(&commit.subject());
@@ -105,8 +105,8 @@ impl HistoryEntry {
             special_subject,
             selected: false,
             subject_module,
-            subtree_type,
-            subtree_modules: vec![],
+            subtree_operation,
+            subtrees: vec![],
             url,
             working_dir,
         }
@@ -208,7 +208,7 @@ impl HistoryEntry {
             &self.subject,
         ];
 
-        let x: Vec<String> = self.subtree_modules.iter().map(|m| m.id()).collect();
+        let x: Vec<String> = self.subtrees.iter().map(|m| m.id()).collect();
         candidates.extend(&x);
 
         for r in self.commit.references().iter() {
@@ -248,14 +248,10 @@ impl HistoryEntry {
     ) -> Option<SpannedString<Style>> {
         let style = mod_style(&self.default_style());
         let mut text;
-        match (
-            !self.subtree_modules.is_empty(),
-            self.subject_module.is_some(),
-        ) {
+        match (!self.subtrees.is_empty(), self.subject_module.is_some()) {
             (true, _) => {
                 text = ":".to_string();
-                let subtree_modules: Vec<String> =
-                    self.subtree_modules.iter().map(|m| m.id()).collect();
+                let subtree_modules: Vec<String> = self.subtrees.iter().map(|m| m.id()).collect();
                 text.push_str(&subtree_modules.join(" :"));
                 if text.width() > max_len {
                     text = format!("({} modules)", subtree_modules.len());
@@ -284,7 +280,8 @@ impl HistoryEntry {
         }
 
         if self.commit.is_merge() {
-            if self.subtree_type == SubtreeType::Import || self.subtree_type == SubtreeType::Update
+            if self.subtree_operation == SubtreeType::Import
+                || self.subtree_operation == SubtreeType::Update
             {
                 if self.commit.is_fork_point() {
                     result.append_styled("⇤┤", style);

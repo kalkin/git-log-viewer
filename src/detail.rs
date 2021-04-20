@@ -91,9 +91,8 @@ impl DetailView for CommitDetailView {
         // Committer lines }
 
         // Modules
-        if !entry.subtree_modules().is_empty() {
-            let module_names: Vec<String> =
-                entry.subtree_modules().iter().map(|m| m.id()).collect();
+        if !entry.subtrees().is_empty() {
+            let module_names: Vec<String> = entry.subtrees().iter().map(|m| m.id()).collect();
             content.append(color_span(
                 "Modules:         ",
                 &module_names.join(", "),
