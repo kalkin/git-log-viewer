@@ -123,45 +123,48 @@ where
         return constraint;
     }
     fn on_event(&mut self, e: Event) -> EventResult {
-        return match self.focused {
-            FocusedView::MAIN => match self.main.on_event(e.clone()) {
-                EventResult::Ignored => match e {
-                    Event::Key(Key::Enter) => {
-                        self.aside.set_detail(self.main.selected_item());
-                        self.focused = FocusedView::ASIDE;
-                        self.aside_visible = true;
-                        EventResult::Consumed(None)
-                    }
-                    Event::Key(Key::Tab) => {
-                        self.focused = FocusedView::ASIDE;
-                        EventResult::Consumed(None)
-                    }
-                    _ => {
-                        log::warn!("MAIN: Unexpected key {:?}", e);
-                        EventResult::Ignored
-                    }
+        match e {
+            Event::Refresh => EventResult::Consumed(None),
+            _ => match self.focused {
+                FocusedView::MAIN => match self.main.on_event(e.clone()) {
+                    EventResult::Ignored => match e {
+                        Event::Key(Key::Enter) => {
+                            self.aside.set_detail(self.main.selected_item());
+                            self.focused = FocusedView::ASIDE;
+                            self.aside_visible = true;
+                            EventResult::Consumed(None)
+                        }
+                        Event::Key(Key::Tab) => {
+                            self.focused = FocusedView::ASIDE;
+                            EventResult::Consumed(None)
+                        }
+                        _ => {
+                            log::warn!("MAIN: Unexpected key {:?}", e);
+                            EventResult::Ignored
+                        }
+                    },
+                    EventResult::Consumed(callback) => EventResult::Consumed(callback),
                 },
-                EventResult::Consumed(callback) => EventResult::Consumed(callback),
-            },
-            FocusedView::ASIDE => match self.aside.on_event(e.clone()) {
-                EventResult::Ignored => match e {
-                    Event::Char('q') => {
-                        self.aside_visible = false;
-                        self.focused = FocusedView::MAIN;
-                        EventResult::Consumed(None)
-                    }
-                    Event::Key(Key::Tab) => {
-                        self.focused = FocusedView::MAIN;
-                        EventResult::Consumed(None)
-                    }
-                    _ => {
-                        log::warn!("ASIDE: Unexpected key {:?}", e);
-                        EventResult::Ignored
-                    }
+                FocusedView::ASIDE => match self.aside.on_event(e.clone()) {
+                    EventResult::Ignored => match e {
+                        Event::Char('q') => {
+                            self.aside_visible = false;
+                            self.focused = FocusedView::MAIN;
+                            EventResult::Consumed(None)
+                        }
+                        Event::Key(Key::Tab) => {
+                            self.focused = FocusedView::MAIN;
+                            EventResult::Consumed(None)
+                        }
+                        _ => {
+                            log::warn!("ASIDE: Unexpected key {:?}", e);
+                            EventResult::Ignored
+                        }
+                    },
+                    EventResult::Consumed(callback) => EventResult::Consumed(callback),
                 },
-                EventResult::Consumed(callback) => EventResult::Consumed(callback),
             },
-        };
+        }
     }
 }
 
