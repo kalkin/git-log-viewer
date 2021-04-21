@@ -18,7 +18,7 @@ log = "0.4"
 lazy_static = "1.4"
 git-subtrees-improved = { path = "../git-subtrees-improved" }
 serde = { version = "1", features = ["derive"] }
-vte = "0.10.0"
+vte = "0.10.1"
 posix-errors = { path = "../posix-errors" }
 regex = "1"
 unicode-segmentation = "1.7.1"
