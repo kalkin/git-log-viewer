@@ -1,4 +1,4 @@
-use clap::{app_from_crate, crate_authors, crate_description, crate_name, crate_version, Arg};
+use clap::{app_from_crate, Arg};
 use cursive::theme::PaletteColor::{Primary, View};
 use cursive::{Cursive, CursiveExt};
 
@@ -25,17 +25,17 @@ fn main() {
     let working_dir: String;
     let mut paths = Vec::new();
 
-    let w_arg = Arg::with_name("working_dir")
+    let w_arg = Arg::new("working_dir")
         .long("working-dir")
-        .short("w")
+        .short('w')
         .takes_value(true)
-        .help("Directory where the git repository is.");
-    let rev_arg = Arg::with_name("REVISION")
-        .help("Branch, tag or commit id")
+        .about("Directory where the git repository is.");
+    let rev_arg = Arg::new("REVISION")
+        .about("Branch, tag or commit id")
         .default_value("HEAD")
         .required(false);
-    let paths_arg = Arg::with_name("path")
-        .help("Show only commits touching the paths")
+    let paths_arg = Arg::new("path")
+        .about("Show only commits touching the paths")
         .multiple(true)
         .last(true);
     let app = app_from_crate!().arg(w_arg).arg(rev_arg).arg(paths_arg);
