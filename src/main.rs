@@ -16,6 +16,7 @@ mod raw;
 mod scroll;
 mod search;
 mod style;
+mod subtrees;
 mod views;
 
 fn main() {

@@ -35,7 +35,7 @@ pub struct HistoryEntry {
     subject_module: Option<String>,
     subject: String,
     selected: bool,
-    subtree_modules: Vec<String>,
+    pub subtree_modules: Vec<String>,
     working_dir: String,
 }
 
@@ -57,12 +57,7 @@ struct SearchMatch {
 }
 
 impl HistoryEntry {
-    pub fn new(
-        working_dir: String,
-        mut commit: Commit,
-        level: u8,
-        all_subtrees: &Vec<SubtreeConfig>,
-    ) -> Self {
+    pub fn new(working_dir: String, mut commit: Commit, level: u8) -> Self {
         let mut subtree_type = SubtreeType::None;
         if commit.subject().starts_with("Update :") {
             subtree_type = SubtreeType::Update
@@ -75,8 +70,6 @@ impl HistoryEntry {
         let (subject_module, short_subject) = split_subject(&commit.subject());
         let subject = short_subject.unwrap_or_else(|| commit.subject().clone());
 
-        let subtree_modules =
-            changed_modules(&working_dir, &commit.id().to_string(), &all_subtrees);
         HistoryEntry {
             commit,
             folded: true,
@@ -85,7 +78,7 @@ impl HistoryEntry {
             selected: false,
             subject_module,
             subtree_type,
-            subtree_modules,
+            subtree_modules: vec![],
             working_dir,
         }
     }
