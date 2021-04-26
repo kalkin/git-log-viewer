@@ -70,5 +70,6 @@ fn main() {
 
     siv.add_global_callback('~', cursive::Cursive::toggle_debug_console);
 
+    siv.set_fps(20);
     siv.run();
 }
