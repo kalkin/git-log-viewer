@@ -1,4 +1,7 @@
 use std::borrow::Borrow;
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
+use std::thread;
 
 use cursive::direction::Direction;
 use cursive::event::{Event, EventResult, Key};
@@ -12,6 +15,7 @@ use git_wrapper::is_ancestor;
 use posix_errors::PosixError;
 
 use crate::core::*;
+use crate::fork_point::{ForkPointRequest, ForkPointResponse, ForkPointThread};
 use crate::history_entry::{HistoryEntry, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
 use crate::search::{search_link_recursive, SearchDirection, SearchState};
@@ -26,6 +30,7 @@ pub struct History {
     subtree_modules: Vec<SubtreeConfig>,
     search_state: SearchState,
     paths: Vec<String>,
+    fork_point_thread: ForkPointThread,
 }
 
 struct RenderConfig {
@@ -39,6 +44,8 @@ impl History {
         let subtree_modules = subtrees(working_dir)?;
         let length = history_length(working_dir, range, vec![])?;
         let search_state = SearchState::new(DEFAULT_STYLE.to_owned());
+        let fork_point_thread = ForkPointThread::new();
+
         Ok(History {
             range: range.to_string(),
             history: vec![],
@@ -48,6 +55,7 @@ impl History {
             subtree_modules,
             search_state,
             paths,
+            fork_point_thread,
         })
     }
 
@@ -108,12 +116,21 @@ impl History {
             );
             let mut above_commit = Some(self.selected_commit());
             for (i, c) in children.iter().cloned().enumerate() {
+                if above_commit.is_some()
+                    && above_commit.unwrap().is_merge()
+                    && c.fork_points_calculation_needed()
+                {
+                    self.fork_point_thread.send(ForkPointRequest {
+                        first: c.id().clone(),
+                        second: above_commit.unwrap().children().first().unwrap().clone(),
+                        working_dir: self.working_dir.clone(),
+                    });
+                }
                 let entry = HistoryEntry::new(
                     self.working_dir.clone(),
                     c,
                     self.selected_entry().level() + 1,
                     &self.subtree_modules,
-                    above_commit,
                 );
                 self.history.insert(pos + i, entry);
                 above_commit = Some(self.history.get(pos + i).unwrap().commit());
@@ -227,13 +244,17 @@ impl History {
         let mut above_commit = Some(entry.commit());
         let mut entries: Vec<HistoryEntry> = vec![];
         for c in children.into_iter() {
-            let e = HistoryEntry::new(
-                self.working_dir.clone(),
-                c,
-                level,
-                &self.subtree_modules,
-                above_commit,
-            );
+            if above_commit.is_some()
+                && above_commit.unwrap().is_merge()
+                && c.fork_points_calculation_needed()
+            {
+                self.fork_point_thread.send(ForkPointRequest {
+                    first: c.id().clone(),
+                    second: above_commit.unwrap().children().first().unwrap().clone(),
+                    working_dir: self.working_dir.clone(),
+                });
+            }
+            let e = HistoryEntry::new(self.working_dir.clone(), c, level, &self.subtree_modules);
             entries.push(e);
             above_commit = Some(entries.last().unwrap().commit());
         }
@@ -305,7 +326,6 @@ impl History {
                             c.to_owned(),
                             level,
                             &self.subtree_modules,
-                            above_commit,
                         );
                         self.history.insert(insert_position, entry);
                         above_commit = Some(self.history.get(insert_position).unwrap().commit());
@@ -346,7 +366,17 @@ impl History {
                 Some(self.history.last().unwrap().commit())
             };
             for c in tmp.into_iter() {
-                let entry = HistoryEntry::new(working_dir.clone(), c, 0, subtrees, above_commit);
+                if above_commit.is_some()
+                    && above_commit.unwrap().is_merge()
+                    && c.fork_points_calculation_needed()
+                {
+                    self.fork_point_thread.send(ForkPointRequest {
+                        first: c.id().clone(),
+                        second: above_commit.unwrap().children().first().unwrap().clone(),
+                        working_dir: self.working_dir.clone(),
+                    });
+                }
+                let entry = HistoryEntry::new(working_dir.clone(), c, 0, subtrees);
                 self.history.push(entry);
                 above_commit = Some(self.history.last().unwrap().commit());
             }
@@ -384,6 +414,15 @@ impl cursive::view::View for History {
 
         for (i, c) in self.history.iter_mut().enumerate() {
             c.selected(i == self.selected);
+        }
+
+        while let Ok(v) = self.fork_point_thread.try_recv() {
+            for e in self.history.iter_mut() {
+                if e.commit().id() == &v.oid {
+                    e.commit_mut().fork_point(v.value);
+                    break;
+                }
+            }
         }
     }
 

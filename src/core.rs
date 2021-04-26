@@ -25,6 +25,12 @@ macro_rules! next_string {
     };
 }
 
+#[derive(Clone)]
+pub enum ForkPointCalculation {
+    Done(bool),
+    Needed,
+}
+
 #[derive(derive_more::Display, derive_more::FromStr, Clone, Eq, PartialEq)]
 #[display(fmt = "{}", self.0)]
 pub struct Oid(pub String);
@@ -53,7 +59,7 @@ pub struct Commit {
     bellow: Option<Oid>,
     children: Vec<Oid>,
     is_commit_link: bool,
-    is_fork_point: bool,
+    fork_point: ForkPointCalculation,
     is_head: bool,
     is_merge: bool,
     branches: Vec<GitRef>,
@@ -118,7 +124,21 @@ impl Commit {
         self.is_head
     }
     pub fn is_fork_point(&self) -> bool {
-        self.is_fork_point
+        match self.fork_point {
+            ForkPointCalculation::Done(t) => t,
+            _ => false,
+        }
+    }
+
+    pub fn fork_points_calculation_needed(&self) -> bool {
+        match self.fork_point {
+            ForkPointCalculation::Needed => true,
+            _ => false,
+        }
+    }
+
+    pub fn fork_point(&mut self, t: bool) {
+        self.fork_point = ForkPointCalculation::Done(t);
     }
     pub fn is_merge(&self) -> bool {
         self.bellow.is_some() && !self.children.is_empty()
@@ -146,7 +166,7 @@ const REV_FORMAT: &str =
     "--format=%x1f%H%x1f%h%x1f%P%x1f%D%x1f%aN%x1f%aE%x1f%aI%x1f%ar%x1f%cN%x1f%cE%x1f%cI%x1f%cr%x1f%s%x1f%b%x1e";
 
 impl Commit {
-    pub fn new(data: &str, is_commit_link: bool, is_fork_point: bool) -> Self {
+    pub fn new(data: &str, is_commit_link: bool, is_fork_point: ForkPointCalculation) -> Self {
         let mut split = data.split('\x1f');
         split.next(); // skip commit: XXXX line
         let id = Oid {
@@ -242,24 +262,12 @@ impl Commit {
             children,
 
             is_commit_link,
-            is_fork_point,
+            fork_point: is_fork_point,
             is_head,
             is_merge,
             branches,
             references,
             tags,
-        }
-    }
-
-    pub fn calc_is_fork_point(&mut self, working_dir: &str, above: Option<&Commit>) {
-        if let Some(c) = above {
-            if !c.children.is_empty() && c.children[0] != self.id {
-                let parent_child = c.children[0].to_string();
-                if c.is_merge {
-                    self.is_fork_point = is_ancestor(working_dir, &self.id.0, &parent_child)
-                        .expect("Execute merge-base --is-ancestor");
-                }
-            }
         }
     }
 }
@@ -316,11 +324,15 @@ pub fn commits_for_range<T: AsRef<str>>(
     let output = git_wrapper::rev_list(working_dir, args)?;
     let lines = output.split('\u{1e}');
     let mut result: Vec<Commit> = Vec::new();
+    let mut fork_point = ForkPointCalculation::Done(false);
     for data in lines {
         if data.is_empty() {
             break;
         }
-        let mut commit = Commit::new(data, false, false);
+        let mut commit = Commit::new(data, false, fork_point.clone());
+        if commit.is_merge {
+            fork_point = ForkPointCalculation::Needed;
+        }
         result.push(commit);
     }
     Ok(result)
@@ -354,11 +366,16 @@ pub fn child_history(
         && end_commit.bellow.is_some()
         && end_commit.bellow.as_ref().expect("Expected merge commit") != bellow
     {
+        let fork_point = if end_commit.is_merge {
+            ForkPointCalculation::Needed
+        } else {
+            ForkPointCalculation::Done(false)
+        };
         let mut link = to_commit(
             working_dir,
             end_commit.bellow.as_ref().expect("Expected merge commit"),
             true,
-            false,
+            fork_point,
         );
 
         result.push(link);
@@ -367,7 +384,12 @@ pub fn child_history(
     result
 }
 
-fn to_commit(working_dir: &str, oid: &Oid, is_commit_link: bool, is_fork_point: bool) -> Commit {
+fn to_commit(
+    working_dir: &str,
+    oid: &Oid,
+    is_commit_link: bool,
+    is_fork_point: ForkPointCalculation,
+) -> Commit {
     let output = git_cmd_out(
         working_dir.to_string(),
         vec!["rev-list", REV_FORMAT, "-1", &oid.0],

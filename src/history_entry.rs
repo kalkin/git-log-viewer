@@ -8,6 +8,7 @@ use git_subtrees_improved::{changed_modules, SubtreeConfig};
 use crate::core::{adjust_string, Commit};
 use crate::search::SearchState;
 use crate::style::{date_style, id_style, mod_style, name_style, ref_style, DEFAULT_STYLE};
+use std::borrow::BorrowMut;
 
 macro_rules! search_if_needed {
     ($text:expr,$style:expr,$optional_search_state:expr) => {
@@ -61,7 +62,6 @@ impl HistoryEntry {
         mut commit: Commit,
         level: u8,
         all_subtrees: &Vec<SubtreeConfig>,
-        above_commit: Option<&Commit>,
     ) -> Self {
         let mut subtree_type = SubtreeType::None;
         if commit.subject().starts_with("Update :") {
@@ -74,8 +74,6 @@ impl HistoryEntry {
 
         let (subject_module, short_subject) = split_subject(&commit.subject());
         let subject = short_subject.unwrap_or_else(|| commit.subject().clone());
-
-        commit.calc_is_fork_point(&working_dir, above_commit);
 
         let subtree_modules =
             changed_modules(&working_dir, &commit.id().to_string(), &all_subtrees);
@@ -104,6 +102,10 @@ impl HistoryEntry {
 
     pub fn commit(&self) -> &Commit {
         &self.commit
+    }
+
+    pub fn commit_mut(&mut self) -> &mut Commit {
+        self.commit.borrow_mut()
     }
 
     pub fn folded(&mut self, t: bool) {
