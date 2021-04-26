@@ -55,7 +55,7 @@ struct SearchMatch {
     end: usize,
 }
 
-impl<'a> HistoryEntry {
+impl HistoryEntry {
     pub fn new(
         working_dir: String,
         mut commit: Commit,
