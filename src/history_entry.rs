@@ -58,9 +58,10 @@ struct SearchMatch {
 impl<'a> HistoryEntry {
     pub fn new(
         working_dir: String,
-        commit: Commit,
+        mut commit: Commit,
         level: u8,
         all_subtrees: &Vec<SubtreeConfig>,
+        above_commit: Option<&Commit>,
     ) -> Self {
         let mut subtree_type = SubtreeType::None;
         if commit.subject().starts_with("Update :") {
@@ -73,6 +74,8 @@ impl<'a> HistoryEntry {
 
         let (subject_module, short_subject) = split_subject(&commit.subject());
         let subject = short_subject.unwrap_or_else(|| commit.subject().clone());
+
+        commit.calc_is_fork_point(&working_dir, above_commit);
 
         let subtree_modules =
             changed_modules(&working_dir, &commit.id().to_string(), &all_subtrees);

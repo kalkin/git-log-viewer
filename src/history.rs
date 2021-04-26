@@ -106,16 +106,17 @@ impl History {
                 self.selected_commit(),
                 self.subtree_modules.as_ref(),
             );
+            let mut above_commit = Some(self.selected_commit());
             for (i, c) in children.iter().cloned().enumerate() {
-                self.history.insert(
-                    pos + i,
-                    HistoryEntry::new(
-                        self.working_dir.clone(),
-                        c,
-                        self.selected_entry().level() + 1,
-                        &self.subtree_modules,
-                    ),
+                let entry = HistoryEntry::new(
+                    self.working_dir.clone(),
+                    c,
+                    self.selected_entry().level() + 1,
+                    &self.subtree_modules,
+                    above_commit,
                 );
+                self.history.insert(pos + i, entry);
+                above_commit = Some(self.history.get(pos + i).unwrap().commit());
             }
         } else {
             while let Some(e) = self.history.get(pos) {
@@ -217,14 +218,25 @@ impl History {
     fn search_recursive(&self, entry: &HistoryEntry) -> Option<(usize, Vec<HistoryEntry>)> {
         assert!(entry.is_merge(), "Expected a merge commit");
         let level = entry.level() + 1;
-        let mut entries: Vec<HistoryEntry> = child_history(
+        let children = child_history(
             &self.working_dir,
             entry.commit(),
             self.subtree_modules.borrow(),
-        )
-        .into_iter()
-        .map(|c| HistoryEntry::new(self.working_dir.clone(), c, level, &self.subtree_modules))
-        .collect();
+        );
+
+        let mut above_commit = Some(entry.commit());
+        let mut entries: Vec<HistoryEntry> = vec![];
+        for c in children.into_iter() {
+            let e = HistoryEntry::new(
+                self.working_dir.clone(),
+                c,
+                level,
+                &self.subtree_modules,
+                above_commit,
+            );
+            entries.push(e);
+            above_commit = Some(entries.last().unwrap().commit());
+        }
         for (i, e) in entries.iter_mut().enumerate() {
             if e.search_matches(&self.search_state.needle, true) {
                 return Some((i, entries));
@@ -285,17 +297,18 @@ impl History {
                     let level = e.level() + 1;
                     let needle_position = i + pos;
                     let mut insert_position = i;
+                    let mut above_commit = Some(e.commit());
                     for c in commits.iter_mut() {
                         insert_position += 1;
-                        self.history.insert(
-                            insert_position,
-                            HistoryEntry::new(
-                                self.working_dir.clone(),
-                                c.to_owned(),
-                                level,
-                                &self.subtree_modules,
-                            ),
+                        let entry = HistoryEntry::new(
+                            self.working_dir.clone(),
+                            c.to_owned(),
+                            level,
+                            &self.subtree_modules,
+                            above_commit,
                         );
+                        self.history.insert(insert_position, entry);
+                        above_commit = Some(self.history.get(insert_position).unwrap().commit());
                     }
                     let delta = needle_position - self.selected + 1;
                     if delta > 0 {
@@ -320,7 +333,6 @@ impl History {
         if let Ok(tmp) = commits_for_range(
             working_dir,
             range,
-            above_commit,
             self.paths.as_ref(),
             Some(skip),
             Some(max),
@@ -328,11 +340,15 @@ impl History {
             let result = !tmp.is_empty();
             let working_dir = self.working_dir.clone();
             let subtrees = &self.subtree_modules;
-            for e in tmp
-                .into_iter()
-                .map(|c| HistoryEntry::new(working_dir.clone(), c, 0, subtrees))
-            {
-                self.history.push(e);
+            let mut above_commit = if self.history.is_empty() {
+                None
+            } else {
+                Some(self.history.last().unwrap().commit())
+            };
+            for c in tmp.into_iter() {
+                let entry = HistoryEntry::new(working_dir.clone(), c, 0, subtrees, above_commit);
+                self.history.push(entry);
+                above_commit = Some(self.history.last().unwrap().commit());
             }
             return result;
         }

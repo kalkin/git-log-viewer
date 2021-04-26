@@ -251,7 +251,7 @@ impl Commit {
         }
     }
 
-    fn calc_is_fork_point(&mut self, working_dir: &str, above: &Option<&Commit>) {
+    pub fn calc_is_fork_point(&mut self, working_dir: &str, above: Option<&Commit>) {
         if let Some(c) = above {
             if !c.children.is_empty() && c.children[0] != self.id {
                 let parent_child = c.children[0].to_string();
@@ -286,7 +286,6 @@ pub fn history_length(
 pub fn commits_for_range<T: AsRef<str>>(
     working_dir: &str,
     rev_range: &str,
-    above_commit: Option<&Commit>,
     paths: &[T],
     skip: Option<usize>,
     max: Option<usize>,
@@ -317,15 +316,12 @@ pub fn commits_for_range<T: AsRef<str>>(
     let output = git_wrapper::rev_list(working_dir, args)?;
     let lines = output.split('\u{1e}');
     let mut result: Vec<Commit> = Vec::new();
-    let mut above = above_commit;
     for data in lines {
         if data.is_empty() {
             break;
         }
         let mut commit = Commit::new(data, false, false);
-        commit.calc_is_fork_point(working_dir, &above);
         result.push(commit);
-        above = result.last();
     }
     Ok(result)
 }
@@ -348,17 +344,9 @@ pub fn child_history(
     } else {
         revision = first_child.0.clone();
     }
-    let above_commit = commit;
     let paths: &[&str] = &[];
-    let mut result = commits_for_range(
-        working_dir,
-        revision.as_str(),
-        Some(above_commit),
-        paths,
-        None,
-        None,
-    )
-    .unwrap_or_else(|_| panic!("Expected child commits for range {}", revision));
+    let mut result = commits_for_range(working_dir, revision.as_str(), paths, None, None)
+        .unwrap_or_else(|_| panic!("Expected child commits for range {}", revision));
     let end_commit = result
         .last()
         .unwrap_or_else(|| panic!("No child commits for range {}", revision));
@@ -373,7 +361,6 @@ pub fn child_history(
             false,
         );
 
-        link.calc_is_fork_point(working_dir, &Some(end_commit));
         result.push(link);
     }
 
