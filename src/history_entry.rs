@@ -1,15 +1,17 @@
 use cursive::theme::{Effect, Style};
 use cursive::utils::span::SpannedString;
 use regex::Regex;
-use unicode_width::UnicodeWidthStr;
 use url::Url;
 
 use git_subtrees_improved::SubtreeConfig;
 
-use crate::core::{adjust_string, Commit};
+use crate::core::Commit;
 use crate::search::SearchState;
 use crate::style::{date_style, id_style, mod_style, name_style, ref_style, DEFAULT_STYLE};
 use std::borrow::BorrowMut;
+
+use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
 
 macro_rules! search_if_needed {
     ($text:expr,$style:expr,$optional_search_state:expr) => {
@@ -404,4 +406,56 @@ pub fn split_subject(subject: &String) -> (Option<String>, Option<String>) {
 
 pub trait DisplayableCommit {
     fn commit(&self) -> &Commit;
+}
+
+// I'm not proud of this code. Ohh Omnissiah be merciful on my soul‼
+fn adjust_string(text: &str, len: usize) -> String {
+    assert!(len > 0, "Minimal length should be 1");
+    let actual = unicode_width::UnicodeWidthStr::width(text);
+    let expected = len;
+    let mut result = String::from(text);
+    if actual < len {
+        let end = len - actual;
+        for _ in 0..end {
+            result.push(' ');
+        }
+    } else if actual > len {
+        let words = text.unicode_words().collect::<Vec<&str>>();
+        result = "".to_string();
+        for w in words {
+            let actual = UnicodeWidthStr::width(result.as_str()) + UnicodeWidthStr::width(w);
+            if actual > expected {
+                break;
+            }
+            result.push_str(w);
+            result.push(' ');
+        }
+
+        if result.is_empty() {
+            let words = text.unicode_words().collect::<Vec<&str>>();
+            result.push_str(words.get(0).unwrap());
+        }
+
+        let actual = UnicodeWidthStr::width(result.as_str());
+        if actual > expected {
+            let mut tmp = String::new();
+            let mut i = 0;
+            for g in result.as_str().graphemes(true) {
+                tmp.push_str(g);
+                i += 1;
+                if i == expected - 1 {
+                    break;
+                }
+            }
+            result = tmp;
+            result.push('…');
+        } else {
+            let end = expected - actual;
+            for _ in 0..end {
+                result.push(' ');
+            }
+        }
+        return result;
+    }
+    result
 }
