@@ -7,8 +7,8 @@ use cursive::utils::span::SpannedString;
 use cursive::views::{ScrollView, TextContent, TextView};
 use cursive::{Printer, Vec2, View};
 
-use crate::core::Commit;
-use crate::core::Oid;
+use crate::commit::Commit;
+use crate::commit::Oid;
 use crate::history_entry::HistoryEntry;
 use crate::raw;
 use crate::style::{bold_style, date_style, DEFAULT_STYLE};

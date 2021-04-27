@@ -1,6 +1,6 @@
 use cucumber_rust::{t, Steps};
 
-use glv::core::{commits_for_range, Commit, GitRef};
+use glv::commit::{commits_for_range, Commit, GitRef};
 
 use crate::Url;
 

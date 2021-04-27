@@ -3,7 +3,7 @@ use cursive::theme::{BaseColor, Color, ColorType, Effect, Style};
 use git_subtrees_improved::SubtreeConfig;
 use git_wrapper::is_ancestor;
 
-use crate::core::{child_history, Commit, Oid};
+use crate::commit::{child_history, Commit, Oid};
 
 #[derive(Clone)]
 pub enum SearchDirection {

@@ -5,7 +5,7 @@ use url::Url;
 
 use git_subtrees_improved::SubtreeConfig;
 
-use crate::core::Commit;
+use crate::commit::Commit;
 use crate::search::SearchState;
 use crate::style::{date_style, id_style, mod_style, name_style, ref_style, DEFAULT_STYLE};
 use std::borrow::BorrowMut;

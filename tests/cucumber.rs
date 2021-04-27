@@ -2,7 +2,7 @@ use std::convert::Infallible;
 
 use cucumber_rust::{async_trait, Context, Cucumber, World};
 
-use glv::core::Commit;
+use glv::commit::Commit;
 
 mod steps;
 

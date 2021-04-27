@@ -10,8 +10,8 @@ use git_subtrees_improved::{subtrees, SubtreeConfig};
 use git_wrapper::is_ancestor;
 use posix_errors::PosixError;
 
+use crate::commit::*;
 use crate::config::{author_name_width, author_rel_date_width, modules_width};
-use crate::core::*;
 use crate::fork_point::{ForkPointRequest, ForkPointThread};
 use crate::github::{GitHubRequest, GitHubThread};
 use crate::history_entry::{HistoryEntry, SpecialSubject, WidthConfig};

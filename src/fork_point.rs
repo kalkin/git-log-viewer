@@ -1,7 +1,7 @@
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::thread::JoinHandle;
 
-use crate::core::Oid;
+use crate::commit::Oid;
 use git_wrapper::is_ancestor;
 use std::sync::mpsc;
 use std::thread;
