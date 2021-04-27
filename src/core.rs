@@ -4,7 +4,6 @@ use regex::Regex;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use git_subtrees_improved::SubtreeConfig;
 use git_wrapper::git_cmd_out;
 use posix_errors::PosixError;
 
@@ -320,11 +319,7 @@ pub fn commits_for_range<T: AsRef<str>>(
     Ok(result)
 }
 
-pub fn child_history(
-    working_dir: &str,
-    commit: &Commit,
-    subtree_modules: &[SubtreeConfig],
-) -> Vec<Commit> {
+pub fn child_history(working_dir: &str, commit: &Commit) -> Vec<Commit> {
     let bellow = commit.bellow.as_ref().expect("Expected merge commit");
     let first_child = commit.children.get(0).expect("Expected merge commit");
     let end = merge_base(working_dir, bellow, first_child).expect("merge-base invocation");

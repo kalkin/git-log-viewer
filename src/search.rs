@@ -46,7 +46,7 @@ pub fn search_link_recursive(
 ) -> Option<(usize, Vec<Commit>)> {
     assert!(commit.is_merge(), "Expected a merge commit");
 
-    let mut commits = child_history(working_dir, commit, subtree_modules);
+    let mut commits = child_history(working_dir, commit);
     for (i, c) in commits.iter_mut().enumerate() {
         if !c.is_commit_link() && c.id() == link {
             return Some((i, commits));

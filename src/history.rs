@@ -1,5 +1,3 @@
-use std::borrow::Borrow;
-
 use cursive::direction::Direction;
 use cursive::event::{Event, EventResult, Key};
 use cursive::theme::*;
@@ -127,11 +125,7 @@ impl History {
     fn toggle_folding(&mut self) {
         let pos = self.selected + 1;
         if self.selected_entry().is_folded() {
-            let children: Vec<Commit> = child_history(
-                &self.working_dir,
-                self.selected_commit(),
-                self.subtree_modules.as_ref(),
-            );
+            let children: Vec<Commit> = child_history(&self.working_dir, self.selected_commit());
             let mut above_commit = Some(self.selected_commit());
             for (i, c) in children.iter().cloned().enumerate() {
                 if !self.subtree_modules.is_empty() {
@@ -266,11 +260,7 @@ impl History {
     fn search_recursive(&self, entry: &HistoryEntry) -> Option<(usize, Vec<HistoryEntry>)> {
         assert!(entry.is_merge(), "Expected a merge commit");
         let level = entry.level() + 1;
-        let children = child_history(
-            &self.working_dir,
-            entry.commit(),
-            self.subtree_modules.borrow(),
-        );
+        let children = child_history(&self.working_dir, entry.commit());
 
         let mut above_commit = Some(entry.commit());
         let mut entries: Vec<HistoryEntry> = vec![];
