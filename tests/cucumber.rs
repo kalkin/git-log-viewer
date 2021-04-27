@@ -17,6 +17,7 @@ pub struct MyWorld {
     working_dir: tempfile::TempDir,
     commit: Option<Commit>,
     entry: Option<HistoryEntry>,
+    entries: Option<Vec<HistoryEntry>>,
     range: Option<Vec<Commit>>,
 }
 
@@ -30,6 +31,7 @@ impl World for MyWorld {
             working_dir: tempfile::tempdir().unwrap(),
             commit: None,
             entry: None,
+            entries: None,
             range: None,
         });
     }
