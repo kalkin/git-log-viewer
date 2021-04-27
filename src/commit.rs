@@ -17,12 +17,6 @@ macro_rules! next_string {
     };
 }
 
-#[derive(Clone)]
-pub enum ForkPointCalculation {
-    Done(bool),
-    Needed,
-}
-
 #[derive(derive_more::Display, derive_more::FromStr, Clone, Eq, PartialEq)]
 #[display(fmt = "{}", self.0)]
 pub struct Oid(pub String);
@@ -51,7 +45,6 @@ pub struct Commit {
     bellow: Option<Oid>,
     children: Vec<Oid>,
     is_commit_link: bool,
-    fork_point: ForkPointCalculation,
     is_head: bool,
     is_merge: bool,
     branches: Vec<GitRef>,
@@ -109,25 +102,11 @@ impl Commit {
         &self.icon
     }
 
-    pub fn is_fork_point(&self) -> bool {
-        match self.fork_point {
-            ForkPointCalculation::Done(t) => t,
-            _ => false,
-        }
-    }
-
     #[allow(dead_code)]
     pub fn is_head(&self) -> bool {
         self.is_head
     }
 
-    pub fn fork_points_calculation_needed(&self) -> bool {
-        matches!(self.fork_point, ForkPointCalculation::Needed)
-    }
-
-    pub fn fork_point(&mut self, t: bool) {
-        self.fork_point = ForkPointCalculation::Done(t);
-    }
     pub fn is_merge(&self) -> bool {
         self.bellow.is_some() && !self.children.is_empty()
     }
@@ -150,7 +129,7 @@ const REV_FORMAT: &str =
     "--format=%x1f%H%x1f%h%x1f%P%x1f%D%x1f%aN%x1f%aE%x1f%aI%x1f%ad%x1f%cN%x1f%cE%x1f%cI%x1f%cd%x1f%s%x1f%b%x1e";
 
 impl Commit {
-    pub fn new(data: &str, is_commit_link: bool, is_fork_point: ForkPointCalculation) -> Self {
+    pub fn new(data: &str, is_commit_link: bool) -> Self {
         let mut split = data.split('\x1f');
         split.next(); // skip commit: XXXX line
         let id = Oid {
@@ -246,7 +225,6 @@ impl Commit {
             children,
 
             is_commit_link,
-            fork_point: is_fork_point,
             is_head,
             is_merge,
             branches,
@@ -308,15 +286,15 @@ pub fn commits_for_range<T: AsRef<str>>(
     let output = git_wrapper::rev_list(working_dir, args)?;
     let lines = output.split('\u{1e}');
     let mut result: Vec<Commit> = Vec::new();
-    let mut fork_point = ForkPointCalculation::Done(false);
+    // let mut fork_point = ForkPointCalculation::Done(false);
     for data in lines {
         if data.is_empty() {
             break;
         }
-        let commit = Commit::new(data, false, fork_point.clone());
-        if commit.is_merge {
-            fork_point = ForkPointCalculation::Needed;
-        }
+        let commit = Commit::new(data, false);
+        // if commit.is_merge {
+        //     fork_point = ForkPointCalculation::Needed;
+        // }
         result.push(commit);
     }
     Ok(result)
@@ -346,16 +324,15 @@ pub fn child_history(working_dir: &str, commit: &Commit) -> Vec<Commit> {
         && end_commit.bellow.is_some()
         && end_commit.bellow.as_ref().expect("Expected merge commit") != bellow
     {
-        let fork_point = if end_commit.is_merge {
-            ForkPointCalculation::Needed
-        } else {
-            ForkPointCalculation::Done(false)
-        };
+        // let fork_point = if end_commit.is_merge {
+        //     ForkPointCalculation::Needed
+        // } else {
+        //     ForkPointCalculation::Done(false)
+        // };
         let link = to_commit(
             working_dir,
             end_commit.bellow.as_ref().expect("Expected merge commit"),
             true,
-            fork_point,
         );
 
         result.push(link);
@@ -364,12 +341,7 @@ pub fn child_history(working_dir: &str, commit: &Commit) -> Vec<Commit> {
     result
 }
 
-fn to_commit(
-    working_dir: &str,
-    oid: &Oid,
-    is_commit_link: bool,
-    is_fork_point: ForkPointCalculation,
-) -> Commit {
+fn to_commit(working_dir: &str, oid: &Oid, is_commit_link: bool) -> Commit {
     let output = git_cmd_out(
         working_dir.to_string(),
         vec!["rev-list", "--date=human", REV_FORMAT, "-1", &oid.0],
@@ -378,7 +350,7 @@ fn to_commit(
     let lines: Vec<&str> = tmp.as_ref().expect("Valid UTF-8").lines().collect();
     // XXX FIXME lines? really?
     assert!(lines.len() >= 2, "Did not got enough data for {}", oid);
-    Commit::new(lines.get(1).unwrap(), is_commit_link, is_fork_point)
+    Commit::new(lines.get(1).unwrap(), is_commit_link)
 }
 
 pub fn merge_base(working_dir: &str, p1: &Oid, p2: &Oid) -> Result<Option<Oid>, PosixError> {

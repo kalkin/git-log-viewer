@@ -9,6 +9,7 @@ use crate::commit::{Commit, Oid};
 use crate::search::SearchState;
 use crate::style::{date_style, id_style, mod_style, name_style, ref_style, DEFAULT_STYLE};
 
+use crate::fork_point::ForkPointCalculation;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
@@ -46,6 +47,7 @@ pub struct HistoryEntry {
     selected: bool,
     pub subtrees: Vec<SubtreeConfig>,
     repo_url: Option<Url>,
+    fork_point: ForkPointCalculation,
 }
 
 pub struct WidthConfig {
@@ -244,7 +246,12 @@ impl HistoryEntry {
 
 // Public interface
 impl HistoryEntry {
-    pub fn new(commit: Commit, level: u8, repo_url: Option<Url>) -> Self {
+    pub fn new(
+        commit: Commit,
+        level: u8,
+        repo_url: Option<Url>,
+        fork_point: ForkPointCalculation,
+    ) -> Self {
         let subtree_operation = HistoryEntry::identify_subtree_operation(&commit);
 
         let (subject_module, short_subject) = split_subject(&commit.subject());
@@ -262,12 +269,17 @@ impl HistoryEntry {
             subject_module,
             subtree_operation,
             subtrees: vec![],
+            fork_point,
             repo_url,
         }
     }
 
     pub fn set_subject(&mut self, subject: String) {
         self.subject = subject
+    }
+
+    pub fn set_fork_point(&mut self, t: bool) {
+        self.fork_point = ForkPointCalculation::Done(t);
     }
 
     pub fn special(&self) -> &SpecialSubject {
@@ -290,12 +302,18 @@ impl HistoryEntry {
         self.commit.author_name()
     }
 
-    pub fn set_fork_point(&mut self, t: bool) {
-        self.commit.fork_point(t)
+    pub fn fork_points_calculation_needed(&self) -> bool {
+        match self.fork_point {
+            ForkPointCalculation::Done(_) => false,
+            ForkPointCalculation::Needed => true,
+        }
     }
 
     pub fn is_fork_point(&self) -> bool {
-        self.commit.is_fork_point()
+        match self.fork_point {
+            ForkPointCalculation::Done(t) => t,
+            ForkPointCalculation::Needed => false,
+        }
     }
 
     pub fn folded(&mut self, t: bool) {

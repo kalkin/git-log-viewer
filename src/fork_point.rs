@@ -6,6 +6,11 @@ use git_wrapper::is_ancestor;
 use std::sync::mpsc;
 use std::thread;
 
+pub enum ForkPointCalculation {
+    Done(bool),
+    Needed,
+}
+
 pub struct ForkPointThread {
     _thread: JoinHandle<()>,
     receiver: Receiver<ForkPointResponse>,

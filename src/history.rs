@@ -12,7 +12,7 @@ use posix_errors::PosixError;
 
 use crate::commit::*;
 use crate::config::{author_name_width, author_rel_date_width, modules_width};
-use crate::fork_point::{ForkPointRequest, ForkPointThread};
+use crate::fork_point::{ForkPointCalculation, ForkPointRequest, ForkPointThread};
 use crate::github::{GitHubRequest, GitHubThread};
 use crate::history_entry::{HistoryEntry, SpecialSubject, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
@@ -135,21 +135,24 @@ impl History {
                         oid: c.id().clone(),
                     })
                 }
-                if above_commit.is_some()
-                    && above_commit.unwrap().is_merge()
-                    && c.fork_points_calculation_needed()
+                let fork_point_calc = if above_commit.is_some() && above_commit.unwrap().is_merge()
                 {
                     self.fork_point_thread.send(ForkPointRequest {
                         first: c.id().clone(),
                         second: above_commit.unwrap().children().first().unwrap().clone(),
                         working_dir: self.working_dir.clone(),
                     });
-                }
-                let entry = HistoryEntry::new(
+                    ForkPointCalculation::Needed
+                } else {
+                    ForkPointCalculation::Done(false)
+                };
+                let entry: HistoryEntry = HistoryEntry::new(
                     c,
                     self.selected_entry().level() + 1,
                     self.selected_entry().url(),
+                    fork_point_calc,
                 );
+
                 if let Some(url) = entry.url() {
                     if let SpecialSubject::PrMerge(pr_id) = entry.special() {
                         self.github_thread.send(GitHubRequest {
@@ -272,17 +275,17 @@ impl History {
                     oid: c.id().clone(),
                 })
             }
-            if above_commit.is_some()
-                && above_commit.unwrap().is_merge()
-                && c.fork_points_calculation_needed()
-            {
+            let fork_point_calc = if above_commit.is_some() && above_commit.unwrap().is_merge() {
                 self.fork_point_thread.send(ForkPointRequest {
                     first: c.id().clone(),
                     second: above_commit.unwrap().children().first().unwrap().clone(),
                     working_dir: self.working_dir.clone(),
                 });
-            }
-            let e = HistoryEntry::new(c, level, self.selected_entry().url());
+                ForkPointCalculation::Needed
+            } else {
+                ForkPointCalculation::Done(false)
+            };
+            let e = HistoryEntry::new(c, level, self.selected_entry().url(), fork_point_calc);
             if let Some(url) = entry.url() {
                 if let SpecialSubject::PrMerge(pr_id) = entry.special() {
                     self.github_thread.send(GitHubRequest {
@@ -358,7 +361,12 @@ impl History {
                     let url = e.url();
                     for c in commits.iter_mut() {
                         insert_position += 1;
-                        let entry = HistoryEntry::new(c.to_owned(), level, url.clone());
+                        let entry = HistoryEntry::new(
+                            c.to_owned(),
+                            level,
+                            url.clone(),
+                            ForkPointCalculation::Needed,
+                        );
                         self.history.insert(insert_position, entry);
                     }
                     let delta = needle_position - self.selected + 1;
@@ -396,17 +404,18 @@ impl History {
                         oid: c.id().clone(),
                     })
                 }
-                if above_commit.is_some()
-                    && above_commit.unwrap().is_merge()
-                    && c.fork_points_calculation_needed()
+                let fork_point_calc = if above_commit.is_some() && above_commit.unwrap().is_merge()
                 {
                     self.fork_point_thread.send(ForkPointRequest {
                         first: c.id().clone(),
                         second: above_commit.unwrap().children().first().unwrap().clone(),
                         working_dir: self.working_dir.clone(),
                     });
-                }
-                let entry = HistoryEntry::new(c, 0, url);
+                    ForkPointCalculation::Needed
+                } else {
+                    ForkPointCalculation::Done(false)
+                };
+                let entry = HistoryEntry::new(c, 0, url, fork_point_calc);
                 if let Some(url) = entry.url() {
                     if let SpecialSubject::PrMerge(pr_id) = entry.special() {
                         self.github_thread.send(GitHubRequest {

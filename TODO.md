@@ -2,7 +2,7 @@
 
 ## Refactor
 
-* move `fork_point` field from `Commit` to `HistoryEntry`
+* ~~move `fork_point` field from `Commit` to `HistoryEntry`~~
 
 ## Testing
 
