@@ -34,10 +34,6 @@ cucumber_rust = { git = "https://github.com/bbqsrc/cucumber-rust", branch = "mai
 tempfile = "3"
 tokio = { version = "1.2.0", features = ["rt-multi-thread", "macros", "time"] }
 
-[dependencies.futures]
-version = "0.3.14"
-features = ["std", "executor"]
-
 [dependencies.clap]
 version = "^2.33"
 default-features = false
