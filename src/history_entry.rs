@@ -8,7 +8,6 @@ use git_subtrees_improved::SubtreeConfig;
 use crate::commit::Commit;
 use crate::search::SearchState;
 use crate::style::{date_style, id_style, mod_style, name_style, ref_style, DEFAULT_STYLE};
-use std::borrow::BorrowMut;
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
@@ -279,8 +278,8 @@ impl HistoryEntry {
         &self.commit
     }
 
-    pub fn commit_mut(&mut self) -> &mut Commit {
-        self.commit.borrow_mut()
+    pub fn set_fork_point(&mut self, t: bool) {
+        self.commit.fork_point(t)
     }
 
     pub fn folded(&mut self, t: bool) {

@@ -457,7 +457,7 @@ impl cursive::view::View for History {
         while let Ok(v) = self.fork_point_thread.try_recv() {
             for e in self.history.iter_mut() {
                 if e.commit().id() == &v.oid {
-                    e.commit_mut().fork_point(v.value);
+                    e.set_fork_point(v.value);
                     break;
                 }
             }
