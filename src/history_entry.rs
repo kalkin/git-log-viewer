@@ -60,160 +60,8 @@ struct SearchMatch {
     end: usize,
 }
 
+// All the span implementations
 impl HistoryEntry {
-    pub fn new(commit: Commit, level: u8, repo_url: Option<Url>) -> Self {
-        let subtree_operation = HistoryEntry::identify_subtree_operation(&commit);
-
-        let (subject_module, short_subject) = split_subject(&commit.subject());
-        let subject = short_subject.unwrap_or_else(|| commit.subject().clone());
-
-        let special_subject = HistoryEntry::are_we_special(&commit);
-
-        HistoryEntry {
-            commit,
-            folded: true,
-            level,
-            subject,
-            special_subject,
-            selected: false,
-            subject_module,
-            subtree_operation,
-            subtrees: vec![],
-            repo_url,
-        }
-    }
-
-    fn identify_subtree_operation(commit: &Commit) -> SubtreeOperation {
-        let mut subtree_operation = SubtreeOperation::None;
-        if commit.subject().starts_with("Update :") {
-            subtree_operation = SubtreeOperation::Update
-        } else if commit.subject().starts_with("Import :") {
-            subtree_operation = SubtreeOperation::Import
-        } else if commit.subject().starts_with("Split '") {
-            subtree_operation = SubtreeOperation::Split
-        }
-        subtree_operation
-    }
-
-    pub fn set_subject(&mut self, subject: String) {
-        self.subject = subject
-    }
-
-    pub fn special(&self) -> &SpecialSubject {
-        &self.special_subject
-    }
-
-    fn are_we_special(commit: &Commit) -> SpecialSubject {
-        let mut special_subject = SpecialSubject::None;
-        let local_gh_merge = regex!(r"^Merge remote-tracking branch '.+/pr/(\d+)'$");
-        if let Some(caps) = local_gh_merge.captures(&commit.subject()) {
-            special_subject = SpecialSubject::PrMerge(caps.get(1).unwrap().as_str().to_string())
-        }
-
-        let online_gh_merge = regex!(r"^Merge pull request #(\d+) from .+$");
-        if let Some(caps) = online_gh_merge.captures(&commit.subject()) {
-            special_subject = SpecialSubject::PrMerge(caps.get(1).unwrap().as_str().to_string())
-        }
-        special_subject
-    }
-
-    fn name_span(
-        &self,
-        search_state: Option<&SearchState>,
-        max_len: usize,
-    ) -> SpannedString<Style> {
-        let style = name_style(&self.default_style());
-        let text = adjust_string(self.commit.author_name(), max_len);
-        search_if_needed!(text, style, search_state)
-    }
-
-    pub fn commit(&self) -> &Commit {
-        &self.commit
-    }
-
-    pub fn commit_mut(&mut self) -> &mut Commit {
-        self.commit.borrow_mut()
-    }
-
-    pub fn folded(&mut self, t: bool) {
-        self.folded = t;
-    }
-
-    pub fn is_folded(&self) -> bool {
-        self.folded
-    }
-
-    pub fn is_merge(&self) -> bool {
-        self.commit.is_merge()
-    }
-
-    pub fn level(&self) -> u8 {
-        self.level
-    }
-
-    pub fn is_commit_link(&self) -> bool {
-        self.commit.is_commit_link()
-    }
-
-    pub fn selected(&mut self, t: bool) {
-        self.selected = t;
-    }
-
-    fn default_style(&self) -> Style {
-        if self.selected {
-            let mut style = *DEFAULT_STYLE;
-            style.effects |= Effect::Reverse;
-            style
-        } else {
-            *DEFAULT_STYLE
-        }
-    }
-
-    fn search_text(haystack: &str, needle: &str) -> Vec<SearchMatch> {
-        let mut result = Vec::new();
-        let indices = haystack.match_indices(needle);
-        for (i, s) in indices {
-            result.push(SearchMatch {
-                start: i,
-                end: i + s.len(),
-            })
-        }
-
-        result
-    }
-
-    /// Check if string is contained any where in commit data
-    pub fn search_matches(&self, needle: &str, ignore_case: bool) -> bool {
-        let mut candidates = vec![
-            self.commit.author_name(),
-            self.commit.short_id(),
-            &self.commit.id().0,
-            self.commit.author_name(),
-            self.commit.author_email(),
-            self.commit.committer_name(),
-            self.commit.committer_email(),
-            &self.subject,
-        ];
-
-        let x: Vec<String> = self.subtrees.iter().map(|m| m.id()).collect();
-        candidates.extend(&x);
-
-        for r in self.commit.references().iter() {
-            candidates.push(&r.0);
-        }
-
-        for cand in candidates {
-            if ignore_case {
-                if cand.to_lowercase().contains(&needle.to_lowercase()) {
-                    return true;
-                }
-            } else {
-                return cand.contains(needle);
-            }
-        }
-        false
-    }
-
     fn date_span(&self, max_len: usize) -> SpannedString<Style> {
         let style = date_style(&self.default_style());
         let text = adjust_string(self.commit.author_rel_date(), max_len);
@@ -251,19 +99,14 @@ impl HistoryEntry {
         Some(search_if_needed!(text, style, search_state))
     }
 
-    pub(crate) fn subtrees(&self) -> &Vec<SubtreeConfig> {
-        &self.subtrees
-    }
-    pub(crate) fn url(&self) -> Option<Url> {
-        if self.subtrees.len() == 1 {
-            let module = self.subtrees.first().unwrap();
-            if let Some(v) = module.upstream().or(module.origin()) {
-                if let Ok(u) = Url::parse(&v) {
-                    return Some(u);
-                }
-            }
-        }
-        self.repo_url.clone()
+    fn name_span(
+        &self,
+        search_state: Option<&SearchState>,
+        max_len: usize,
+    ) -> SpannedString<Style> {
+        let style = name_style(&self.default_style());
+        let text = adjust_string(self.commit.author_name(), max_len);
+        search_if_needed!(text, style, search_state)
     }
 
     fn graph_span(&self) -> SpannedString<Style> {
@@ -324,6 +167,57 @@ impl HistoryEntry {
         }
         result
     }
+}
+
+impl HistoryEntry {
+    fn identify_subtree_operation(commit: &Commit) -> SubtreeOperation {
+        let mut subtree_operation = SubtreeOperation::None;
+        if commit.subject().starts_with("Update :") {
+            subtree_operation = SubtreeOperation::Update
+        } else if commit.subject().starts_with("Import :") {
+            subtree_operation = SubtreeOperation::Import
+        } else if commit.subject().starts_with("Split '") {
+            subtree_operation = SubtreeOperation::Split
+        }
+        subtree_operation
+    }
+
+    fn are_we_special(commit: &Commit) -> SpecialSubject {
+        let mut special_subject = SpecialSubject::None;
+        let local_gh_merge = regex!(r"^Merge remote-tracking branch '.+/pr/(\d+)'$");
+        if let Some(caps) = local_gh_merge.captures(&commit.subject()) {
+            special_subject = SpecialSubject::PrMerge(caps.get(1).unwrap().as_str().to_string())
+        }
+
+        let online_gh_merge = regex!(r"^Merge pull request #(\d+) from .+$");
+        if let Some(caps) = online_gh_merge.captures(&commit.subject()) {
+            special_subject = SpecialSubject::PrMerge(caps.get(1).unwrap().as_str().to_string())
+        }
+        special_subject
+    }
+
+    fn default_style(&self) -> Style {
+        if self.selected {
+            let mut style = *DEFAULT_STYLE;
+            style.effects |= Effect::Reverse;
+            style
+        } else {
+            *DEFAULT_STYLE
+        }
+    }
+
+    fn search_text(haystack: &str, needle: &str) -> Vec<SearchMatch> {
+        let mut result = Vec::new();
+        let indices = haystack.match_indices(needle);
+        for (i, s) in indices {
+            result.push(SearchMatch {
+                start: i,
+                end: i + s.len(),
+            })
+        }
+
+        result
+    }
 
     fn highlight_search(
         style: Style,
@@ -347,7 +241,118 @@ impl HistoryEntry {
         }
         tmp
     }
+}
 
+// Public interface
+impl HistoryEntry {
+    pub fn new(commit: Commit, level: u8, repo_url: Option<Url>) -> Self {
+        let subtree_operation = HistoryEntry::identify_subtree_operation(&commit);
+
+        let (subject_module, short_subject) = split_subject(&commit.subject());
+        let subject = short_subject.unwrap_or_else(|| commit.subject().clone());
+
+        let special_subject = HistoryEntry::are_we_special(&commit);
+
+        HistoryEntry {
+            commit,
+            folded: true,
+            level,
+            subject,
+            special_subject,
+            selected: false,
+            subject_module,
+            subtree_operation,
+            subtrees: vec![],
+            repo_url,
+        }
+    }
+
+    pub fn set_subject(&mut self, subject: String) {
+        self.subject = subject
+    }
+
+    pub fn special(&self) -> &SpecialSubject {
+        &self.special_subject
+    }
+
+    pub fn commit(&self) -> &Commit {
+        &self.commit
+    }
+
+    pub fn commit_mut(&mut self) -> &mut Commit {
+        self.commit.borrow_mut()
+    }
+
+    pub fn folded(&mut self, t: bool) {
+        self.folded = t;
+    }
+
+    pub fn is_folded(&self) -> bool {
+        self.folded
+    }
+
+    pub fn is_merge(&self) -> bool {
+        self.commit.is_merge()
+    }
+
+    pub fn level(&self) -> u8 {
+        self.level
+    }
+
+    pub fn is_commit_link(&self) -> bool {
+        self.commit.is_commit_link()
+    }
+
+    pub fn selected(&mut self, t: bool) {
+        self.selected = t;
+    }
+
+    /// Check if string is contained any where in commit data
+    pub fn search_matches(&self, needle: &str, ignore_case: bool) -> bool {
+        let mut candidates = vec![
+            self.commit.author_name(),
+            self.commit.short_id(),
+            &self.commit.id().0,
+            self.commit.author_name(),
+            self.commit.author_email(),
+            self.commit.committer_name(),
+            self.commit.committer_email(),
+            &self.subject,
+        ];
+
+        let x: Vec<String> = self.subtrees.iter().map(|m| m.id()).collect();
+        candidates.extend(&x);
+
+        for r in self.commit.references().iter() {
+            candidates.push(&r.0);
+        }
+
+        for cand in candidates {
+            if ignore_case {
+                if cand.to_lowercase().contains(&needle.to_lowercase()) {
+                    return true;
+                }
+            } else {
+                return cand.contains(needle);
+            }
+        }
+        false
+    }
+
+    pub(crate) fn subtrees(&self) -> &Vec<SubtreeConfig> {
+        &self.subtrees
+    }
+    pub(crate) fn url(&self) -> Option<Url> {
+        if self.subtrees.len() == 1 {
+            let module = self.subtrees.first().unwrap();
+            if let Some(v) = module.upstream().or(module.origin()) {
+                if let Ok(u) = Url::parse(&v) {
+                    return Some(u);
+                }
+            }
+        }
+        self.repo_url.clone()
+    }
     pub fn render(
         &self,
         search_state: Option<&SearchState>,
@@ -391,7 +396,6 @@ impl HistoryEntry {
         buf
     }
 }
-
 pub fn split_subject(subject: &String) -> (Option<String>, Option<String>) {
     let reg = regex!(r"^\w+\((.+)\): .+");
     let mut subject_module = None;
