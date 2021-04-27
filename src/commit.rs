@@ -147,7 +147,7 @@ impl Commit {
 }
 
 const REV_FORMAT: &str =
-    "--format=%x1f%H%x1f%h%x1f%P%x1f%D%x1f%aN%x1f%aE%x1f%aI%x1f%ar%x1f%cN%x1f%cE%x1f%cI%x1f%cr%x1f%s%x1f%b%x1e";
+    "--format=%x1f%H%x1f%h%x1f%P%x1f%D%x1f%aN%x1f%aE%x1f%aI%x1f%ad%x1f%cN%x1f%cE%x1f%cI%x1f%cd%x1f%s%x1f%b%x1e";
 
 impl Commit {
     pub fn new(data: &str, is_commit_link: bool, is_fork_point: ForkPointCalculation) -> Self {
@@ -282,7 +282,7 @@ pub fn commits_for_range<T: AsRef<str>>(
     skip: Option<usize>,
     max: Option<usize>,
 ) -> Result<Vec<Commit>, PosixError> {
-    let mut args = vec!["--first-parent", REV_FORMAT];
+    let mut args = vec!["--date=human", "--first-parent", REV_FORMAT];
 
     let tmp;
     if let Some(val) = skip {
@@ -372,7 +372,7 @@ fn to_commit(
 ) -> Commit {
     let output = git_cmd_out(
         working_dir.to_string(),
-        vec!["rev-list", REV_FORMAT, "-1", &oid.0],
+        vec!["rev-list", "--date=human", REV_FORMAT, "-1", &oid.0],
     );
     let tmp = String::from_utf8(output.unwrap().stdout);
     let lines: Vec<&str> = tmp.as_ref().expect("Valid UTF-8").lines().collect();
