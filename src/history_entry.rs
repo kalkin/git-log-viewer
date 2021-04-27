@@ -49,23 +49,6 @@ pub struct HistoryEntry {
     repo_url: Option<Url>,
 }
 
-impl HistoryEntry {
-    pub(crate) fn subtrees(&self) -> &Vec<SubtreeConfig> {
-        &self.subtrees
-    }
-    pub(crate) fn url(&self) -> Option<Url> {
-        if self.subtrees.len() == 1 {
-            let module = self.subtrees.first().unwrap();
-            if let Some(v) = module.upstream().or(module.origin()) {
-                if let Ok(u) = Url::parse(&v) {
-                    return Some(u);
-                }
-            }
-        }
-        self.repo_url.clone()
-    }
-}
-
 pub struct WidthConfig {
     pub max_author: usize,
     pub max_date: usize,
@@ -79,14 +62,7 @@ struct SearchMatch {
 
 impl HistoryEntry {
     pub fn new(commit: Commit, level: u8, repo_url: Option<Url>) -> Self {
-        let mut subtree_operation = SubtreeOperation::None;
-        if commit.subject().starts_with("Update :") {
-            subtree_operation = SubtreeOperation::Update
-        } else if commit.subject().starts_with("Import :") {
-            subtree_operation = SubtreeOperation::Import
-        } else if commit.subject().starts_with("Split '") {
-            subtree_operation = SubtreeOperation::Split
-        }
+        let subtree_operation = HistoryEntry::identify_subtree_operation(&commit);
 
         let (subject_module, short_subject) = split_subject(&commit.subject());
         let subject = short_subject.unwrap_or_else(|| commit.subject().clone());
@@ -105,6 +81,18 @@ impl HistoryEntry {
             subtrees: vec![],
             repo_url,
         }
+    }
+
+    fn identify_subtree_operation(commit: &Commit) -> SubtreeOperation {
+        let mut subtree_operation = SubtreeOperation::None;
+        if commit.subject().starts_with("Update :") {
+            subtree_operation = SubtreeOperation::Update
+        } else if commit.subject().starts_with("Import :") {
+            subtree_operation = SubtreeOperation::Import
+        } else if commit.subject().starts_with("Split '") {
+            subtree_operation = SubtreeOperation::Split
+        }
+        subtree_operation
     }
 
     pub fn set_subject(&mut self, subject: String) {
@@ -261,6 +249,21 @@ impl HistoryEntry {
         };
 
         Some(search_if_needed!(text, style, search_state))
+    }
+
+    pub(crate) fn subtrees(&self) -> &Vec<SubtreeConfig> {
+        &self.subtrees
+    }
+    pub(crate) fn url(&self) -> Option<Url> {
+        if self.subtrees.len() == 1 {
+            let module = self.subtrees.first().unwrap();
+            if let Some(v) = module.upstream().or(module.origin()) {
+                if let Ok(u) = Url::parse(&v) {
+                    return Some(u);
+                }
+            }
+        }
+        self.repo_url.clone()
     }
 
     fn graph_span(&self) -> SpannedString<Style> {
