@@ -150,7 +150,6 @@ impl History {
                     });
                 }
                 let entry = HistoryEntry::new(
-                    self.working_dir.clone(),
                     c,
                     self.selected_entry().level() + 1,
                     self.selected_entry().url(),
@@ -291,12 +290,7 @@ impl History {
                     working_dir: self.working_dir.clone(),
                 });
             }
-            let e = HistoryEntry::new(
-                self.working_dir.clone(),
-                c,
-                level,
-                self.selected_entry().url(),
-            );
+            let e = HistoryEntry::new(c, level, self.selected_entry().url());
             if let Some(url) = entry.url() {
                 if let SpecialSubject::PrMerge(pr_id) = entry.special() {
                     self.github_thread.send(GitHubRequest {
@@ -372,12 +366,7 @@ impl History {
                     let url = e.url();
                     for c in commits.iter_mut() {
                         insert_position += 1;
-                        let entry = HistoryEntry::new(
-                            self.working_dir.clone(),
-                            c.to_owned(),
-                            level,
-                            url.clone(),
-                        );
+                        let entry = HistoryEntry::new(c.to_owned(), level, url.clone());
                         self.history.insert(insert_position, entry);
                     }
                     let delta = needle_position - self.selected + 1;
@@ -403,7 +392,6 @@ impl History {
             Some(max),
         ) {
             let result = !tmp.is_empty();
-            let working_dir = self.working_dir.clone();
             let mut above_commit = if self.history.is_empty() {
                 None
             } else {
@@ -426,7 +414,7 @@ impl History {
                         working_dir: self.working_dir.clone(),
                     });
                 }
-                let entry = HistoryEntry::new(working_dir.clone(), c, 0, url);
+                let entry = HistoryEntry::new(c, 0, url);
                 if let Some(url) = entry.url() {
                     if let SpecialSubject::PrMerge(pr_id) = entry.special() {
                         self.github_thread.send(GitHubRequest {

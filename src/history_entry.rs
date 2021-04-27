@@ -45,7 +45,6 @@ pub struct HistoryEntry {
     selected: bool,
     pub subtrees: Vec<SubtreeConfig>,
     repo_url: Option<Url>,
-    working_dir: String,
 }
 
 impl HistoryEntry {
@@ -77,7 +76,7 @@ struct SearchMatch {
 }
 
 impl HistoryEntry {
-    pub fn new(working_dir: String, commit: Commit, level: u8, repo_url: Option<Url>) -> Self {
+    pub fn new(commit: Commit, level: u8, repo_url: Option<Url>) -> Self {
         let mut subtree_operation = SubtreeOperation::None;
         if commit.subject().starts_with("Update :") {
             subtree_operation = SubtreeOperation::Update
@@ -103,7 +102,6 @@ impl HistoryEntry {
             subtree_operation,
             subtrees: vec![],
             repo_url,
-            working_dir,
         }
     }
 
