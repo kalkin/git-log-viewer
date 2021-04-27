@@ -19,7 +19,7 @@ pub fn steps() -> Steps<crate::MyWorld> {
     );
 
     steps.given_regex_async(
-        r#"commit (.+)$"#,
+        r#"^commit (.+)$"#,
         t!(|mut world, ctx| {
             assert_eq!(ctx.matches.len(), 2);
             let id = ctx.matches[1].clone();
