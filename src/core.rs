@@ -1,4 +1,3 @@
-use configparser::ini::Ini;
 use lazy_static::lazy_static;
 use regex::Regex;
 use unicode_segmentation::UnicodeSegmentation;
@@ -6,10 +5,6 @@ use unicode_width::UnicodeWidthStr;
 
 use git_wrapper::git_cmd_out;
 use posix_errors::PosixError;
-
-lazy_static! {
-    static ref CONFIG: Ini = config();
-}
 
 #[macro_export]
 macro_rules! regex {
@@ -442,21 +437,6 @@ lazy_static! {
     ];
 }
 
-fn config() -> Ini {
-    let xdg_dirs = xdg::BaseDirectories::with_prefix("glv").expect("Expected BaseDirectories");
-    let mut result = Ini::new();
-    match xdg_dirs.find_config_file("config") {
-        None => {}
-        Some(config_path) => {
-            let path = config_path
-                .to_str()
-                .expect("A path convertible to an UTF-8 string");
-            result.load(path).expect("Loaded INI file");
-        }
-    }
-    result
-}
-
 // I'm not proud of this code. Ohh Omnissiah be merciful on my soul‼
 pub fn adjust_string(text: &str, len: usize) -> String {
     assert!(len > 0, "Minimal length should be 1");
@@ -507,34 +487,4 @@ pub fn adjust_string(text: &str, len: usize) -> String {
         return result;
     }
     result
-}
-
-pub fn author_name_width() -> usize {
-    match CONFIG.getuint("history", "author_name_width") {
-        Ok(o) => match o {
-            None => 10,
-            Some(v) => v as usize,
-        },
-        Err(_) => panic!("Error while parsing history.author_name_width"),
-    }
-}
-
-pub fn author_rel_date_width() -> usize {
-    match CONFIG.getuint("history", "author_rel_date_width") {
-        Ok(o) => match o {
-            None => 0,
-            Some(v) => v as usize,
-        },
-        Err(_) => panic!("Error while parsing history.author_rel_name_width"),
-    }
-}
-
-pub fn modules_width() -> usize {
-    match CONFIG.getuint("history", "modules_width") {
-        Ok(o) => match o {
-            None => 35,
-            Some(v) => v as usize,
-        },
-        Err(_) => panic!("Error while parsing history.modules_width"),
-    }
 }

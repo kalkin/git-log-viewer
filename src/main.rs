@@ -8,6 +8,7 @@ use crate::views::DynamicSplitView;
 
 #[macro_use]
 mod core;
+mod config;
 mod detail;
 mod fork_point;
 mod github;

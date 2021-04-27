@@ -2,7 +2,7 @@
 
 ## Testing
 
-* Separate config stuff from `core.rs` to `config.rs`
+* ~~Separate config stuff from `core.rs` to `config.rs`~~
 * Handle *Subject* as own `struct` or `enum` to
    distinguish between different subject options.
 
