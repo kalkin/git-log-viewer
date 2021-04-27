@@ -126,9 +126,10 @@ impl History {
     fn toggle_folding(&mut self) {
         let pos = self.selected + 1;
         if self.selected_entry().is_folded() {
-            let children: Vec<Commit> = child_history(&self.working_dir, self.selected_commit());
+            let mut children: Vec<Commit> =
+                child_history(&self.working_dir, self.selected_commit());
             let mut above_commit = Some(self.selected_commit());
-            for (i, c) in children.iter().cloned().enumerate() {
+            for (i, c) in children.into_iter().enumerate() {
                 if !self.subtree_modules.is_empty() {
                     self.subtree_thread.send(SubtreeChangesRequest {
                         oid: c.id().clone(),
