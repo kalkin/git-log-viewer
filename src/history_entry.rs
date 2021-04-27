@@ -4,7 +4,7 @@ use regex::Regex;
 use unicode_width::UnicodeWidthStr;
 use url::Url;
 
-use git_subtrees_improved::{changed_modules, SubtreeConfig};
+use git_subtrees_improved::SubtreeConfig;
 
 use crate::core::{adjust_string, Commit};
 use crate::search::SearchState;
@@ -77,7 +77,7 @@ struct SearchMatch {
 }
 
 impl HistoryEntry {
-    pub fn new(working_dir: String, mut commit: Commit, level: u8, repo_url: Option<Url>) -> Self {
+    pub fn new(working_dir: String, commit: Commit, level: u8, repo_url: Option<Url>) -> Self {
         let mut subtree_operation = SubtreeOperation::None;
         if commit.subject().starts_with("Update :") {
             subtree_operation = SubtreeOperation::Update

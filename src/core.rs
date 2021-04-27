@@ -4,8 +4,8 @@ use regex::Regex;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use git_subtrees_improved::{changed_modules, SubtreeConfig};
-use git_wrapper::{git_cmd_out, is_ancestor};
+use git_subtrees_improved::SubtreeConfig;
+use git_wrapper::git_cmd_out;
 use posix_errors::PosixError;
 
 lazy_static! {
@@ -90,10 +90,6 @@ impl Commit {
         &self.body
     }
 
-    pub fn branches(&self) -> &Vec<GitRef> {
-        &self.branches
-    }
-
     pub fn committer_name(&self) -> &String {
         &self.committer_name
     }
@@ -102,10 +98,6 @@ impl Commit {
     }
     pub fn committer_date(&self) -> &String {
         &self.committer_date
-    }
-
-    pub fn committer_rel_date(&self) -> &String {
-        &self.committer_rel_date
     }
 
     pub fn children(&self) -> &Vec<Oid> {
@@ -120,9 +112,6 @@ impl Commit {
         &self.icon
     }
 
-    pub fn is_head(&self) -> bool {
-        self.is_head
-    }
     pub fn is_fork_point(&self) -> bool {
         match self.fork_point {
             ForkPointCalculation::Done(t) => t,
@@ -131,10 +120,7 @@ impl Commit {
     }
 
     pub fn fork_points_calculation_needed(&self) -> bool {
-        match self.fork_point {
-            ForkPointCalculation::Needed => true,
-            _ => false,
-        }
+        matches!(self.fork_point, ForkPointCalculation::Needed)
     }
 
     pub fn fork_point(&mut self, t: bool) {
@@ -155,10 +141,6 @@ impl Commit {
     }
     pub fn subject(&self) -> &String {
         &self.subject
-    }
-
-    pub fn tags(&self) -> &Vec<GitRef> {
-        &self.tags
     }
 }
 
@@ -329,7 +311,7 @@ pub fn commits_for_range<T: AsRef<str>>(
         if data.is_empty() {
             break;
         }
-        let mut commit = Commit::new(data, false, fork_point.clone());
+        let commit = Commit::new(data, false, fork_point.clone());
         if commit.is_merge {
             fork_point = ForkPointCalculation::Needed;
         }
@@ -371,7 +353,7 @@ pub fn child_history(
         } else {
             ForkPointCalculation::Done(false)
         };
-        let mut link = to_commit(
+        let link = to_commit(
             working_dir,
             end_commit.bellow.as_ref().expect("Expected merge commit"),
             true,

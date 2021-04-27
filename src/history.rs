@@ -1,7 +1,4 @@
 use std::borrow::Borrow;
-use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender};
-use std::thread;
 
 use cursive::direction::Direction;
 use cursive::event::{Event, EventResult, Key};
@@ -16,7 +13,7 @@ use git_wrapper::is_ancestor;
 use posix_errors::PosixError;
 
 use crate::core::*;
-use crate::fork_point::{ForkPointRequest, ForkPointResponse, ForkPointThread};
+use crate::fork_point::{ForkPointRequest, ForkPointThread};
 use crate::github::{GitHubRequest, GitHubThread};
 use crate::history_entry::{HistoryEntry, SpecialSubject, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
@@ -249,7 +246,7 @@ impl History {
                 }
             } else if e.is_merge() && e.is_folded() {
                 let x = self.search_recursive(e);
-                if let Some((pos, mut entries)) = x {
+                if let Some((pos, entries)) = x {
                     self.history.get_mut(i).unwrap().folded(false);
                     let needle_position = i + pos;
                     let mut insert_position = i;
@@ -372,7 +369,6 @@ impl History {
                     let level = e.level() + 1;
                     let needle_position = i + pos;
                     let mut insert_position = i;
-                    let mut above_commit = Some(e.commit());
                     let url = e.url();
                     for c in commits.iter_mut() {
                         insert_position += 1;
@@ -383,7 +379,6 @@ impl History {
                             url.clone(),
                         );
                         self.history.insert(insert_position, entry);
-                        above_commit = Some(self.history.get(insert_position).unwrap().commit());
                     }
                     let delta = needle_position - self.selected + 1;
                     if delta > 0 {
@@ -399,11 +394,6 @@ impl History {
         let skip = self.history.len();
         let range = self.range.as_str();
         let working_dir = self.working_dir.as_str();
-
-        let mut above_commit = None;
-        if let Some(v) = self.history.last() {
-            above_commit = Some(v.commit());
-        }
 
         if let Ok(tmp) = commits_for_range(
             working_dir,

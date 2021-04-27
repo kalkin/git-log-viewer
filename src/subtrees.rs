@@ -16,7 +16,7 @@ pub struct SubtreeChangesResponse {
 }
 
 pub struct SubtreesThread {
-    thread: JoinHandle<()>,
+    _thread: JoinHandle<()>,
     receiver: Receiver<SubtreeChangesResponse>,
     sender: Sender<SubtreeChangesRequest>,
 }
@@ -43,7 +43,7 @@ impl SubtreesThread {
             }
         });
         SubtreesThread {
-            thread: child,
+            _thread: child,
             receiver: rx_1,
             sender: tx_2,
         }

@@ -21,7 +21,7 @@ pub struct GitHubResponse {
 }
 
 pub struct GitHubThread {
-    thread: JoinHandle<()>,
+    _thread: JoinHandle<()>,
     receiver: Receiver<GitHubResponse>,
     sender: Sender<GitHubRequest>,
 }
@@ -88,7 +88,7 @@ impl GitHubThread {
         });
 
         Self {
-            thread: child,
+            _thread: child,
             receiver: rx_1,
             sender: tx_2,
         }

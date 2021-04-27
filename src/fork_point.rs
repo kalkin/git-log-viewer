@@ -7,7 +7,7 @@ use std::sync::mpsc;
 use std::thread;
 
 pub struct ForkPointThread {
-    thread: JoinHandle<()>,
+    _thread: JoinHandle<()>,
     receiver: Receiver<ForkPointResponse>,
     sender: Sender<ForkPointRequest>,
 }
@@ -44,7 +44,7 @@ impl ForkPointThread {
             }
         });
         ForkPointThread {
-            thread: child,
+            _thread: child,
             receiver: rx_1,
             sender: tx_2,
         }
