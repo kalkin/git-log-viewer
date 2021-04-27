@@ -50,7 +50,9 @@ impl SubtreesThread {
     }
 
     pub(crate) fn send(&self, req: SubtreeChangesRequest) {
-        self.sender.send(req);
+        if let Err(e) = self.sender.send(req) {
+            log::error!("Error {:?}", e)
+        }
     }
 
     pub(crate) fn try_recv(&self) -> Result<SubtreeChangesResponse, TryRecvError> {

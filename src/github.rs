@@ -95,7 +95,9 @@ impl GitHubThread {
     }
 
     pub(crate) fn send(&self, req: GitHubRequest) {
-        self.sender.send(req);
+        if let Err(e) = self.sender.send(req) {
+            log::error!("Error {:?}", e)
+        }
     }
 
     pub(crate) fn try_recv(&self) -> Result<GitHubResponse, TryRecvError> {
