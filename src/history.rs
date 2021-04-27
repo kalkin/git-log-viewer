@@ -17,7 +17,8 @@ use posix_errors::PosixError;
 
 use crate::core::*;
 use crate::fork_point::{ForkPointRequest, ForkPointResponse, ForkPointThread};
-use crate::history_entry::{HistoryEntry, WidthConfig};
+use crate::github::{GitHubRequest, GitHubThread};
+use crate::history_entry::{HistoryEntry, SpecialSubject, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
 use crate::search::{search_link_recursive, SearchDirection, SearchState};
 use crate::style::DEFAULT_STYLE;
@@ -34,6 +35,7 @@ pub struct History {
     paths: Vec<String>,
     fork_point_thread: ForkPointThread,
     subtree_thread: SubtreesThread,
+    github_thread: GitHubThread,
     url: Option<Url>,
 }
 
@@ -73,6 +75,7 @@ impl History {
             paths,
             fork_point_thread,
             subtree_thread,
+            github_thread: GitHubThread::new(),
             url,
         })
     }
@@ -155,6 +158,15 @@ impl History {
                     self.selected_entry().level() + 1,
                     self.selected_entry().url(),
                 );
+                if let Some(url) = entry.url() {
+                    if let SpecialSubject::PrMerge(pr_id) = entry.special() {
+                        self.github_thread.send(GitHubRequest {
+                            oid: entry.commit().id().clone(),
+                            url,
+                            pr_id: pr_id.clone(),
+                        });
+                    }
+                }
                 self.history.insert(pos + i, entry);
                 above_commit = Some(self.history.get(pos + i).unwrap().commit());
             }
@@ -288,6 +300,15 @@ impl History {
                 level,
                 self.selected_entry().url(),
             );
+            if let Some(url) = entry.url() {
+                if let SpecialSubject::PrMerge(pr_id) = entry.special() {
+                    self.github_thread.send(GitHubRequest {
+                        oid: entry.commit().id().clone(),
+                        url,
+                        pr_id: pr_id.clone(),
+                    });
+                }
+            }
             entries.push(e);
             above_commit = Some(entries.last().unwrap().commit());
         }
@@ -416,6 +437,15 @@ impl History {
                     });
                 }
                 let entry = HistoryEntry::new(working_dir.clone(), c, 0, url);
+                if let Some(url) = entry.url() {
+                    if let SpecialSubject::PrMerge(pr_id) = entry.special() {
+                        self.github_thread.send(GitHubRequest {
+                            oid: entry.commit().id().clone(),
+                            url,
+                            pr_id: pr_id.clone(),
+                        });
+                    }
+                }
                 self.history.push(entry);
                 above_commit = Some(self.history.last().unwrap().commit());
             }
@@ -468,6 +498,15 @@ impl cursive::view::View for History {
             for e in self.history.iter_mut() {
                 if e.commit().id() == &v.oid {
                     e.subtrees = v.subtrees;
+                    break;
+                }
+            }
+        }
+
+        while let Ok(v) = self.github_thread.try_recv() {
+            for e in self.history.iter_mut() {
+                if e.commit().id() == &v.oid {
+                    e.set_subject(v.subject);
                     break;
                 }
             }

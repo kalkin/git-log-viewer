@@ -10,6 +10,7 @@ use crate::views::DynamicSplitView;
 mod core;
 mod detail;
 mod fork_point;
+mod github;
 mod history;
 mod history_entry;
 mod raw;

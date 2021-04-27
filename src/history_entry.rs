@@ -107,6 +107,14 @@ impl HistoryEntry {
         }
     }
 
+    pub fn set_subject(&mut self, subject: String) {
+        self.subject = subject
+    }
+
+    pub fn special(&self) -> &SpecialSubject {
+        &self.special_subject
+    }
+
     fn are_we_special(commit: &Commit) -> SpecialSubject {
         let mut special_subject = SpecialSubject::None;
         let local_gh_merge = regex!(r"^Merge remote-tracking branch '.+/pr/(\d+)'$");
@@ -184,10 +192,6 @@ impl HistoryEntry {
         }
 
         result
-    }
-
-    pub fn special_subject(&self) -> &SpecialSubject {
-        &self.special_subject
     }
 
     /// Check if string is contained any where in commit data
@@ -375,13 +379,6 @@ impl HistoryEntry {
             buf.append(modules);
             buf.append_styled(" ", style);
         }
-        match &self.special_subject {
-            SpecialSubject::PrMerge(id) => {
-                buf.append_styled(format!("#{} ", id), id_style(&style));
-            }
-            SpecialSubject::None => {}
-        }
-
         {
             buf.append(self.subject_span(search_state));
             buf.append_styled(" ", style);
