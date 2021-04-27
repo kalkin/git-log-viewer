@@ -1,6 +1,6 @@
 use cucumber_rust::{t, Steps};
 
-use glv_core::{commits_for_range, Commit, GitRef};
+use glv::core::{commits_for_range, Commit, GitRef};
 
 use crate::Url;
 
@@ -24,8 +24,10 @@ pub fn steps() -> Steps<crate::MyWorld> {
             assert_eq!(ctx.matches.len(), 2);
             let id = ctx.matches[1].clone();
             let working_dir = world.working_dir.path().to_str().unwrap();
-            let commit = Commit::new_from_id(working_dir, &id, 0, false, None, vec![]).unwrap();
-            world.commit = Some(commit);
+            let range = format!("{}~1..{}", id, id);
+            let paths: Vec<String> = vec![];
+            let commits = commits_for_range(working_dir, &range, &paths, None, None).unwrap();
+            world.commit = commits.into_iter().next();
             world
         }),
     );
@@ -34,19 +36,8 @@ pub fn steps() -> Steps<crate::MyWorld> {
         assert_eq!(ctx.matches.len(), 2);
         let range = ctx.matches[1].clone();
         let working_dir = world.working_dir.path().to_str().unwrap();
-        world.range = Some(
-            commits_for_range(
-                working_dir,
-                &range,
-                0,
-                None,
-                vec![].as_ref(),
-                vec![],
-                None,
-                None,
-            )
-            .unwrap(),
-        );
+        let paths: Vec<String> = vec![];
+        world.range = Some(commits_for_range(working_dir, &range, &paths, None, None).unwrap());
         world
     });
 
@@ -103,14 +94,6 @@ pub fn steps() -> Steps<crate::MyWorld> {
             let direction = &ctx.matches[1].clone();
             let expected = &ctx.matches[2].clone();
             match direction.as_str() {
-                "above" => {
-                    assert!(
-                        commit.above().is_some(),
-                        "Expected commit {} to have above commit",
-                        commit.short_id()
-                    );
-                    assert!(commit.above().unwrap().to_string().starts_with(expected));
-                }
                 "bellow" => {
                     assert!(
                         commit.bellow().is_some(),

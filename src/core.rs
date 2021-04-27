@@ -85,6 +85,11 @@ impl Commit {
         self.bellow.as_ref()
     }
 
+    #[allow(dead_code)]
+    pub fn branches(&self) -> &Vec<GitRef> {
+        &self.branches
+    }
+
     pub fn body(&self) -> &String {
         &self.body
     }
@@ -116,6 +121,11 @@ impl Commit {
             ForkPointCalculation::Done(t) => t,
             _ => false,
         }
+    }
+
+    #[allow(dead_code)]
+    pub fn is_head(&self) -> bool {
+        self.is_head
     }
 
     pub fn fork_points_calculation_needed(&self) -> bool {
