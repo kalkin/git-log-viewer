@@ -127,17 +127,17 @@ impl HistoryEntry {
             if self.subtree_operation == SubtreeOperation::Import
                 || self.subtree_operation == SubtreeOperation::Update
             {
-                if self.commit.is_fork_point() {
+                if self.is_fork_point() {
                     result.append_styled("⇤┤", style);
                 } else {
                     result.append_styled("⇤╮", style);
                 }
-            } else if self.commit.is_fork_point() {
+            } else if self.is_fork_point() {
                 result.append_styled("─┤", style);
             } else {
                 result.append_styled("─┐", style)
             }
-        } else if self.commit.is_fork_point() {
+        } else if self.is_fork_point() {
             result.append_styled("─┘", style)
         }
 
@@ -292,6 +292,10 @@ impl HistoryEntry {
 
     pub fn set_fork_point(&mut self, t: bool) {
         self.commit.fork_point(t)
+    }
+
+    pub fn is_fork_point(&self) -> bool {
+        self.commit.is_fork_point()
     }
 
     pub fn folded(&mut self, t: bool) {
