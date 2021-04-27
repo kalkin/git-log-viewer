@@ -5,7 +5,7 @@ use url::Url;
 
 use git_subtrees_improved::SubtreeConfig;
 
-use crate::commit::Commit;
+use crate::commit::{Commit, Oid};
 use crate::search::SearchState;
 use crate::style::{date_style, id_style, mod_style, name_style, ref_style, DEFAULT_STYLE};
 
@@ -276,6 +276,18 @@ impl HistoryEntry {
 
     pub fn commit(&self) -> &Commit {
         &self.commit
+    }
+
+    pub fn id(&self) -> &Oid {
+        self.commit.id()
+    }
+
+    pub fn author_date(&self) -> &String {
+        self.commit.author_rel_date()
+    }
+
+    pub fn author_name(&self) -> &String {
+        self.commit.author_name()
     }
 
     pub fn set_fork_point(&mut self, t: bool) {

@@ -107,12 +107,12 @@ impl History {
             let mut iter = self.history.iter();
             for _ in 0..height {
                 if let Some(entry) = iter.next() {
-                    if entry.commit().author_rel_date().len() > max_date {
-                        let t = entry.commit().author_rel_date().as_str();
+                    if entry.author_date().len() > max_date {
+                        let t = entry.author_date().as_str();
                         max_date = UnicodeWidthStr::width(t);
                     }
-                    if entry.commit().author_name().len() > max_author {
-                        let t = entry.commit().author_name().as_str();
+                    if entry.author_name().len() > max_author {
+                        let t = entry.author_name().as_str();
                         max_author = UnicodeWidthStr::width(t);
                     }
                 } else {
@@ -152,7 +152,7 @@ impl History {
                 if let Some(url) = entry.url() {
                     if let SpecialSubject::PrMerge(pr_id) = entry.special() {
                         self.github_thread.send(GitHubRequest {
-                            oid: entry.commit().id().clone(),
+                            oid: entry.id().clone(),
                             url,
                             pr_id: pr_id.clone(),
                         });
@@ -285,7 +285,7 @@ impl History {
             if let Some(url) = entry.url() {
                 if let SpecialSubject::PrMerge(pr_id) = entry.special() {
                     self.github_thread.send(GitHubRequest {
-                        oid: entry.commit().id().clone(),
+                        oid: entry.id().clone(),
                         url,
                         pr_id: pr_id.clone(),
                     });
@@ -331,7 +331,7 @@ impl History {
                 continue;
             }
 
-            if e.commit().id() == link {
+            if e.id() == link {
                 let delta = i - self.selected;
                 if delta > 0 {
                     self.move_focus(delta, MoveDirection::Down);
@@ -409,7 +409,7 @@ impl History {
                 if let Some(url) = entry.url() {
                     if let SpecialSubject::PrMerge(pr_id) = entry.special() {
                         self.github_thread.send(GitHubRequest {
-                            oid: entry.commit().id().clone(),
+                            oid: entry.id().clone(),
                             url,
                             pr_id: pr_id.clone(),
                         });
@@ -456,7 +456,7 @@ impl cursive::view::View for History {
 
         while let Ok(v) = self.fork_point_thread.try_recv() {
             for e in self.history.iter_mut() {
-                if e.commit().id() == &v.oid {
+                if e.id() == &v.oid {
                     e.set_fork_point(v.value);
                     break;
                 }
@@ -465,7 +465,7 @@ impl cursive::view::View for History {
 
         while let Ok(v) = self.subtree_thread.try_recv() {
             for e in self.history.iter_mut() {
-                if e.commit().id() == &v.oid {
+                if e.id() == &v.oid {
                     e.subtrees = v.subtrees;
                     break;
                 }
@@ -474,7 +474,7 @@ impl cursive::view::View for History {
 
         while let Ok(v) = self.github_thread.try_recv() {
             for e in self.history.iter_mut() {
-                if e.commit().id() == &v.oid {
+                if e.id() == &v.oid {
                     e.set_subject(v.subject);
                     break;
                 }
