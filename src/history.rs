@@ -247,7 +247,7 @@ impl History {
                     self.history.get_mut(i).unwrap().folded(false);
                     let needle_position = i + pos;
                     let mut insert_position = i;
-                    for entry in entries.into_iter() {
+                    for entry in entries {
                         insert_position += 1;
                         self.history.insert(insert_position, entry);
                     }
@@ -268,7 +268,7 @@ impl History {
 
         let mut above_commit = Some(entry.commit());
         let mut entries: Vec<HistoryEntry> = vec![];
-        for c in children.into_iter() {
+        for c in children {
             if !self.subtree_modules.is_empty() {
                 self.subtree_thread.send(SubtreeChangesRequest {
                     oid: c.id().clone(),
@@ -305,7 +305,7 @@ impl History {
                 if let Some((pos, children)) = self.search_recursive(e) {
                     let needle_position = i + pos;
                     let mut insert_position = i;
-                    for child in children.into_iter() {
+                    for child in children {
                         insert_position += 1;
                         entries.insert(insert_position, child);
                     }
@@ -397,7 +397,7 @@ impl History {
             } else {
                 Some(self.history.last().unwrap().commit())
             };
-            for c in tmp.into_iter() {
+            for c in tmp {
                 let url = self.url.clone();
                 if !self.subtree_modules.is_empty() {
                     self.subtree_thread.send(SubtreeChangesRequest {
