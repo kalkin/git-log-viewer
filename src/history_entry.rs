@@ -365,10 +365,10 @@ impl HistoryEntry {
         false
     }
 
-    pub(crate) fn subtrees(&self) -> &Vec<SubtreeConfig> {
+    pub fn subtrees(&self) -> &Vec<SubtreeConfig> {
         &self.subtrees
     }
-    pub(crate) fn url(&self) -> Option<Url> {
+    pub fn url(&self) -> Option<Url> {
         if self.subtrees.len() == 1 {
             let module = self.subtrees.first().unwrap();
             if let Some(v) = module.upstream().or_else(|| module.origin()) {

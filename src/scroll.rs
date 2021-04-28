@@ -13,8 +13,8 @@ struct ViewPort {
 }
 
 enum CustomScrollFocus {
-    CONTENT,
-    SEARCH,
+    Content,
+    Search,
 }
 
 pub struct CustomScrollView<V> {
@@ -33,7 +33,7 @@ impl<V> CustomScrollView<V> {
             search_state,
             search_input: None,
             view_port: ViewPort { top: 0, bottom: 25 },
-            focus: CustomScrollFocus::CONTENT,
+            focus: CustomScrollFocus::Content,
         }
     }
 }
@@ -145,13 +145,13 @@ where
 
     fn on_event(&mut self, event: Event) -> EventResult {
         match &self.focus {
-            CustomScrollFocus::CONTENT => match event {
+            CustomScrollFocus::Content => match event {
                 Event::Char('?') => {
                     let mut t = EditView::new();
                     t.set_enabled(true);
                     self.search_input = Some(t);
                     self.search_state.direction = SearchDirection::Backward;
-                    self.focus = CustomScrollFocus::SEARCH;
+                    self.focus = CustomScrollFocus::Search;
                     self.search_input
                         .as_mut()
                         .unwrap()
@@ -187,7 +187,7 @@ where
                     t.set_enabled(true);
                     self.search_input = Some(t);
                     self.search_state.direction = SearchDirection::Forward;
-                    self.focus = CustomScrollFocus::SEARCH;
+                    self.focus = CustomScrollFocus::Search;
                     self.search_input
                         .as_mut()
                         .unwrap()
@@ -257,16 +257,16 @@ where
                 }
                 _ => self.inner.on_event(event),
             },
-            CustomScrollFocus::SEARCH => match event {
+            CustomScrollFocus::Search => match event {
                 Event::Key(Key::Esc) => {
-                    self.focus = CustomScrollFocus::CONTENT;
+                    self.focus = CustomScrollFocus::Content;
                     self.search_state.active = false;
                     self.search_input = None;
 
                     EventResult::Consumed(None)
                 }
                 Event::Key(Key::Enter) => {
-                    self.focus = CustomScrollFocus::CONTENT;
+                    self.focus = CustomScrollFocus::Content;
                     self.search_input.as_mut().unwrap().disable();
                     let needle = self
                         .search_input

@@ -29,7 +29,7 @@ pub struct ForkPointResponse {
 }
 
 impl ForkPointThread {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         let (tx_1, rx_1): (Sender<ForkPointResponse>, Receiver<ForkPointResponse>) =
             mpsc::channel();
         let (tx_2, rx_2): (Sender<ForkPointRequest>, Receiver<ForkPointRequest>) = mpsc::channel();
@@ -54,13 +54,13 @@ impl ForkPointThread {
         is_ancestor(working_dir, &first.0, &second.0).expect("Execute merge-base --is-ancestor")
     }
 
-    pub(crate) fn send(&self, req: ForkPointRequest) {
+    pub fn send(&self, req: ForkPointRequest) {
         if let Err(e) = self.sender.send(req) {
             log::error!("Error {:?}", e)
         }
     }
 
-    pub(crate) fn try_recv(&self) -> Result<ForkPointResponse, TryRecvError> {
+    pub fn try_recv(&self) -> Result<ForkPointResponse, TryRecvError> {
         self.receiver.try_recv()
     }
 }
