@@ -62,7 +62,7 @@ pub fn search_link_recursive(
             {
                 let needle_position = i + pos;
                 let mut insert_position = i;
-                for child in children.iter_mut() {
+                for child in &mut children {
                     insert_position += 1;
                     commits.insert(insert_position, child.to_owned());
                 }
