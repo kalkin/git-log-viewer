@@ -78,6 +78,7 @@ impl vte::Perform for Counter {
 
                 38 => {
                     assert!(iter.next().unwrap()[0] == 5);
+                    #[allow(clippy::cast_possible_truncation)]
                     let color = iter.next().unwrap()[0] as u8;
                     self.style.color.front = ColorType::Color(Color::from_256colors(color))
                 }
@@ -93,6 +94,7 @@ impl vte::Perform for Counter {
 
                 48 => {
                     assert!(iter.next().unwrap()[0] == 5);
+                    #[allow(clippy::cast_possible_truncation)]
                     let color = iter.next().unwrap()[0] as u8;
                     self.style.color.back = ColorType::Color(Color::from_256colors(color))
                 }
