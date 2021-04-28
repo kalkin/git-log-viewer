@@ -1,5 +1,7 @@
 use std::process::{Command, Stdio};
 
+use git_subtrees_improved::SubtreeConfig;
+
 use cursive::event::{Event, EventResult};
 use cursive::theme::Style;
 use cursive::traits::*;
@@ -92,7 +94,8 @@ impl DetailView for CommitDetailView {
 
         // Modules
         if !entry.subtrees().is_empty() {
-            let module_names: Vec<String> = entry.subtrees().iter().map(|m| m.id()).collect();
+            let module_names: Vec<String> =
+                entry.subtrees().iter().map(SubtreeConfig::id).collect();
             content.append(color_span(
                 "Modules:         ",
                 &module_names.join(", "),
