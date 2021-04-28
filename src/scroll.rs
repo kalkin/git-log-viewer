@@ -143,6 +143,7 @@ where
         self.inner.required_size(constraint)
     }
 
+    #[allow(clippy::too_many_lines)]
     fn on_event(&mut self, event: Event) -> EventResult {
         match &self.focus {
             CustomScrollFocus::Content => match event {
