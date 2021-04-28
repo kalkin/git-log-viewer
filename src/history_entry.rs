@@ -461,12 +461,12 @@ pub trait DisplayableCommit {
 // I'm not proud of this code. Ohh Omnissiah be merciful on my soul‼
 fn adjust_string(text: &str, expected: usize) -> String {
     assert!(expected > 0, "Minimal length should be 1");
-    let actual = unicode_width::UnicodeWidthStr::width(text);
+    let length = unicode_width::UnicodeWidthStr::width(text);
     let mut result = String::from(text);
-    match actual.cmp(&expected) {
+    match length.cmp(&expected) {
         Ordering::Less => {
-            let end = expected - actual;
-            for _ in 0..end {
+            let actual = expected - length;
+            for _ in 0..actual {
                 result.push(' ');
             }
         }
