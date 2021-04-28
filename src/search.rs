@@ -20,6 +20,7 @@ pub struct SearchState {
 }
 
 impl SearchState {
+    #[must_use]
     pub fn new(default_style: Style) -> Self {
         let mut style = default_style;
         style.color.back = ColorType::Color(Color::Dark(BaseColor::Red));
@@ -33,11 +34,13 @@ impl SearchState {
         }
     }
 
+    #[must_use]
     pub fn style(&self) -> Style {
         self.style
     }
 }
 
+#[must_use]
 pub fn search_link_recursive(
     working_dir: &str,
     commit: &Commit,

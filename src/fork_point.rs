@@ -29,6 +29,7 @@ pub struct ForkPointResponse {
 }
 
 impl ForkPointThread {
+    #[must_use]
     pub fn is_fork_point(working_dir: &str, first: &Oid, second: &Oid) -> bool {
         is_ancestor(working_dir, &first.0, &second.0).expect("Execute merge-base --is-ancestor")
     }

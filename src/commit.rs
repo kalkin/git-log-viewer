@@ -53,73 +53,92 @@ pub struct Commit {
 }
 
 impl Commit {
+    #[must_use]
     pub fn author_name(&self) -> &String {
         &self.author_name
     }
+    #[must_use]
     pub fn author_email(&self) -> &String {
         &self.author_email
     }
+    #[must_use]
     pub fn author_date(&self) -> &String {
         &self.author_date
     }
 
+    #[must_use]
     pub fn author_rel_date(&self) -> &String {
         &self.author_rel_date
     }
 
+    #[must_use]
     pub fn bellow(&self) -> Option<&Oid> {
         self.bellow.as_ref()
     }
 
     #[allow(dead_code)]
+    #[must_use]
     pub fn branches(&self) -> &Vec<GitRef> {
         &self.branches
     }
 
+    #[must_use]
     pub fn body(&self) -> &String {
         &self.body
     }
 
+    #[must_use]
     pub fn committer_name(&self) -> &String {
         &self.committer_name
     }
+    #[must_use]
     pub fn committer_email(&self) -> &String {
         &self.committer_email
     }
+    #[must_use]
     pub fn committer_date(&self) -> &String {
         &self.committer_date
     }
 
+    #[must_use]
     pub fn children(&self) -> &Vec<Oid> {
         &self.children
     }
 
+    #[must_use]
     pub fn id(&self) -> &Oid {
         &self.id
     }
 
+    #[must_use]
     pub fn icon(&self) -> &String {
         &self.icon
     }
 
     #[allow(dead_code)]
+    #[must_use]
     pub fn is_head(&self) -> bool {
         self.is_head
     }
 
+    #[must_use]
     pub fn is_merge(&self) -> bool {
         self.bellow.is_some() && !self.children.is_empty()
     }
+    #[must_use]
     pub fn is_commit_link(&self) -> bool {
         self.is_commit_link
     }
 
+    #[must_use]
     pub fn references(&self) -> &Vec<GitRef> {
         &self.references
     }
+    #[must_use]
     pub fn short_id(&self) -> &String {
         &self.short_id
     }
+    #[must_use]
     pub fn subject(&self) -> &String {
         &self.subject
     }
@@ -129,6 +148,7 @@ const REV_FORMAT: &str =
     "--format=%x1f%H%x1f%h%x1f%P%x1f%D%x1f%aN%x1f%aE%x1f%aI%x1f%ad%x1f%cN%x1f%cE%x1f%cI%x1f%cd%x1f%s%x1f%b%x1e";
 
 impl Commit {
+    #[must_use]
     pub fn new(data: &str, is_commit_link: bool) -> Self {
         let mut split = data.split('\x1f');
         split.next(); // skip commit: XXXX line
@@ -300,6 +320,7 @@ pub fn commits_for_range<T: AsRef<str>>(
     Ok(result)
 }
 
+#[must_use]
 pub fn child_history(working_dir: &str, commit: &Commit) -> Vec<Commit> {
     let bellow = commit.bellow.as_ref().expect("Expected merge commit");
     let first_child = commit.children.get(0).expect("Expected merge commit");

@@ -248,6 +248,7 @@ impl HistoryEntry {
 
 // Public interface
 impl HistoryEntry {
+    #[must_use]
     pub fn new(
         commit: Commit,
         level: u8,
@@ -284,26 +285,32 @@ impl HistoryEntry {
         self.fork_point = ForkPointCalculation::Done(t);
     }
 
+    #[must_use]
     pub fn special(&self) -> &SpecialSubject {
         &self.special_subject
     }
 
+    #[must_use]
     pub fn commit(&self) -> &Commit {
         &self.commit
     }
 
+    #[must_use]
     pub fn id(&self) -> &Oid {
         self.commit.id()
     }
 
+    #[must_use]
     pub fn author_date(&self) -> &String {
         self.commit.author_rel_date()
     }
 
+    #[must_use]
     pub fn author_name(&self) -> &String {
         self.commit.author_name()
     }
 
+    #[must_use]
     pub fn is_fork_point(&self) -> bool {
         match self.fork_point {
             ForkPointCalculation::Done(t) => t,
@@ -315,18 +322,22 @@ impl HistoryEntry {
         self.folded = t;
     }
 
+    #[must_use]
     pub fn is_folded(&self) -> bool {
         self.folded
     }
 
+    #[must_use]
     pub fn has_children(&self) -> bool {
         self.commit.is_merge()
     }
 
+    #[must_use]
     pub fn level(&self) -> u8 {
         self.level
     }
 
+    #[must_use]
     pub fn is_commit_link(&self) -> bool {
         self.commit.is_commit_link()
     }
@@ -336,6 +347,7 @@ impl HistoryEntry {
     }
 
     /// Check if string is contained any where in commit data
+    #[must_use]
     pub fn search_matches(&self, needle: &str, ignore_case: bool) -> bool {
         let mut candidates = vec![
             self.commit.author_name(),
@@ -367,9 +379,11 @@ impl HistoryEntry {
         false
     }
 
+    #[must_use]
     pub fn subtrees(&self) -> &Vec<SubtreeConfig> {
         &self.subtrees
     }
+    #[must_use]
     pub fn url(&self) -> Option<Url> {
         if self.subtrees.len() == 1 {
             let module = self.subtrees.first().unwrap();
@@ -381,6 +395,7 @@ impl HistoryEntry {
         }
         self.repo_url.clone()
     }
+    #[must_use]
     pub fn render(
         &self,
         search_state: Option<&SearchState>,
@@ -424,6 +439,7 @@ impl HistoryEntry {
         buf
     }
 }
+#[must_use]
 pub fn split_subject(subject: &str) -> (Option<String>, Option<String>) {
     let reg = regex!(r"^\w+\((.+)\): .+");
     let mut subject_module = None;
