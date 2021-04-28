@@ -74,19 +74,6 @@ pub fn steps() -> Steps<crate::MyWorld> {
         }),
     );
 
-    steps.then_async(
-        "commit is fork point",
-        t!(|world, _ctx| {
-            let commit: &Commit = world.commit.as_ref().unwrap();
-            assert!(
-                commit.is_fork_point(),
-                "Commit {} should be fork point",
-                commit.short_id()
-            );
-            return world;
-        }),
-    );
-
     steps.when_regex_async(
         r#"^(bellow|above) commit is (.+)$"#,
         t!(|world, ctx| {
