@@ -65,7 +65,7 @@ fn main() {
     siv.add_fullscreen_layer(spl_view);
     siv.add_global_callback('q', |s| s.quit());
 
-    let mut theme: cursive::theme::Theme = Default::default();
+    let mut theme: cursive::theme::Theme = cursive::theme::Theme::default();
     theme.palette[View] = cursive::theme::Color::TerminalDefault;
     theme.palette[Primary] = cursive::theme::Color::TerminalDefault;
     siv.set_theme(theme);
