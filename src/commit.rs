@@ -158,9 +158,7 @@ impl Commit {
         let mut branches: Vec<GitRef> = Vec::new();
         let mut tags: Vec<GitRef> = Vec::new();
         for s in references_record.split(", ") {
-            if s.is_empty() {
-                continue;
-            } else if s == "HEAD" {
+            if s == "HEAD" {
                 is_head = true
             } else if s.starts_with("HEAD -> ") {
                 is_head = true;
@@ -173,6 +171,8 @@ impl Commit {
                 let tag = split_2[1].to_string();
                 tags.push(GitRef(tag.clone()));
                 references.push(GitRef(tag));
+            } else if s.is_empty() {
+                // do nothing
             } else {
                 let branch = s.to_string();
                 branches.push(GitRef(branch.clone()));
