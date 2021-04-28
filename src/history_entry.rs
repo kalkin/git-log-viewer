@@ -10,6 +10,7 @@ use crate::search::SearchState;
 use crate::style::{date_style, id_style, mod_style, name_style, ref_style, DEFAULT_STYLE};
 
 use crate::fork_point::ForkPointCalculation;
+use std::cmp::Ordering;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
@@ -442,53 +443,55 @@ pub trait DisplayableCommit {
 }
 
 // I'm not proud of this code. Ohh Omnissiah be merciful on my soul‼
-fn adjust_string(text: &str, len: usize) -> String {
-    assert!(len > 0, "Minimal length should be 1");
+fn adjust_string(text: &str, expected: usize) -> String {
+    assert!(expected > 0, "Minimal length should be 1");
     let actual = unicode_width::UnicodeWidthStr::width(text);
-    let expected = len;
     let mut result = String::from(text);
-    if actual < len {
-        let end = len - actual;
-        for _ in 0..end {
-            result.push(' ');
-        }
-    } else if actual > len {
-        let words = text.unicode_words().collect::<Vec<&str>>();
-        result = "".to_string();
-        for w in words {
-            let actual = UnicodeWidthStr::width(result.as_str()) + UnicodeWidthStr::width(w);
-            if actual > expected {
-                break;
-            }
-            result.push_str(w);
-            result.push(' ');
-        }
-
-        if result.is_empty() {
-            let words = text.unicode_words().collect::<Vec<&str>>();
-            result.push_str(words.get(0).unwrap());
-        }
-
-        let actual = UnicodeWidthStr::width(result.as_str());
-        if actual > expected {
-            let mut tmp = String::new();
-            let mut i = 0;
-            for g in result.as_str().graphemes(true) {
-                tmp.push_str(g);
-                i += 1;
-                if i == expected - 1 {
-                    break;
-                }
-            }
-            result = tmp;
-            result.push('…');
-        } else {
+    match actual.cmp(&expected) {
+        Ordering::Less => {
             let end = expected - actual;
             for _ in 0..end {
                 result.push(' ');
             }
         }
-        return result;
+        Ordering::Equal => {}
+        Ordering::Greater => {
+            let words = text.unicode_words().collect::<Vec<&str>>();
+            result = "".to_string();
+            for w in words {
+                let actual = UnicodeWidthStr::width(result.as_str()) + UnicodeWidthStr::width(w);
+                if actual > expected {
+                    break;
+                }
+                result.push_str(w);
+                result.push(' ');
+            }
+
+            if result.is_empty() {
+                let words = text.unicode_words().collect::<Vec<&str>>();
+                result.push_str(words.get(0).unwrap());
+            }
+
+            let actual = UnicodeWidthStr::width(result.as_str());
+            if actual > expected {
+                let mut tmp = String::new();
+                let mut i = 0;
+                for g in result.as_str().graphemes(true) {
+                    tmp.push_str(g);
+                    i += 1;
+                    if i == expected - 1 {
+                        break;
+                    }
+                }
+                result = tmp;
+                result.push('…');
+            } else {
+                let end = expected - actual;
+                for _ in 0..end {
+                    result.push(' ');
+                }
+            }
+        }
     }
     result
 }
