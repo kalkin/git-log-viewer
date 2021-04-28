@@ -142,7 +142,7 @@ impl History {
                             second: above_commit.unwrap().children().first().unwrap().clone(),
                             working_dir: self.working_dir.clone(),
                         });
-                        fork_point_calc = ForkPointCalculation::Needed;
+                        fork_point_calc = ForkPointCalculation::InProgress;
                     }
                 }
                 let entry: HistoryEntry = HistoryEntry::new(
@@ -282,7 +282,7 @@ impl History {
                         second: above_commit.unwrap().children().first().unwrap().clone(),
                         working_dir: self.working_dir.clone(),
                     });
-                    fork_point_calc = ForkPointCalculation::Needed;
+                    fork_point_calc = ForkPointCalculation::InProgress;
                 }
             }
             let e = HistoryEntry::new(c, level, self.selected_entry().url(), fork_point_calc);
@@ -365,7 +365,7 @@ impl History {
                             c.to_owned(),
                             level,
                             url.clone(),
-                            ForkPointCalculation::Needed,
+                            ForkPointCalculation::InProgress,
                         );
                         self.history.insert(insert_position, entry);
                     }
@@ -411,7 +411,7 @@ impl History {
                             second: above_commit.unwrap().children().first().unwrap().clone(),
                             working_dir: self.working_dir.clone(),
                         });
-                        ForkPointCalculation::Needed
+                        ForkPointCalculation::InProgress
                     } else {
                         ForkPointCalculation::Done(false)
                     }

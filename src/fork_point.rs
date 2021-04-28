@@ -8,7 +8,7 @@ use std::thread;
 
 pub enum ForkPointCalculation {
     Done(bool),
-    Needed,
+    InProgress,
 }
 
 pub struct ForkPointThread {

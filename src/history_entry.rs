@@ -306,7 +306,7 @@ impl HistoryEntry {
     pub fn is_fork_point(&self) -> bool {
         match self.fork_point {
             ForkPointCalculation::Done(t) => t,
-            ForkPointCalculation::Needed => false,
+            ForkPointCalculation::InProgress => false,
         }
     }
 
