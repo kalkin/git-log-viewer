@@ -46,7 +46,7 @@ impl History {
         let subtree_modules = subtrees(working_dir)?;
         let length = history_length(working_dir, range, vec![])?;
         let search_state = SearchState::new(DEFAULT_STYLE.to_owned());
-        let fork_point_thread = ForkPointThread::new();
+        let fork_point_thread = ForkPointThread::default();
         let subtree_thread = SubtreesThread::new(working_dir.to_string(), subtree_modules.to_vec());
 
         let mut url: Option<Url> = None;

@@ -29,7 +29,23 @@ pub struct ForkPointResponse {
 }
 
 impl ForkPointThread {
-    pub fn new() -> Self {
+    pub fn is_fork_point(working_dir: &str, first: &Oid, second: &Oid) -> bool {
+        is_ancestor(working_dir, &first.0, &second.0).expect("Execute merge-base --is-ancestor")
+    }
+
+    pub fn send(&self, req: ForkPointRequest) {
+        if let Err(e) = self.sender.send(req) {
+            log::error!("Error {:?}", e)
+        }
+    }
+
+    pub fn try_recv(&self) -> Result<ForkPointResponse, TryRecvError> {
+        self.receiver.try_recv()
+    }
+}
+
+impl Default for ForkPointThread {
+    fn default() -> Self {
         let (tx_1, rx_1): (Sender<ForkPointResponse>, Receiver<ForkPointResponse>) =
             mpsc::channel();
         let (tx_2, rx_2): (Sender<ForkPointRequest>, Receiver<ForkPointRequest>) = mpsc::channel();
@@ -48,19 +64,5 @@ impl ForkPointThread {
             receiver: rx_1,
             sender: tx_2,
         }
-    }
-
-    pub fn is_fork_point(working_dir: &str, first: &Oid, second: &Oid) -> bool {
-        is_ancestor(working_dir, &first.0, &second.0).expect("Execute merge-base --is-ancestor")
-    }
-
-    pub fn send(&self, req: ForkPointRequest) {
-        if let Err(e) = self.sender.send(req) {
-            log::error!("Error {:?}", e)
-        }
-    }
-
-    pub fn try_recv(&self) -> Result<ForkPointResponse, TryRecvError> {
-        self.receiver.try_recv()
     }
 }
