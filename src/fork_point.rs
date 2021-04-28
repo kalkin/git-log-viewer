@@ -40,6 +40,7 @@ impl ForkPointThread {
         }
     }
 
+    #[allow(clippy::missing_errors_doc)]
     pub fn try_recv(&self) -> Result<ForkPointResponse, TryRecvError> {
         self.receiver.try_recv()
     }

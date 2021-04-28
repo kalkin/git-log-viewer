@@ -255,6 +255,11 @@ impl Commit {
     }
 }
 
+/// Return commit count with `--first-parent`
+///
+/// # Errors
+///
+/// Returns a [`PosixError`] if `working_dir` does not exist or `rev_range` is invalid.
 pub fn history_length(
     working_dir: &str,
     rev_range: &str,
@@ -274,6 +279,12 @@ pub fn history_length(
         .expect("Failed to parse commit length"))
 }
 
+/// Return specified amount of commits for a `rev_range`.
+///
+/// # Errors
+///
+/// Returns a [`PosixError`] if `working_dir` does not exist, `rev_range` is invalid or `max` &
+/// `skip` combination is `>` commit length with `--first-parent`.
 pub fn commits_for_range<T: AsRef<str>>(
     working_dir: &str,
     rev_range: &str,
@@ -377,6 +388,10 @@ fn to_commit(working_dir: &str, oid: &Oid, is_commit_link: bool) -> Commit {
     Commit::new(lines.get(1).unwrap(), is_commit_link)
 }
 
+/// Return the mergebase for two commit ids
+///
+/// # Errors
+/// Return [`PosixError`] when `merge-base` command fails. Should never happen.
 pub fn merge_base(working_dir: &str, p1: &Oid, p2: &Oid) -> Result<Option<Oid>, PosixError> {
     let output = git_wrapper::git_cmd_out(working_dir, vec!["merge-base", &p1.0, &p2.0]);
     let tmp = String::from_utf8(output?.stdout)
