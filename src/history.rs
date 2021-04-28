@@ -97,7 +97,7 @@ impl History {
             max_modules: modules_width(),
         };
 
-        entry.render(search_state, width_config)
+        entry.render(search_state, &width_config)
     }
 
     fn calc_max_name_date(&self, height: usize) -> (usize, usize) {

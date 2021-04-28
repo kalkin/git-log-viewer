@@ -384,7 +384,7 @@ impl HistoryEntry {
     pub fn render(
         &self,
         search_state: Option<&SearchState>,
-        widths: WidthConfig,
+        widths: &WidthConfig,
     ) -> SpannedString<Style> {
         let style = self.default_style();
         let mut buf = SpannedString::new();
