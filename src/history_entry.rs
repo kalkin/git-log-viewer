@@ -88,7 +88,8 @@ impl HistoryEntry {
         match (!self.subtrees.is_empty(), self.subject_module.is_some()) {
             (true, _) => {
                 text = ":".to_string();
-                let subtree_modules: Vec<String> = self.subtrees.iter().map(|m| m.id()).collect();
+                let subtree_modules: Vec<String> =
+                    self.subtrees.iter().map(SubtreeConfig::id).collect();
                 text.push_str(&subtree_modules.join(" :"));
                 if text.width() > max_len {
                     text = format!("({} modules)", subtree_modules.len());
@@ -347,7 +348,7 @@ impl HistoryEntry {
             &self.subject,
         ];
 
-        let x: Vec<String> = self.subtrees.iter().map(|m| m.id()).collect();
+        let x: Vec<String> = self.subtrees.iter().map(SubtreeConfig::id).collect();
         candidates.extend(&x);
 
         for r in self.commit.references().iter() {
