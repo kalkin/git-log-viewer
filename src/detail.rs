@@ -4,7 +4,7 @@ use git_subtrees_improved::SubtreeConfig;
 
 use cursive::event::{Event, EventResult};
 use cursive::theme::Style;
-use cursive::traits::*;
+use cursive::traits::Scrollable;
 use cursive::utils::span::SpannedString;
 use cursive::views::{ScrollView, TextContent, TextView};
 use cursive::{Printer, Vec2, View};

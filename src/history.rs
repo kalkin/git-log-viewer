@@ -1,6 +1,6 @@
 use cursive::direction::Direction;
 use cursive::event::{Event, EventResult, Key};
-use cursive::theme::*;
+use cursive::theme::{Effect, Style};
 use cursive::utils::span::{SpannedStr, SpannedString};
 use cursive::{Printer, Rect, Vec2, XY};
 use unicode_width::UnicodeWidthStr;
@@ -10,7 +10,7 @@ use git_subtrees_improved::{subtrees, SubtreeConfig};
 use git_wrapper::is_ancestor;
 use posix_errors::PosixError;
 
-use crate::commit::*;
+use crate::commit::{child_history, commits_for_range, history_length, Commit};
 use crate::config::{author_name_width, author_rel_date_width, modules_width};
 use crate::fork_point::{ForkPointCalculation, ForkPointRequest, ForkPointThread};
 use crate::github::{GitHubRequest, GitHubThread};
