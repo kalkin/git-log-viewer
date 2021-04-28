@@ -120,7 +120,7 @@ where
     }
 
     fn required_size(&mut self, constraint: Vec2) -> Vec2 {
-        return constraint;
+        constraint
     }
     fn on_event(&mut self, e: Event) -> EventResult {
         match e {

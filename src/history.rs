@@ -126,8 +126,7 @@ impl History {
     fn toggle_folding(&mut self) {
         let pos = self.selected + 1;
         if self.selected_entry().is_folded() {
-            let mut children: Vec<Commit> =
-                child_history(&self.working_dir, self.selected_commit());
+            let children: Vec<Commit> = child_history(&self.working_dir, self.selected_commit());
             let mut above_commit = Some(self.selected_commit());
             for (i, c) in children.into_iter().enumerate() {
                 if !self.subtree_modules.is_empty() {
@@ -135,17 +134,17 @@ impl History {
                         oid: c.id().clone(),
                     })
                 }
-                let fork_point_calc = if above_commit.is_some() && above_commit.unwrap().is_merge()
-                {
-                    self.fork_point_thread.send(ForkPointRequest {
-                        first: c.id().clone(),
-                        second: above_commit.unwrap().children().first().unwrap().clone(),
-                        working_dir: self.working_dir.clone(),
-                    });
-                    ForkPointCalculation::Needed
-                } else {
-                    ForkPointCalculation::Done(false)
-                };
+                let mut fork_point_calc = ForkPointCalculation::Done(false);
+                if let Some(c) = above_commit {
+                    if c.is_merge() {
+                        self.fork_point_thread.send(ForkPointRequest {
+                            first: c.id().clone(),
+                            second: above_commit.unwrap().children().first().unwrap().clone(),
+                            working_dir: self.working_dir.clone(),
+                        });
+                        fork_point_calc = ForkPointCalculation::Needed;
+                    }
+                }
                 let entry: HistoryEntry = HistoryEntry::new(
                     c,
                     self.selected_entry().level() + 1,
@@ -275,16 +274,17 @@ impl History {
                     oid: c.id().clone(),
                 })
             }
-            let fork_point_calc = if above_commit.is_some() && above_commit.unwrap().is_merge() {
-                self.fork_point_thread.send(ForkPointRequest {
-                    first: c.id().clone(),
-                    second: above_commit.unwrap().children().first().unwrap().clone(),
-                    working_dir: self.working_dir.clone(),
-                });
-                ForkPointCalculation::Needed
-            } else {
-                ForkPointCalculation::Done(false)
-            };
+            let mut fork_point_calc = ForkPointCalculation::Done(false);
+            if let Some(c) = above_commit {
+                if c.is_merge() {
+                    self.fork_point_thread.send(ForkPointRequest {
+                        first: c.id().clone(),
+                        second: above_commit.unwrap().children().first().unwrap().clone(),
+                        working_dir: self.working_dir.clone(),
+                    });
+                    fork_point_calc = ForkPointCalculation::Needed;
+                }
+            }
             let e = HistoryEntry::new(c, level, self.selected_entry().url(), fork_point_calc);
             if let Some(url) = entry.url() {
                 if let SpecialSubject::PrMerge(pr_id) = entry.special() {
@@ -404,14 +404,17 @@ impl History {
                         oid: c.id().clone(),
                     })
                 }
-                let fork_point_calc = if above_commit.is_some() && above_commit.unwrap().is_merge()
-                {
-                    self.fork_point_thread.send(ForkPointRequest {
-                        first: c.id().clone(),
-                        second: above_commit.unwrap().children().first().unwrap().clone(),
-                        working_dir: self.working_dir.clone(),
-                    });
-                    ForkPointCalculation::Needed
+                let fork_point_calc = if let Some(c) = above_commit {
+                    if c.is_merge() {
+                        self.fork_point_thread.send(ForkPointRequest {
+                            first: c.id().clone(),
+                            second: above_commit.unwrap().children().first().unwrap().clone(),
+                            working_dir: self.working_dir.clone(),
+                        });
+                        ForkPointCalculation::Needed
+                    } else {
+                        ForkPointCalculation::Done(false)
+                    }
                 } else {
                     ForkPointCalculation::Done(false)
                 };

@@ -302,13 +302,6 @@ impl HistoryEntry {
         self.commit.author_name()
     }
 
-    pub fn fork_points_calculation_needed(&self) -> bool {
-        match self.fork_point {
-            ForkPointCalculation::Done(_) => false,
-            ForkPointCalculation::Needed => true,
-        }
-    }
-
     pub fn is_fork_point(&self) -> bool {
         match self.fork_point {
             ForkPointCalculation::Done(t) => t,
@@ -378,7 +371,7 @@ impl HistoryEntry {
     pub(crate) fn url(&self) -> Option<Url> {
         if self.subtrees.len() == 1 {
             let module = self.subtrees.first().unwrap();
-            if let Some(v) = module.upstream().or(module.origin()) {
+            if let Some(v) = module.upstream().or_else(|| module.origin()) {
                 if let Ok(u) = Url::parse(&v) {
                     return Some(u);
                 }
@@ -429,16 +422,16 @@ impl HistoryEntry {
         buf
     }
 }
-pub fn split_subject(subject: &String) -> (Option<String>, Option<String>) {
+pub fn split_subject(subject: &str) -> (Option<String>, Option<String>) {
     let reg = regex!(r"^\w+\((.+)\): .+");
     let mut subject_module = None;
     let mut short_subject = None;
     if let Some(caps) = reg.captures(&subject) {
         let x = caps.get(1).expect("Expected 1 capture group");
         subject_module = Some(x.as_str().to_string());
-        let mut f = subject.clone();
+        let mut f = subject.to_string();
         f.truncate(x.start() - 1);
-        f.push_str(&subject.clone().split_off(x.end() + 1));
+        f.push_str(&subject.to_string().split_off(x.end() + 1));
         short_subject = Some(f);
     }
     (subject_module, short_subject)
