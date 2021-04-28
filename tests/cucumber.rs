@@ -2,8 +2,10 @@ use std::convert::Infallible;
 
 use cucumber_rust::{async_trait, Context, Cucumber, World};
 
-use glv_core::Commit;
+use glv::commit::Commit;
+use glv::history_entry::HistoryEntry;
 
+mod history_entry_steps;
 mod steps;
 
 #[derive(derive_more::Display, derive_more::FromStr)]
@@ -14,6 +16,8 @@ pub struct MyWorld {
     url: Url,
     working_dir: tempfile::TempDir,
     commit: Option<Commit>,
+    entry: Option<HistoryEntry>,
+    entries: Option<Vec<HistoryEntry>>,
     range: Option<Vec<Commit>>,
 }
 
@@ -26,6 +30,8 @@ impl World for MyWorld {
             url: Url(String::new()),
             working_dir: tempfile::tempdir().unwrap(),
             commit: None,
+            entry: None,
+            entries: None,
             range: None,
         });
     }
@@ -38,6 +44,7 @@ async fn main() {
         .features(&["features"])
         // Adds the implementation of our steps to the runner
         .steps(steps::steps())
+        .steps(history_entry_steps::steps())
         .context(Context::new())
         // Parses the command line arguments if passed
         .cli()

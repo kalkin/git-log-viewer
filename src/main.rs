@@ -7,7 +7,8 @@ use crate::scroll::CustomScrollView;
 use crate::views::DynamicSplitView;
 
 #[macro_use]
-mod core;
+mod commit;
+mod config;
 mod detail;
 mod fork_point;
 mod github;

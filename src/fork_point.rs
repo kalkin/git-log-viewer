@@ -1,10 +1,15 @@
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::thread::JoinHandle;
 
-use crate::core::Oid;
+use crate::commit::Oid;
 use git_wrapper::is_ancestor;
 use std::sync::mpsc;
 use std::thread;
+
+pub enum ForkPointCalculation {
+    Done(bool),
+    Needed,
+}
 
 pub struct ForkPointThread {
     _thread: JoinHandle<()>,
@@ -30,15 +35,10 @@ impl ForkPointThread {
         let (tx_2, rx_2): (Sender<ForkPointRequest>, Receiver<ForkPointRequest>) = mpsc::channel();
         let child = thread::spawn(move || {
             while let Ok(v) = rx_2.recv() {
-                let t = is_ancestor(
-                    v.working_dir.as_str(),
-                    &v.first.to_string(),
-                    &v.second.to_string(),
-                )
-                .expect("Execute merge-base --is-ancestor");
+                let working_dir = v.working_dir.as_str();
                 tx_1.send(ForkPointResponse {
-                    oid: v.first,
-                    value: t,
+                    oid: v.first.clone(),
+                    value: ForkPointThread::is_fork_point(working_dir, &v.first, &v.second),
                 })
                 .unwrap();
             }
@@ -48,6 +48,10 @@ impl ForkPointThread {
             receiver: rx_1,
             sender: tx_2,
         }
+    }
+
+    pub fn is_fork_point(working_dir: &str, first: &Oid, second: &Oid) -> bool {
+        is_ancestor(working_dir, &first.0, &second.0).expect("Execute merge-base --is-ancestor")
     }
 
     pub(crate) fn send(&self, req: ForkPointRequest) {

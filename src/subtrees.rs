@@ -5,7 +5,7 @@ use std::thread::JoinHandle;
 
 use git_subtrees_improved::{changed_modules, SubtreeConfig};
 
-use crate::core::Oid;
+use crate::commit::Oid;
 
 pub struct SubtreeChangesRequest {
     pub oid: Oid,

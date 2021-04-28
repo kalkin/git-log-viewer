@@ -4,7 +4,7 @@ use std::thread::JoinHandle;
 
 use curl::easy::Easy;
 
-use crate::core::Oid;
+use crate::commit::Oid;
 use std::thread;
 use tinyjson::JsonValue;
 use url::Url;

@@ -10,8 +10,9 @@ use git_subtrees_improved::{subtrees, SubtreeConfig};
 use git_wrapper::is_ancestor;
 use posix_errors::PosixError;
 
-use crate::core::*;
-use crate::fork_point::{ForkPointRequest, ForkPointThread};
+use crate::commit::*;
+use crate::config::{author_name_width, author_rel_date_width, modules_width};
+use crate::fork_point::{ForkPointCalculation, ForkPointRequest, ForkPointThread};
 use crate::github::{GitHubRequest, GitHubThread};
 use crate::history_entry::{HistoryEntry, SpecialSubject, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
@@ -106,12 +107,12 @@ impl History {
             let mut iter = self.history.iter();
             for _ in 0..height {
                 if let Some(entry) = iter.next() {
-                    if entry.commit().author_rel_date().len() > max_date {
-                        let t = entry.commit().author_rel_date().as_str();
+                    if entry.author_date().len() > max_date {
+                        let t = entry.author_date().as_str();
                         max_date = UnicodeWidthStr::width(t);
                     }
-                    if entry.commit().author_name().len() > max_author {
-                        let t = entry.commit().author_name().as_str();
+                    if entry.author_name().len() > max_author {
+                        let t = entry.author_name().as_str();
                         max_author = UnicodeWidthStr::width(t);
                     }
                 } else {
@@ -125,33 +126,37 @@ impl History {
     fn toggle_folding(&mut self) {
         let pos = self.selected + 1;
         if self.selected_entry().is_folded() {
-            let children: Vec<Commit> = child_history(&self.working_dir, self.selected_commit());
+            let mut children: Vec<Commit> =
+                child_history(&self.working_dir, self.selected_commit());
             let mut above_commit = Some(self.selected_commit());
-            for (i, c) in children.iter().cloned().enumerate() {
+            for (i, c) in children.into_iter().enumerate() {
                 if !self.subtree_modules.is_empty() {
                     self.subtree_thread.send(SubtreeChangesRequest {
                         oid: c.id().clone(),
                     })
                 }
-                if above_commit.is_some()
-                    && above_commit.unwrap().is_merge()
-                    && c.fork_points_calculation_needed()
+                let fork_point_calc = if above_commit.is_some() && above_commit.unwrap().is_merge()
                 {
                     self.fork_point_thread.send(ForkPointRequest {
                         first: c.id().clone(),
                         second: above_commit.unwrap().children().first().unwrap().clone(),
                         working_dir: self.working_dir.clone(),
                     });
-                }
-                let entry = HistoryEntry::new(
+                    ForkPointCalculation::Needed
+                } else {
+                    ForkPointCalculation::Done(false)
+                };
+                let entry: HistoryEntry = HistoryEntry::new(
                     c,
                     self.selected_entry().level() + 1,
                     self.selected_entry().url(),
+                    fork_point_calc,
                 );
+
                 if let Some(url) = entry.url() {
                     if let SpecialSubject::PrMerge(pr_id) = entry.special() {
                         self.github_thread.send(GitHubRequest {
-                            oid: entry.commit().id().clone(),
+                            oid: entry.id().clone(),
                             url,
                             pr_id: pr_id.clone(),
                         });
@@ -270,21 +275,21 @@ impl History {
                     oid: c.id().clone(),
                 })
             }
-            if above_commit.is_some()
-                && above_commit.unwrap().is_merge()
-                && c.fork_points_calculation_needed()
-            {
+            let fork_point_calc = if above_commit.is_some() && above_commit.unwrap().is_merge() {
                 self.fork_point_thread.send(ForkPointRequest {
                     first: c.id().clone(),
                     second: above_commit.unwrap().children().first().unwrap().clone(),
                     working_dir: self.working_dir.clone(),
                 });
-            }
-            let e = HistoryEntry::new(c, level, self.selected_entry().url());
+                ForkPointCalculation::Needed
+            } else {
+                ForkPointCalculation::Done(false)
+            };
+            let e = HistoryEntry::new(c, level, self.selected_entry().url(), fork_point_calc);
             if let Some(url) = entry.url() {
                 if let SpecialSubject::PrMerge(pr_id) = entry.special() {
                     self.github_thread.send(GitHubRequest {
-                        oid: entry.commit().id().clone(),
+                        oid: entry.id().clone(),
                         url,
                         pr_id: pr_id.clone(),
                     });
@@ -330,7 +335,7 @@ impl History {
                 continue;
             }
 
-            if e.commit().id() == link {
+            if e.id() == link {
                 let delta = i - self.selected;
                 if delta > 0 {
                     self.move_focus(delta, MoveDirection::Down);
@@ -356,7 +361,12 @@ impl History {
                     let url = e.url();
                     for c in commits.iter_mut() {
                         insert_position += 1;
-                        let entry = HistoryEntry::new(c.to_owned(), level, url.clone());
+                        let entry = HistoryEntry::new(
+                            c.to_owned(),
+                            level,
+                            url.clone(),
+                            ForkPointCalculation::Needed,
+                        );
                         self.history.insert(insert_position, entry);
                     }
                     let delta = needle_position - self.selected + 1;
@@ -394,21 +404,22 @@ impl History {
                         oid: c.id().clone(),
                     })
                 }
-                if above_commit.is_some()
-                    && above_commit.unwrap().is_merge()
-                    && c.fork_points_calculation_needed()
+                let fork_point_calc = if above_commit.is_some() && above_commit.unwrap().is_merge()
                 {
                     self.fork_point_thread.send(ForkPointRequest {
                         first: c.id().clone(),
                         second: above_commit.unwrap().children().first().unwrap().clone(),
                         working_dir: self.working_dir.clone(),
                     });
-                }
-                let entry = HistoryEntry::new(c, 0, url);
+                    ForkPointCalculation::Needed
+                } else {
+                    ForkPointCalculation::Done(false)
+                };
+                let entry = HistoryEntry::new(c, 0, url, fork_point_calc);
                 if let Some(url) = entry.url() {
                     if let SpecialSubject::PrMerge(pr_id) = entry.special() {
                         self.github_thread.send(GitHubRequest {
-                            oid: entry.commit().id().clone(),
+                            oid: entry.id().clone(),
                             url,
                             pr_id: pr_id.clone(),
                         });
@@ -455,8 +466,8 @@ impl cursive::view::View for History {
 
         while let Ok(v) = self.fork_point_thread.try_recv() {
             for e in self.history.iter_mut() {
-                if e.commit().id() == &v.oid {
-                    e.commit_mut().fork_point(v.value);
+                if e.id() == &v.oid {
+                    e.set_fork_point(v.value);
                     break;
                 }
             }
@@ -464,7 +475,7 @@ impl cursive::view::View for History {
 
         while let Ok(v) = self.subtree_thread.try_recv() {
             for e in self.history.iter_mut() {
-                if e.commit().id() == &v.oid {
+                if e.id() == &v.oid {
                     e.subtrees = v.subtrees;
                     break;
                 }
@@ -473,7 +484,7 @@ impl cursive::view::View for History {
 
         while let Ok(v) = self.github_thread.try_recv() {
             for e in self.history.iter_mut() {
-                if e.commit().id() == &v.oid {
+                if e.id() == &v.oid {
                     e.set_subject(v.subject);
                     break;
                 }
