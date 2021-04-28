@@ -197,7 +197,7 @@ impl Commit {
         let mut icon = " ".to_string();
         for (reg, c) in REGEXES.iter() {
             if reg.is_match(&subject) {
-                icon = c.to_string();
+                icon = (*c).to_string();
                 break;
             }
         }
