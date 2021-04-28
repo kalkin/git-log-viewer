@@ -40,6 +40,6 @@ pub fn bold_style(default: &Style) -> Style {
 lazy_static! {
     pub static ref DEFAULT_STYLE: Style = Style {
         color: ColorStyle::terminal_default(),
-        ..Default::default()
+        ..Style::default()
     };
 }
