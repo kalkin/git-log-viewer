@@ -404,8 +404,9 @@ impl History {
                         oid: c.id().clone(),
                     })
                 }
-                let fork_point_calc = if let Some(c) = above_commit {
-                    if c.is_merge() {
+                let mut fork_point_calc = ForkPointCalculation::Done(false);
+                if let Some(c) = above_commit {
+                    fork_point_calc = if c.is_merge() {
                         self.fork_point_thread.send(ForkPointRequest {
                             first: c.id().clone(),
                             second: above_commit.unwrap().children().first().unwrap().clone(),
@@ -415,9 +416,7 @@ impl History {
                     } else {
                         ForkPointCalculation::Done(false)
                     }
-                } else {
-                    ForkPointCalculation::Done(false)
-                };
+                }
                 let entry = HistoryEntry::new(c, 0, url, fork_point_calc);
                 if let Some(url) = entry.url() {
                     if let SpecialSubject::PrMerge(pr_id) = entry.special() {
