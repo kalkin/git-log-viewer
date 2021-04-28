@@ -1,5 +1,5 @@
 use clap::*;
-use cursive::theme::PaletteColor::*;
+use cursive::theme::PaletteColor::{Primary, View};
 use cursive::{Cursive, CursiveExt};
 
 use crate::detail::CommitDetailView;
