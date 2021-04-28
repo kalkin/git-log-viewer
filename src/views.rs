@@ -5,8 +5,8 @@ use crate::history_entry::HistoryEntry;
 use crate::scroll::ScrollableSelectable;
 
 enum FocusedView {
-    MAIN,
-    ASIDE,
+    Main,
+    Aside,
 }
 
 pub struct DynamicSplitView<V1, V2> {
@@ -23,7 +23,7 @@ impl<V1, V2> DynamicSplitView<V1, V2> {
             main,
             aside,
             aside_visible,
-            focused: FocusedView::MAIN,
+            focused: FocusedView::Main,
         }
     }
 }
@@ -34,9 +34,7 @@ where
     V2: View + DetailView,
 {
     fn draw(&self, printer: &Printer) {
-        if !self.aside_visible {
-            self.main.draw(printer);
-        } else {
+        if self.aside_visible {
             let aside_size;
             let main_size;
 
@@ -85,13 +83,13 @@ where
             }
             let aside_printer = printer.windowed(aside_rect);
             self.aside.draw(&aside_printer);
+        } else {
+            self.main.draw(printer);
         }
     }
 
     fn layout(&mut self, size: Vec2) {
-        if !self.aside_visible {
-            self.main.layout(size);
-        } else {
+        if self.aside_visible {
             let aside_size;
             let main_size;
 
@@ -116,26 +114,28 @@ where
             }
             self.main.layout(main_size);
             self.aside.layout(aside_size);
+        } else {
+            self.main.layout(size);
         }
     }
 
     fn required_size(&mut self, constraint: Vec2) -> Vec2 {
-        return constraint;
+        constraint
     }
     fn on_event(&mut self, e: Event) -> EventResult {
         match e {
             Event::Refresh => EventResult::Consumed(None),
             _ => match self.focused {
-                FocusedView::MAIN => match self.main.on_event(e.clone()) {
+                FocusedView::Main => match self.main.on_event(e.clone()) {
                     EventResult::Ignored => match e {
                         Event::Key(Key::Enter) => {
                             self.aside.set_detail(self.main.selected_item());
-                            self.focused = FocusedView::ASIDE;
+                            self.focused = FocusedView::Aside;
                             self.aside_visible = true;
                             EventResult::Consumed(None)
                         }
                         Event::Key(Key::Tab) => {
-                            self.focused = FocusedView::ASIDE;
+                            self.focused = FocusedView::Aside;
                             EventResult::Consumed(None)
                         }
                         _ => {
@@ -145,15 +145,15 @@ where
                     },
                     EventResult::Consumed(callback) => EventResult::Consumed(callback),
                 },
-                FocusedView::ASIDE => match self.aside.on_event(e.clone()) {
+                FocusedView::Aside => match self.aside.on_event(e.clone()) {
                     EventResult::Ignored => match e {
                         Event::Char('q') => {
                             self.aside_visible = false;
-                            self.focused = FocusedView::MAIN;
+                            self.focused = FocusedView::Main;
                             EventResult::Consumed(None)
                         }
                         Event::Key(Key::Tab) => {
-                            self.focused = FocusedView::MAIN;
+                            self.focused = FocusedView::Main;
                             EventResult::Consumed(None)
                         }
                         _ => {

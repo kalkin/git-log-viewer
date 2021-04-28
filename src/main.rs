@@ -1,5 +1,5 @@
-use clap::*;
-use cursive::theme::PaletteColor::*;
+use clap::{app_from_crate, crate_authors, crate_description, crate_name, crate_version, Arg};
+use cursive::theme::PaletteColor::{Primary, View};
 use cursive::{Cursive, CursiveExt};
 
 use crate::detail::CommitDetailView;
@@ -50,7 +50,7 @@ fn main() {
     let revision = matches.value_of("REVISION").unwrap();
 
     if let Some(p) = matches.values_of("path") {
-        paths = p.map(|s| s.to_string()).collect();
+        paths = p.map(ToString::to_string).collect();
     }
 
     cursive::logger::init();
@@ -63,9 +63,9 @@ fn main() {
     let spl_view = DynamicSplitView::new(main, aside);
 
     siv.add_fullscreen_layer(spl_view);
-    siv.add_global_callback('q', |s| s.quit());
+    siv.add_global_callback('q', Cursive::quit);
 
-    let mut theme: cursive::theme::Theme = Default::default();
+    let mut theme: cursive::theme::Theme = cursive::theme::Theme::default();
     theme.palette[View] = cursive::theme::Color::TerminalDefault;
     theme.palette[Primary] = cursive::theme::Color::TerminalDefault;
     siv.set_theme(theme);

@@ -1,3 +1,4 @@
+#![allow(clippy::module_name_repetitions)]
 use cursive::theme::{BaseColor, Color, ColorType, Effect, Style};
 
 use git_subtrees_improved::SubtreeConfig;
@@ -20,6 +21,7 @@ pub struct SearchState {
 }
 
 impl SearchState {
+    #[must_use]
     pub fn new(default_style: Style) -> Self {
         let mut style = default_style;
         style.color.back = ColorType::Color(Color::Dark(BaseColor::Red));
@@ -33,18 +35,25 @@ impl SearchState {
         }
     }
 
+    #[must_use]
     pub fn style(&self) -> Style {
         self.style
     }
 }
 
+#[must_use]
+/// # Panics
+///
+/// Panics when a non merge commit provided
 pub fn search_link_recursive(
     working_dir: &str,
     commit: &Commit,
     subtree_modules: &[SubtreeConfig],
     link: &Oid,
 ) -> Option<(usize, Vec<Commit>)> {
-    assert!(commit.is_merge(), "Expected a merge commit");
+    if !commit.is_merge() {
+        panic!("Expected a merge commit");
+    }
 
     let mut commits = child_history(working_dir, commit);
     for (i, c) in commits.iter_mut().enumerate() {
@@ -62,7 +71,7 @@ pub fn search_link_recursive(
             {
                 let needle_position = i + pos;
                 let mut insert_position = i;
-                for child in children.iter_mut() {
+                for child in &mut children {
                     insert_position += 1;
                     commits.insert(insert_position, child.to_owned());
                 }

@@ -1,8 +1,10 @@
 use std::process::{Command, Stdio};
 
+use git_subtrees_improved::SubtreeConfig;
+
 use cursive::event::{Event, EventResult};
 use cursive::theme::Style;
-use cursive::traits::*;
+use cursive::traits::Scrollable;
 use cursive::utils::span::SpannedString;
 use cursive::views::{ScrollView, TextContent, TextView};
 use cursive::{Printer, Vec2, View};
@@ -92,7 +94,8 @@ impl DetailView for CommitDetailView {
 
         // Modules
         if !entry.subtrees().is_empty() {
-            let module_names: Vec<String> = entry.subtrees().iter().map(|m| m.id()).collect();
+            let module_names: Vec<String> =
+                entry.subtrees().iter().map(SubtreeConfig::id).collect();
             content.append(color_span(
                 "Modules:         ",
                 &module_names.join(", "),
@@ -152,7 +155,7 @@ fn git_diff(commit: &Commit) -> Vec<SpannedString<Style>> {
         raw::parse_spans(delta_p.stdout)
     } else {
         let proc = git_wrapper::git_cmd_out(
-            working_dir.to_string(),
+            working_dir,
             vec![
                 "diff",
                 "--color=always",

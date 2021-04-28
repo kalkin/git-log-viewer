@@ -1,6 +1,6 @@
 use cursive::direction::Direction;
 use cursive::event::{Event, EventResult, Key};
-use cursive::theme::*;
+use cursive::theme::{Effect, Style};
 use cursive::utils::span::{SpannedStr, SpannedString};
 use cursive::{Printer, Rect, Vec2, XY};
 use unicode_width::UnicodeWidthStr;
@@ -10,7 +10,7 @@ use git_subtrees_improved::{subtrees, SubtreeConfig};
 use git_wrapper::is_ancestor;
 use posix_errors::PosixError;
 
-use crate::commit::*;
+use crate::commit::{child_history, commits_for_range, history_length, Commit};
 use crate::config::{author_name_width, author_rel_date_width, modules_width};
 use crate::fork_point::{ForkPointCalculation, ForkPointRequest, ForkPointThread};
 use crate::github::{GitHubRequest, GitHubThread};
@@ -18,7 +18,7 @@ use crate::history_entry::{HistoryEntry, SpecialSubject, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
 use crate::search::{search_link_recursive, SearchDirection, SearchState};
 use crate::style::DEFAULT_STYLE;
-use crate::subtrees::{SubtreeChangesRequest, SubtreesThread};
+use crate::subtrees::{SubtreeChangesRequest, SubtreeThread};
 
 pub struct History {
     range: String,
@@ -30,7 +30,7 @@ pub struct History {
     search_state: SearchState,
     paths: Vec<String>,
     fork_point_thread: ForkPointThread,
-    subtree_thread: SubtreesThread,
+    subtree_thread: SubtreeThread,
     github_thread: GitHubThread,
     url: Option<Url>,
 }
@@ -46,8 +46,8 @@ impl History {
         let subtree_modules = subtrees(working_dir)?;
         let length = history_length(working_dir, range, vec![])?;
         let search_state = SearchState::new(DEFAULT_STYLE.to_owned());
-        let fork_point_thread = ForkPointThread::new();
-        let subtree_thread = SubtreesThread::new(working_dir.to_string(), subtree_modules.to_vec());
+        let fork_point_thread = ForkPointThread::default();
+        let subtree_thread = SubtreeThread::new(working_dir.to_string(), subtree_modules.to_vec());
 
         let mut url: Option<Url> = None;
         if let Some(v) = git_wrapper::main_url(working_dir)? {
@@ -79,7 +79,7 @@ impl History {
     fn render_commit(
         &self,
         entry: &HistoryEntry,
-        render_config: RenderConfig,
+        render_config: &RenderConfig,
     ) -> SpannedString<Style> {
         let mut style = *DEFAULT_STYLE;
         if render_config.highlight {
@@ -97,7 +97,7 @@ impl History {
             max_modules: modules_width(),
         };
 
-        entry.render(search_state, width_config)
+        entry.render(search_state, &width_config)
     }
 
     fn calc_max_name_date(&self, height: usize) -> (usize, usize) {
@@ -126,8 +126,7 @@ impl History {
     fn toggle_folding(&mut self) {
         let pos = self.selected + 1;
         if self.selected_entry().is_folded() {
-            let mut children: Vec<Commit> =
-                child_history(&self.working_dir, self.selected_commit());
+            let children: Vec<Commit> = child_history(&self.working_dir, self.selected_commit());
             let mut above_commit = Some(self.selected_commit());
             for (i, c) in children.into_iter().enumerate() {
                 if !self.subtree_modules.is_empty() {
@@ -135,17 +134,17 @@ impl History {
                         oid: c.id().clone(),
                     })
                 }
-                let fork_point_calc = if above_commit.is_some() && above_commit.unwrap().is_merge()
-                {
-                    self.fork_point_thread.send(ForkPointRequest {
-                        first: c.id().clone(),
-                        second: above_commit.unwrap().children().first().unwrap().clone(),
-                        working_dir: self.working_dir.clone(),
-                    });
-                    ForkPointCalculation::Needed
-                } else {
-                    ForkPointCalculation::Done(false)
-                };
+                let mut fork_point_calc = ForkPointCalculation::Done(false);
+                if let Some(c) = above_commit {
+                    if c.is_merge() {
+                        self.fork_point_thread.send(ForkPointRequest {
+                            first: c.id().clone(),
+                            second: above_commit.unwrap().children().first().unwrap().clone(),
+                            working_dir: self.working_dir.clone(),
+                        });
+                        fork_point_calc = ForkPointCalculation::InProgress;
+                    }
+                }
                 let entry: HistoryEntry = HistoryEntry::new(
                     c,
                     self.selected_entry().level() + 1,
@@ -200,7 +199,7 @@ impl History {
                     max_date,
                     highlight: x == self.selected,
                 };
-                buf = self.render_commit(entry, render_config);
+                buf = self.render_commit(entry, &render_config);
                 let t = SpannedStr::from(&buf);
                 printer.print_styled((0, x), t);
             } else {
@@ -229,10 +228,10 @@ impl History {
             let mut commit_option = self.history.get(i);
             // Check if we need to fill_up data
             if commit_option.is_none() {
-                if !self.fill_up(50) {
-                    panic!("WTF?: No data to fill up during search")
-                } else {
+                if self.fill_up(50) {
                     commit_option = self.history.get(i);
+                } else {
+                    panic!("WTF?: No data to fill up during search")
                 }
             }
             let e = commit_option.unwrap();
@@ -242,13 +241,13 @@ impl History {
                     self.move_focus(delta, MoveDirection::Down);
                     return;
                 }
-            } else if e.is_merge() && e.is_folded() {
+            } else if e.has_children() && e.is_folded() {
                 let x = self.search_recursive(e);
                 if let Some((pos, entries)) = x {
                     self.history.get_mut(i).unwrap().folded(false);
                     let needle_position = i + pos;
                     let mut insert_position = i;
-                    for entry in entries.into_iter() {
+                    for entry in entries {
                         insert_position += 1;
                         self.history.insert(insert_position, entry);
                     }
@@ -263,28 +262,29 @@ impl History {
     }
 
     fn search_recursive(&self, entry: &HistoryEntry) -> Option<(usize, Vec<HistoryEntry>)> {
-        assert!(entry.is_merge(), "Expected a merge commit");
+        assert!(entry.has_children(), "Expected a merge commit");
         let level = entry.level() + 1;
         let children = child_history(&self.working_dir, entry.commit());
 
         let mut above_commit = Some(entry.commit());
         let mut entries: Vec<HistoryEntry> = vec![];
-        for c in children.into_iter() {
+        for c in children {
             if !self.subtree_modules.is_empty() {
                 self.subtree_thread.send(SubtreeChangesRequest {
                     oid: c.id().clone(),
                 })
             }
-            let fork_point_calc = if above_commit.is_some() && above_commit.unwrap().is_merge() {
-                self.fork_point_thread.send(ForkPointRequest {
-                    first: c.id().clone(),
-                    second: above_commit.unwrap().children().first().unwrap().clone(),
-                    working_dir: self.working_dir.clone(),
-                });
-                ForkPointCalculation::Needed
-            } else {
-                ForkPointCalculation::Done(false)
-            };
+            let mut fork_point_calc = ForkPointCalculation::Done(false);
+            if let Some(c) = above_commit {
+                if c.is_merge() {
+                    self.fork_point_thread.send(ForkPointRequest {
+                        first: c.id().clone(),
+                        second: above_commit.unwrap().children().first().unwrap().clone(),
+                        working_dir: self.working_dir.clone(),
+                    });
+                    fork_point_calc = ForkPointCalculation::InProgress;
+                }
+            }
             let e = HistoryEntry::new(c, level, self.selected_entry().url(), fork_point_calc);
             if let Some(url) = entry.url() {
                 if let SpecialSubject::PrMerge(pr_id) = entry.special() {
@@ -301,11 +301,11 @@ impl History {
         for (i, e) in entries.iter_mut().enumerate() {
             if e.search_matches(&self.search_state.needle, true) {
                 return Some((i, entries));
-            } else if e.is_merge() {
+            } else if e.has_children() {
                 if let Some((pos, children)) = self.search_recursive(e) {
                     let needle_position = i + pos;
                     let mut insert_position = i;
-                    for child in children.into_iter() {
+                    for child in children {
                         insert_position += 1;
                         entries.insert(insert_position, child);
                     }
@@ -324,10 +324,10 @@ impl History {
             let mut commit_option = self.history.get_mut(i);
             // Check if we need to fill_up data
             if commit_option.is_none() {
-                if !self.fill_up(50) {
-                    panic!("WTF?: No data to fill up during search")
-                } else {
+                if self.fill_up(50) {
                     commit_option = self.history.get_mut(i);
+                } else {
+                    panic!("WTF?: No data to fill up during search")
                 }
             }
             let e = commit_option.unwrap();
@@ -341,7 +341,7 @@ impl History {
                     self.move_focus(delta, MoveDirection::Down);
                     return;
                 }
-            } else if e.is_merge() && e.is_folded() {
+            } else if e.has_children() && e.is_folded() {
                 let bellow = &e.commit().bellow().expect("Expected Merge").to_string();
                 let link_id = &link.to_string();
                 // Heuristic skip examining merge if link is ancestor of the first child
@@ -359,13 +359,13 @@ impl History {
                     let needle_position = i + pos;
                     let mut insert_position = i;
                     let url = e.url();
-                    for c in commits.iter_mut() {
+                    for c in &mut commits {
                         insert_position += 1;
                         let entry = HistoryEntry::new(
                             c.to_owned(),
                             level,
                             url.clone(),
-                            ForkPointCalculation::Needed,
+                            ForkPointCalculation::InProgress,
                         );
                         self.history.insert(insert_position, entry);
                     }
@@ -397,24 +397,26 @@ impl History {
             } else {
                 Some(self.history.last().unwrap().commit())
             };
-            for c in tmp.into_iter() {
+            for c in tmp {
                 let url = self.url.clone();
                 if !self.subtree_modules.is_empty() {
                     self.subtree_thread.send(SubtreeChangesRequest {
                         oid: c.id().clone(),
                     })
                 }
-                let fork_point_calc = if above_commit.is_some() && above_commit.unwrap().is_merge()
-                {
-                    self.fork_point_thread.send(ForkPointRequest {
-                        first: c.id().clone(),
-                        second: above_commit.unwrap().children().first().unwrap().clone(),
-                        working_dir: self.working_dir.clone(),
-                    });
-                    ForkPointCalculation::Needed
-                } else {
-                    ForkPointCalculation::Done(false)
-                };
+                let mut fork_point_calc = ForkPointCalculation::Done(false);
+                if let Some(c) = above_commit {
+                    fork_point_calc = if c.is_merge() {
+                        self.fork_point_thread.send(ForkPointRequest {
+                            first: c.id().clone(),
+                            second: above_commit.unwrap().children().first().unwrap().clone(),
+                            working_dir: self.working_dir.clone(),
+                        });
+                        ForkPointCalculation::InProgress
+                    } else {
+                        ForkPointCalculation::Done(false)
+                    }
+                }
                 let entry = HistoryEntry::new(c, 0, url, fork_point_calc);
                 if let Some(url) = entry.url() {
                     if let SpecialSubject::PrMerge(pr_id) = entry.special() {
@@ -465,7 +467,7 @@ impl cursive::view::View for History {
         }
 
         while let Ok(v) = self.fork_point_thread.try_recv() {
-            for e in self.history.iter_mut() {
+            for e in &mut self.history {
                 if e.id() == &v.oid {
                     e.set_fork_point(v.value);
                     break;
@@ -474,7 +476,7 @@ impl cursive::view::View for History {
         }
 
         while let Ok(v) = self.subtree_thread.try_recv() {
-            for e in self.history.iter_mut() {
+            for e in &mut self.history {
                 if e.id() == &v.oid {
                     e.subtrees = v.subtrees;
                     break;
@@ -483,7 +485,7 @@ impl cursive::view::View for History {
         }
 
         while let Ok(v) = self.github_thread.try_recv() {
-            for e in self.history.iter_mut() {
+            for e in &mut self.history {
                 if e.id() == &v.oid {
                     e.set_subject(v.subject);
                     break;
@@ -502,7 +504,7 @@ impl cursive::view::View for History {
     fn on_event(&mut self, e: Event) -> EventResult {
         match e {
             Event::Char('h') | Event::Key(Key::Left) => {
-                if self.selected_entry().is_merge() && !self.selected_entry().is_folded() {
+                if self.selected_entry().has_children() && !self.selected_entry().is_folded() {
                     self.toggle_folding();
                 } else if self.selected_entry().level() > 0 {
                     // move to last parent node
@@ -519,7 +521,7 @@ impl cursive::view::View for History {
                     // move to last merge
                     let mut cur = self.selected;
                     for c in self.history[0..cur].iter().rev() {
-                        if c.is_merge() {
+                        if c.has_children() {
                             break;
                         }
                         cur -= 1;
@@ -531,12 +533,12 @@ impl cursive::view::View for History {
             Event::Char('l') | Event::Key(Key::Right) => {
                 if self.selected_item().is_commit_link() {
                     self.search_link_target();
-                } else if self.selected_item().is_merge() && self.selected_entry().is_folded() {
+                } else if self.selected_item().has_children() && self.selected_entry().is_folded() {
                     self.toggle_folding()
                 } else {
                     let mut cur = self.selected;
                     for c in self.history[cur + 1..].iter() {
-                        if c.is_merge() {
+                        if c.has_children() {
                             break;
                         }
                         cur += 1;
@@ -549,7 +551,7 @@ impl cursive::view::View for History {
             Event::Char(' ') => {
                 if self.selected_item().is_commit_link() {
                     self.search_link_target();
-                } else if self.selected_item().is_merge() {
+                } else if self.selected_item().has_children() {
                     self.toggle_folding();
                 }
                 EventResult::Consumed(None)

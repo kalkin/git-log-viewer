@@ -10,6 +10,7 @@ use crate::search::SearchState;
 use crate::style::{date_style, id_style, mod_style, name_style, ref_style, DEFAULT_STYLE};
 
 use crate::fork_point::ForkPointCalculation;
+use std::cmp::Ordering;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
@@ -87,7 +88,8 @@ impl HistoryEntry {
         match (!self.subtrees.is_empty(), self.subject_module.is_some()) {
             (true, _) => {
                 text = ":".to_string();
-                let subtree_modules: Vec<String> = self.subtrees.iter().map(|m| m.id()).collect();
+                let subtree_modules: Vec<String> =
+                    self.subtrees.iter().map(SubtreeConfig::id).collect();
                 text.push_str(&subtree_modules.join(" :"));
                 if text.width() > max_len {
                     text = format!("({} modules)", subtree_modules.len());
@@ -246,6 +248,7 @@ impl HistoryEntry {
 
 // Public interface
 impl HistoryEntry {
+    #[must_use]
     pub fn new(
         commit: Commit,
         level: u8,
@@ -282,37 +285,36 @@ impl HistoryEntry {
         self.fork_point = ForkPointCalculation::Done(t);
     }
 
+    #[must_use]
     pub fn special(&self) -> &SpecialSubject {
         &self.special_subject
     }
 
+    #[must_use]
     pub fn commit(&self) -> &Commit {
         &self.commit
     }
 
+    #[must_use]
     pub fn id(&self) -> &Oid {
         self.commit.id()
     }
 
+    #[must_use]
     pub fn author_date(&self) -> &String {
         self.commit.author_rel_date()
     }
 
+    #[must_use]
     pub fn author_name(&self) -> &String {
         self.commit.author_name()
     }
 
-    pub fn fork_points_calculation_needed(&self) -> bool {
-        match self.fork_point {
-            ForkPointCalculation::Done(_) => false,
-            ForkPointCalculation::Needed => true,
-        }
-    }
-
+    #[must_use]
     pub fn is_fork_point(&self) -> bool {
         match self.fork_point {
             ForkPointCalculation::Done(t) => t,
-            ForkPointCalculation::Needed => false,
+            ForkPointCalculation::InProgress => false,
         }
     }
 
@@ -320,18 +322,22 @@ impl HistoryEntry {
         self.folded = t;
     }
 
+    #[must_use]
     pub fn is_folded(&self) -> bool {
         self.folded
     }
 
-    pub fn is_merge(&self) -> bool {
+    #[must_use]
+    pub fn has_children(&self) -> bool {
         self.commit.is_merge()
     }
 
+    #[must_use]
     pub fn level(&self) -> u8 {
         self.level
     }
 
+    #[must_use]
     pub fn is_commit_link(&self) -> bool {
         self.commit.is_commit_link()
     }
@@ -341,6 +347,7 @@ impl HistoryEntry {
     }
 
     /// Check if string is contained any where in commit data
+    #[must_use]
     pub fn search_matches(&self, needle: &str, ignore_case: bool) -> bool {
         let mut candidates = vec![
             self.commit.author_name(),
@@ -353,7 +360,7 @@ impl HistoryEntry {
             &self.subject,
         ];
 
-        let x: Vec<String> = self.subtrees.iter().map(|m| m.id()).collect();
+        let x: Vec<String> = self.subtrees.iter().map(SubtreeConfig::id).collect();
         candidates.extend(&x);
 
         for r in self.commit.references().iter() {
@@ -372,13 +379,14 @@ impl HistoryEntry {
         false
     }
 
-    pub(crate) fn subtrees(&self) -> &Vec<SubtreeConfig> {
+    #[must_use]
+    pub fn subtrees(&self) -> &Vec<SubtreeConfig> {
         &self.subtrees
     }
-    pub(crate) fn url(&self) -> Option<Url> {
-        if self.subtrees.len() == 1 {
-            let module = self.subtrees.first().unwrap();
-            if let Some(v) = module.upstream().or(module.origin()) {
+    #[must_use]
+    pub fn url(&self) -> Option<Url> {
+        if let Some(module) = self.subtrees.first() {
+            if let Some(v) = module.upstream().or_else(|| module.origin()) {
                 if let Ok(u) = Url::parse(&v) {
                     return Some(u);
                 }
@@ -386,10 +394,11 @@ impl HistoryEntry {
         }
         self.repo_url.clone()
     }
+    #[must_use]
     pub fn render(
         &self,
         search_state: Option<&SearchState>,
-        widths: WidthConfig,
+        widths: &WidthConfig,
     ) -> SpannedString<Style> {
         let style = self.default_style();
         let mut buf = SpannedString::new();
@@ -429,16 +438,17 @@ impl HistoryEntry {
         buf
     }
 }
-pub fn split_subject(subject: &String) -> (Option<String>, Option<String>) {
+#[must_use]
+pub fn split_subject(subject: &str) -> (Option<String>, Option<String>) {
     let reg = regex!(r"^\w+\((.+)\): .+");
     let mut subject_module = None;
     let mut short_subject = None;
     if let Some(caps) = reg.captures(&subject) {
         let x = caps.get(1).expect("Expected 1 capture group");
         subject_module = Some(x.as_str().to_string());
-        let mut f = subject.clone();
+        let mut f = subject.to_string();
         f.truncate(x.start() - 1);
-        f.push_str(&subject.clone().split_off(x.end() + 1));
+        f.push_str(&subject.to_string().split_off(x.end() + 1));
         short_subject = Some(f);
     }
     (subject_module, short_subject)
@@ -449,53 +459,55 @@ pub trait DisplayableCommit {
 }
 
 // I'm not proud of this code. Ohh Omnissiah be merciful on my soul‼
-fn adjust_string(text: &str, len: usize) -> String {
-    assert!(len > 0, "Minimal length should be 1");
-    let actual = unicode_width::UnicodeWidthStr::width(text);
-    let expected = len;
+fn adjust_string(text: &str, expected: usize) -> String {
+    assert!(expected > 0, "Minimal length should be 1");
+    let length = unicode_width::UnicodeWidthStr::width(text);
     let mut result = String::from(text);
-    if actual < len {
-        let end = len - actual;
-        for _ in 0..end {
-            result.push(' ');
-        }
-    } else if actual > len {
-        let words = text.unicode_words().collect::<Vec<&str>>();
-        result = "".to_string();
-        for w in words {
-            let actual = UnicodeWidthStr::width(result.as_str()) + UnicodeWidthStr::width(w);
-            if actual > expected {
-                break;
-            }
-            result.push_str(w);
-            result.push(' ');
-        }
-
-        if result.is_empty() {
-            let words = text.unicode_words().collect::<Vec<&str>>();
-            result.push_str(words.get(0).unwrap());
-        }
-
-        let actual = UnicodeWidthStr::width(result.as_str());
-        if actual > expected {
-            let mut tmp = String::new();
-            let mut i = 0;
-            for g in result.as_str().graphemes(true) {
-                tmp.push_str(g);
-                i += 1;
-                if i == expected - 1 {
-                    break;
-                }
-            }
-            result = tmp;
-            result.push('…');
-        } else {
-            let end = expected - actual;
-            for _ in 0..end {
+    match length.cmp(&expected) {
+        Ordering::Less => {
+            let actual = expected - length;
+            for _ in 0..actual {
                 result.push(' ');
             }
         }
-        return result;
+        Ordering::Equal => {}
+        Ordering::Greater => {
+            let words = text.unicode_words().collect::<Vec<&str>>();
+            result = "".to_string();
+            for w in words {
+                let actual = UnicodeWidthStr::width(result.as_str()) + UnicodeWidthStr::width(w);
+                if actual > expected {
+                    break;
+                }
+                result.push_str(w);
+                result.push(' ');
+            }
+
+            if result.is_empty() {
+                let words = text.unicode_words().collect::<Vec<&str>>();
+                result.push_str(words.get(0).unwrap());
+            }
+
+            let actual = UnicodeWidthStr::width(result.as_str());
+            if actual > expected {
+                let mut tmp = String::new();
+                let mut i = 0;
+                for g in result.as_str().graphemes(true) {
+                    tmp.push_str(g);
+                    i += 1;
+                    if i == expected - 1 {
+                        break;
+                    }
+                }
+                result = tmp;
+                result.push('…');
+            } else {
+                let end = expected - actual;
+                for _ in 0..end {
+                    result.push(' ');
+                }
+            }
+        }
     }
     result
 }

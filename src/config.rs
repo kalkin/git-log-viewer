@@ -25,9 +25,10 @@ pub fn author_name_width() -> usize {
     match CONFIG.getuint("history", "author_name_width") {
         Ok(o) => match o {
             None => 10,
+            #[allow(clippy::cast_possible_truncation)]
             Some(v) => v as usize,
         },
-        Err(_) => panic!("Error while parsing history.author_name_width"),
+        Err(e) => panic!("Error while parsing history.author_name_width: {}", e),
     }
 }
 
@@ -35,9 +36,10 @@ pub fn author_rel_date_width() -> usize {
     match CONFIG.getuint("history", "author_rel_date_width") {
         Ok(o) => match o {
             None => 0,
+            #[allow(clippy::cast_possible_truncation)]
             Some(v) => v as usize,
         },
-        Err(_) => panic!("Error while parsing history.author_rel_name_width"),
+        Err(e) => panic!("Error while parsing history.author_rel_name_width: {}", e),
     }
 }
 
@@ -45,8 +47,9 @@ pub fn modules_width() -> usize {
     match CONFIG.getuint("history", "modules_width") {
         Ok(o) => match o {
             None => 35,
+            #[allow(clippy::cast_possible_truncation)]
             Some(v) => v as usize,
         },
-        Err(_) => panic!("Error while parsing history.modules_width"),
+        Err(e) => panic!("Error while parsing history.modules_width: {}", e),
     }
 }

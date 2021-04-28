@@ -1,6 +1,6 @@
 use cucumber_rust::{t, Steps};
 use glv::commit::{commits_for_range, Commit};
-use glv::fork_point::ForkPointThread;
+use glv::fork_point::{ForkPointCalculation, ForkPointThread};
 use glv::history_entry::HistoryEntry;
 
 pub fn steps() -> Steps<crate::MyWorld> {
@@ -16,7 +16,12 @@ pub fn steps() -> Steps<crate::MyWorld> {
             let paths: Vec<String> = vec![];
             let commits = commits_for_range(working_dir, &range, &paths, None, None).unwrap();
             let commit = commits.into_iter().next().unwrap();
-            world.entry = Some(HistoryEntry::new(commit, 0, None));
+            world.entry = Some(HistoryEntry::new(
+                commit,
+                0,
+                None,
+                ForkPointCalculation::Done(false),
+            ));
             world
         }),
     );
@@ -30,7 +35,12 @@ pub fn steps() -> Steps<crate::MyWorld> {
             let commits = commits_for_range(working_dir, &range, &paths, None, None).unwrap();
             let mut result: Vec<HistoryEntry> = vec![];
             for c in commits.into_iter() {
-                result.push(HistoryEntry::new(c, 0, None))
+                result.push(HistoryEntry::new(
+                    c,
+                    0,
+                    None,
+                    ForkPointCalculation::Done(false),
+                ))
             }
             assert!(!result.is_empty());
             world.entries = Some(result);
@@ -49,8 +59,8 @@ pub fn steps() -> Steps<crate::MyWorld> {
                     let t = if above_commit.is_none() {
                         false
                     } else {
-                        let first = e.id();
-                        let second = above_commit.unwrap().children().first().unwrap();
+                        let above = above_commit.unwrap();
+                        let second = above.children().first().unwrap();
                         ForkPointThread::is_fork_point(working_dir, &e.id(), &second)
                     };
                     above_commit = Some(e.commit().clone());
@@ -62,11 +72,11 @@ pub fn steps() -> Steps<crate::MyWorld> {
     );
 
     steps.then_regex_async(
-        r#"^entry is not a merge$"#,
+        r#"^entry has no children$"#,
         t!(|world, ctx| {
             match &world.entry {
                 Some(e) => {
-                    assert_eq!(e.is_merge(), false, "Not a merge");
+                    assert_eq!(e.has_children(), false, "Has no children");
                 }
                 None => {
                     panic!("No history entry found");
