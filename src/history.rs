@@ -359,7 +359,7 @@ impl History {
                     let needle_position = i + pos;
                     let mut insert_position = i;
                     let url = e.url();
-                    for c in commits.iter_mut() {
+                    for c in &mut commits {
                         insert_position += 1;
                         let entry = HistoryEntry::new(
                             c.to_owned(),
@@ -468,7 +468,7 @@ impl cursive::view::View for History {
         }
 
         while let Ok(v) = self.fork_point_thread.try_recv() {
-            for e in self.history.iter_mut() {
+            for e in &mut self.history {
                 if e.id() == &v.oid {
                     e.set_fork_point(v.value);
                     break;
@@ -477,7 +477,7 @@ impl cursive::view::View for History {
         }
 
         while let Ok(v) = self.subtree_thread.try_recv() {
-            for e in self.history.iter_mut() {
+            for e in &mut self.history {
                 if e.id() == &v.oid {
                     e.subtrees = v.subtrees;
                     break;
@@ -486,7 +486,7 @@ impl cursive::view::View for History {
         }
 
         while let Ok(v) = self.github_thread.try_recv() {
-            for e in self.history.iter_mut() {
+            for e in &mut self.history {
                 if e.id() == &v.oid {
                     e.set_subject(v.subject);
                     break;
