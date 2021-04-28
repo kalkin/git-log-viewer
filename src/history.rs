@@ -79,7 +79,7 @@ impl History {
     fn render_commit(
         &self,
         entry: &HistoryEntry,
-        render_config: RenderConfig,
+        render_config: &RenderConfig,
     ) -> SpannedString<Style> {
         let mut style = *DEFAULT_STYLE;
         if render_config.highlight {
@@ -199,7 +199,7 @@ impl History {
                     max_date,
                     highlight: x == self.selected,
                 };
-                buf = self.render_commit(entry, render_config);
+                buf = self.render_commit(entry, &render_config);
                 let t = SpannedStr::from(&buf);
                 printer.print_styled((0, x), t);
             } else {
