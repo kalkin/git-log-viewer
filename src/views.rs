@@ -34,9 +34,7 @@ where
     V2: View + DetailView,
 {
     fn draw(&self, printer: &Printer) {
-        if !self.aside_visible {
-            self.main.draw(printer);
-        } else {
+        if self.aside_visible {
             let aside_size;
             let main_size;
 
@@ -85,13 +83,13 @@ where
             }
             let aside_printer = printer.windowed(aside_rect);
             self.aside.draw(&aside_printer);
+        } else {
+            self.main.draw(printer);
         }
     }
 
     fn layout(&mut self, size: Vec2) {
-        if !self.aside_visible {
-            self.main.layout(size);
-        } else {
+        if self.aside_visible {
             let aside_size;
             let main_size;
 
@@ -116,6 +114,8 @@ where
             }
             self.main.layout(main_size);
             self.aside.layout(aside_size);
+        } else {
+            self.main.layout(size);
         }
     }
 

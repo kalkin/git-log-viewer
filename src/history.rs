@@ -228,10 +228,10 @@ impl History {
             let mut commit_option = self.history.get(i);
             // Check if we need to fill_up data
             if commit_option.is_none() {
-                if !self.fill_up(50) {
-                    panic!("WTF?: No data to fill up during search")
-                } else {
+                if self.fill_up(50) {
                     commit_option = self.history.get(i);
+                } else {
+                    panic!("WTF?: No data to fill up during search")
                 }
             }
             let e = commit_option.unwrap();
@@ -324,10 +324,10 @@ impl History {
             let mut commit_option = self.history.get_mut(i);
             // Check if we need to fill_up data
             if commit_option.is_none() {
-                if !self.fill_up(50) {
-                    panic!("WTF?: No data to fill up during search")
-                } else {
+                if self.fill_up(50) {
                     commit_option = self.history.get_mut(i);
+                } else {
+                    panic!("WTF?: No data to fill up during search")
                 }
             }
             let e = commit_option.unwrap();
