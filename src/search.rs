@@ -41,13 +41,18 @@ impl SearchState {
 }
 
 #[must_use]
+/// # Panics
+///
+/// Panics when a non merge commit provided
 pub fn search_link_recursive(
     working_dir: &str,
     commit: &Commit,
     subtree_modules: &[SubtreeConfig],
     link: &Oid,
 ) -> Option<(usize, Vec<Commit>)> {
-    assert!(commit.is_merge(), "Expected a merge commit");
+    if !commit.is_merge() {
+        panic!("Expected a merge commit");
+    }
 
     let mut commits = child_history(working_dir, commit);
     for (i, c) in commits.iter_mut().enumerate() {

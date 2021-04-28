@@ -157,7 +157,8 @@ impl Commit {
         };
 
         let short_id = next_string!(split);
-        let mut parents_record: Vec<&str> = split.next().unwrap().split(' ').collect();
+        let mut parents_record: Vec<&str> =
+            split.next().expect("Parse parents").split(' ').collect();
         let references_record = next_string!(split);
 
         let author_name = next_string!(split);
@@ -336,11 +337,13 @@ pub fn child_history(working_dir: &str, commit: &Commit) -> Vec<Commit> {
         revision = first_child.0.clone();
     }
     let paths: &[&str] = &[];
+    #[allow(clippy::expect_fun_call)]
     let mut result = commits_for_range(working_dir, revision.as_str(), paths, None, None)
-        .unwrap_or_else(|_| panic!("Expected child commits for range {}", revision));
+        .expect(&format!("Expected child commits for range {}", revision));
+    #[allow(clippy::expect_fun_call)]
     let end_commit = result
         .last()
-        .unwrap_or_else(|| panic!("No child commits for range {}", revision));
+        .expect(&format!("No child commits for range {}", revision));
     if end.is_some()
         && end_commit.bellow.is_some()
         && end_commit.bellow.as_ref().expect("Expected merge commit") != bellow

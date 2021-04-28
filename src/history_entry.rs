@@ -385,8 +385,7 @@ impl HistoryEntry {
     }
     #[must_use]
     pub fn url(&self) -> Option<Url> {
-        if self.subtrees.len() == 1 {
-            let module = self.subtrees.first().unwrap();
+        if let Some(module) = self.subtrees.first() {
             if let Some(v) = module.upstream().or_else(|| module.origin()) {
                 if let Ok(u) = Url::parse(&v) {
                     return Some(u);
