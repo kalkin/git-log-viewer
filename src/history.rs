@@ -18,7 +18,7 @@ use crate::history_entry::{HistoryEntry, SpecialSubject, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
 use crate::search::{search_link_recursive, SearchDirection, SearchState};
 use crate::style::DEFAULT_STYLE;
-use crate::subtrees::{SubtreeChangesRequest, SubtreesThread};
+use crate::subtrees::{SubtreeChangesRequest, SubtreeThread};
 
 pub struct History {
     range: String,
@@ -30,7 +30,7 @@ pub struct History {
     search_state: SearchState,
     paths: Vec<String>,
     fork_point_thread: ForkPointThread,
-    subtree_thread: SubtreesThread,
+    subtree_thread: SubtreeThread,
     github_thread: GitHubThread,
     url: Option<Url>,
 }
@@ -47,7 +47,7 @@ impl History {
         let length = history_length(working_dir, range, vec![])?;
         let search_state = SearchState::new(DEFAULT_STYLE.to_owned());
         let fork_point_thread = ForkPointThread::default();
-        let subtree_thread = SubtreesThread::new(working_dir.to_string(), subtree_modules.to_vec());
+        let subtree_thread = SubtreeThread::new(working_dir.to_string(), subtree_modules.to_vec());
 
         let mut url: Option<Url> = None;
         if let Some(v) = git_wrapper::main_url(working_dir)? {

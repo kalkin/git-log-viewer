@@ -1,3 +1,4 @@
+#![allow(clippy::module_name_repetitions)]
 use cursive::theme::{BaseColor, Color, ColorType, Effect, Style};
 
 use git_subtrees_improved::SubtreeConfig;

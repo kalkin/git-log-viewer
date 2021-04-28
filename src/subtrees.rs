@@ -15,13 +15,13 @@ pub struct SubtreeChangesResponse {
     pub subtrees: Vec<SubtreeConfig>,
 }
 
-pub struct SubtreesThread {
+pub struct SubtreeThread {
     _thread: JoinHandle<()>,
     receiver: Receiver<SubtreeChangesResponse>,
     sender: Sender<SubtreeChangesRequest>,
 }
 
-impl SubtreesThread {
+impl SubtreeThread {
     pub(crate) fn new(working_dir: String, all_subtrees: Vec<SubtreeConfig>) -> Self {
         let (tx_1, rx_1): (
             Sender<SubtreeChangesResponse>,
@@ -42,7 +42,7 @@ impl SubtreesThread {
                 .unwrap();
             }
         });
-        SubtreesThread {
+        SubtreeThread {
             _thread: child,
             receiver: rx_1,
             sender: tx_2,

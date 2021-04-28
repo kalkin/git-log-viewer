@@ -1,3 +1,4 @@
+#![allow(clippy::module_name_repetitions)]
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::thread::JoinHandle;
 

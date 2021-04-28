@@ -1,3 +1,4 @@
+#![allow(clippy::module_name_repetitions)]
 use cursive::theme::{BaseColor, Color, ColorStyle, Effect, Style};
 use lazy_static::lazy_static;
 
