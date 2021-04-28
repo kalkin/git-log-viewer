@@ -155,7 +155,7 @@ fn git_diff(commit: &Commit) -> Vec<SpannedString<Style>> {
         raw::parse_spans(delta_p.stdout)
     } else {
         let proc = git_wrapper::git_cmd_out(
-            working_dir.to_string(),
+            working_dir,
             vec![
                 "diff",
                 "--color=always",

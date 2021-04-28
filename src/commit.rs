@@ -343,7 +343,7 @@ pub fn child_history(working_dir: &str, commit: &Commit) -> Vec<Commit> {
 
 fn to_commit(working_dir: &str, oid: &Oid, is_commit_link: bool) -> Commit {
     let output = git_cmd_out(
-        working_dir.to_string(),
+        working_dir,
         vec!["rev-list", "--date=human", REV_FORMAT, "-1", &oid.0],
     );
     let tmp = String::from_utf8(output.unwrap().stdout);
@@ -354,8 +354,7 @@ fn to_commit(working_dir: &str, oid: &Oid, is_commit_link: bool) -> Commit {
 }
 
 pub fn merge_base(working_dir: &str, p1: &Oid, p2: &Oid) -> Result<Option<Oid>, PosixError> {
-    let output =
-        git_wrapper::git_cmd_out(working_dir.to_string(), vec!["merge-base", &p1.0, &p2.0]);
+    let output = git_wrapper::git_cmd_out(working_dir, vec!["merge-base", &p1.0, &p2.0]);
     let tmp = String::from_utf8(output?.stdout)
         .expect("Valid UTF-8")
         .trim_end()
