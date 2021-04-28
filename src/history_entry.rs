@@ -318,7 +318,7 @@ impl HistoryEntry {
         self.folded
     }
 
-    pub fn is_merge(&self) -> bool {
+    pub fn has_children(&self) -> bool {
         self.commit.is_merge()
     }
 

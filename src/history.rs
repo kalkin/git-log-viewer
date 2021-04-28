@@ -241,7 +241,7 @@ impl History {
                     self.move_focus(delta, MoveDirection::Down);
                     return;
                 }
-            } else if e.is_merge() && e.is_folded() {
+            } else if e.has_children() && e.is_folded() {
                 let x = self.search_recursive(e);
                 if let Some((pos, entries)) = x {
                     self.history.get_mut(i).unwrap().folded(false);
@@ -262,7 +262,7 @@ impl History {
     }
 
     fn search_recursive(&self, entry: &HistoryEntry) -> Option<(usize, Vec<HistoryEntry>)> {
-        assert!(entry.is_merge(), "Expected a merge commit");
+        assert!(entry.has_children(), "Expected a merge commit");
         let level = entry.level() + 1;
         let children = child_history(&self.working_dir, entry.commit());
 
@@ -301,7 +301,7 @@ impl History {
         for (i, e) in entries.iter_mut().enumerate() {
             if e.search_matches(&self.search_state.needle, true) {
                 return Some((i, entries));
-            } else if e.is_merge() {
+            } else if e.has_children() {
                 if let Some((pos, children)) = self.search_recursive(e) {
                     let needle_position = i + pos;
                     let mut insert_position = i;
@@ -341,7 +341,7 @@ impl History {
                     self.move_focus(delta, MoveDirection::Down);
                     return;
                 }
-            } else if e.is_merge() && e.is_folded() {
+            } else if e.has_children() && e.is_folded() {
                 let bellow = &e.commit().bellow().expect("Expected Merge").to_string();
                 let link_id = &link.to_string();
                 // Heuristic skip examining merge if link is ancestor of the first child
@@ -505,7 +505,7 @@ impl cursive::view::View for History {
     fn on_event(&mut self, e: Event) -> EventResult {
         match e {
             Event::Char('h') | Event::Key(Key::Left) => {
-                if self.selected_entry().is_merge() && !self.selected_entry().is_folded() {
+                if self.selected_entry().has_children() && !self.selected_entry().is_folded() {
                     self.toggle_folding();
                 } else if self.selected_entry().level() > 0 {
                     // move to last parent node
@@ -522,7 +522,7 @@ impl cursive::view::View for History {
                     // move to last merge
                     let mut cur = self.selected;
                     for c in self.history[0..cur].iter().rev() {
-                        if c.is_merge() {
+                        if c.has_children() {
                             break;
                         }
                         cur -= 1;
@@ -534,12 +534,12 @@ impl cursive::view::View for History {
             Event::Char('l') | Event::Key(Key::Right) => {
                 if self.selected_item().is_commit_link() {
                     self.search_link_target();
-                } else if self.selected_item().is_merge() && self.selected_entry().is_folded() {
+                } else if self.selected_item().has_children() && self.selected_entry().is_folded() {
                     self.toggle_folding()
                 } else {
                     let mut cur = self.selected;
                     for c in self.history[cur + 1..].iter() {
-                        if c.is_merge() {
+                        if c.has_children() {
                             break;
                         }
                         cur += 1;
@@ -552,7 +552,7 @@ impl cursive::view::View for History {
             Event::Char(' ') => {
                 if self.selected_item().is_commit_link() {
                     self.search_link_target();
-                } else if self.selected_item().is_merge() {
+                } else if self.selected_item().has_children() {
                     self.toggle_folding();
                 }
                 EventResult::Consumed(None)

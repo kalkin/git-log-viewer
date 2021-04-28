@@ -72,11 +72,11 @@ pub fn steps() -> Steps<crate::MyWorld> {
     );
 
     steps.then_regex_async(
-        r#"^entry is not a merge$"#,
+        r#"^entry has no children$"#,
         t!(|world, ctx| {
             match &world.entry {
                 Some(e) => {
-                    assert_eq!(e.is_merge(), false, "Not a merge");
+                    assert_eq!(e.has_children(), false, "Has no children");
                 }
                 None => {
                     panic!("No history entry found");

@@ -10,7 +10,7 @@
 * Handle *Subject* as own `struct` or `enum` to
    distinguish between different subject options.
 * `HistoryEntry::folded` should be an enum with values `Yes, No, Invalid`
-* `HistoryEntry` add `is_foldable`
+* ~~`HistoryEntry` add `has_children`~~
 
 ## Benchmarks
 
