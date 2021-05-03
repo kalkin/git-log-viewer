@@ -3,11 +3,13 @@ use cursive::utils::span::SpannedString;
 use regex::Regex;
 use url::Url;
 
-use git_subtrees_improved::SubtreeConfig;
+use git_subtrees_improved::{SubtreeConfig, SubtreeOperation};
 
 use crate::commit::{Commit, Oid};
 use crate::search::SearchState;
-use crate::style::{date_style, id_style, mod_style, name_style, ref_style, DEFAULT_STYLE};
+use crate::style::{
+    bold_style, date_style, id_style, mod_style, name_style, ref_style, DEFAULT_STYLE,
+};
 
 use crate::fork_point::ForkPointCalculation;
 use std::cmp::Ordering;
@@ -22,13 +24,6 @@ macro_rules! search_if_needed {
             SpannedString::styled($text, $style)
         }
     };
-}
-#[derive(Eq, PartialEq)]
-pub enum SubtreeOperation {
-    Update,
-    Import,
-    Split,
-    None,
 }
 
 #[derive(Eq, PartialEq)]
@@ -128,9 +123,7 @@ impl HistoryEntry {
         }
 
         if self.commit.is_merge() {
-            if self.subtree_operation == SubtreeOperation::Import
-                || self.subtree_operation == SubtreeOperation::Update
-            {
+            if self.subtree_operation.is_import() || self.subtree_operation.is_update() {
                 if self.is_fork_point() {
                     result.append_styled("⇤┤", style);
                 } else {
@@ -148,14 +141,55 @@ impl HistoryEntry {
         result
     }
 
-    fn subject_span(&self, search_state: Option<&SearchState>) -> SpannedString<Style> {
+    fn subject_span(
+        &self,
+        search_state: Option<&SearchState>,
+        widths: &WidthConfig,
+    ) -> SpannedString<Style> {
         let style = self.default_style();
-        let text = if self.subtrees.is_empty() {
-            &self.subject
+        let mut buf = SpannedString::new();
+        if self.subtree_operation == SubtreeOperation::None {
+            if let Some(modules) = self.modules_span(search_state, widths.max_modules) {
+                buf.append(modules);
+                buf.append_styled(" ", style);
+            }
+
+            let style = self.default_style();
+            let text = if self.subtrees.is_empty() {
+                &self.subject
+            } else {
+                self.original_subject()
+            };
+            buf.append(search_if_needed!(text, style, search_state));
         } else {
-            self.original_subject()
-        };
-        search_if_needed!(text, style, search_state)
+            match &self.subtree_operation {
+                SubtreeOperation::Update { subtree, git_ref } => {
+                    buf.append(search_if_needed!(subtree, mod_style(&style), search_state));
+                    buf.append(search_if_needed!(" Update to ", style, search_state));
+                    buf.append(search_if_needed!(git_ref, bold_style(&style), search_state));
+                }
+                SubtreeOperation::Split { subtree, git_ref } => {
+                    buf.append(search_if_needed!(subtree, mod_style(&style), search_state));
+                    buf.append(search_if_needed!(
+                        " Split into commit ",
+                        style,
+                        search_state
+                    ));
+                    buf.append(search_if_needed!(git_ref, bold_style(&style), search_state));
+                }
+                SubtreeOperation::Import { subtree, git_ref } => {
+                    buf.append(search_if_needed!(subtree, mod_style(&style), search_state));
+                    buf.append(search_if_needed!(" Import from ", style, search_state));
+                    buf.append(search_if_needed!(git_ref, bold_style(&style), search_state));
+                }
+                _ => {
+                    let text = self.original_subject();
+                    buf.append(search_if_needed!(text, style, search_state));
+                }
+            }
+        }
+
+        buf
     }
 
     fn references_span(&self, search_state: Option<&SearchState>) -> SpannedString<Style> {
@@ -178,15 +212,7 @@ impl HistoryEntry {
 
 impl HistoryEntry {
     fn identify_subtree_operation(commit: &Commit) -> SubtreeOperation {
-        let mut subtree_operation = SubtreeOperation::None;
-        if commit.subject().starts_with("Update :") {
-            subtree_operation = SubtreeOperation::Update
-        } else if commit.subject().starts_with("Import :") {
-            subtree_operation = SubtreeOperation::Import
-        } else if commit.subject().starts_with("Split '") {
-            subtree_operation = SubtreeOperation::Split
-        }
-        subtree_operation
+        return SubtreeOperation::from(&format!("{}\n{}", commit.subject(), commit.body()));
     }
 
     fn are_we_special(commit: &Commit) -> SpecialSubject {
@@ -433,12 +459,8 @@ impl HistoryEntry {
         buf.append(self.graph_span());
         buf.append_styled(" ", style);
 
-        if let Some(modules) = self.modules_span(search_state, widths.max_modules) {
-            buf.append(modules);
-            buf.append_styled(" ", style);
-        }
         {
-            buf.append(self.subject_span(search_state));
+            buf.append(self.subject_span(search_state, widths));
             buf.append_styled(" ", style);
         }
         buf.append(self.references_span(search_state));
