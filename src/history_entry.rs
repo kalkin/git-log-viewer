@@ -150,7 +150,11 @@ impl HistoryEntry {
 
     fn subject_span(&self, search_state: Option<&SearchState>) -> SpannedString<Style> {
         let style = self.default_style();
-        let text = &self.subject;
+        let text = if self.subtrees.is_empty() {
+            &self.subject
+        } else {
+            self.original_subject()
+        };
         search_if_needed!(text, style, search_state)
     }
 
@@ -243,6 +247,10 @@ impl HistoryEntry {
             tmp.append_styled(&text[cur..], style)
         }
         tmp
+    }
+
+    fn original_subject(&self) -> &String {
+        self.commit.subject()
     }
 }
 
