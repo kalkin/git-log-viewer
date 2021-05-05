@@ -1,5 +1,7 @@
 #![allow(clippy::module_name_repetitions)]
+
 use cursive::theme::{BaseColor, Color, ColorStyle, Effect, Style};
+use cursive::utils::span::SpannedString;
 use lazy_static::lazy_static;
 
 #[must_use]
@@ -55,4 +57,9 @@ lazy_static! {
         color: ColorStyle::terminal_default(),
         ..Style::default()
     };
+}
+
+pub fn color_span(key: &str, content: &str, style: Style) -> SpannedString<Style> {
+    let line = format!("{}{}\n", key, content);
+    SpannedString::styled(line, style)
 }

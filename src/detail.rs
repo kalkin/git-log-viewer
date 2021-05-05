@@ -1,7 +1,5 @@
 use std::process::{Command, Stdio};
 
-use git_subtrees_improved::SubtreeConfig;
-
 use cursive::event::{Event, EventResult};
 use cursive::theme::Style;
 use cursive::traits::Scrollable;
@@ -9,12 +7,13 @@ use cursive::utils::span::SpannedString;
 use cursive::views::{ScrollView, TextContent, TextView};
 use cursive::{Printer, Vec2, View};
 
+use git_subtrees_improved::SubtreeConfig;
+
 use crate::commit::Commit;
 use crate::commit::Oid;
 use crate::history_entry::HistoryEntry;
 use crate::raw;
-use crate::style::{bold_style, date_style, DEFAULT_STYLE};
-use crate::style::{id_style, name_style};
+use crate::style::{bold_style, color_span, date_style, id_style, name_style, DEFAULT_STYLE};
 use crate::views::DetailView;
 
 pub struct CommitDetailView {
@@ -119,11 +118,6 @@ impl DetailView for CommitDetailView {
         }
         self.content = Some(TextView::new_with_content(content).scrollable());
     }
-}
-
-fn color_span(key: &str, content: &str, style: Style) -> SpannedString<Style> {
-    let line = format!("{}{}\n", key, content);
-    SpannedString::styled(line, style)
 }
 
 fn git_diff(commit: &Commit) -> Vec<SpannedString<Style>> {
