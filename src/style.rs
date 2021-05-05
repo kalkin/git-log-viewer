@@ -44,6 +44,12 @@ pub fn bold_style(default: &Style) -> Style {
     style
 }
 
+pub fn reverse_style(default: &Style) -> Style {
+    let mut style = *default;
+    style.effects |= Effect::Reverse;
+    style
+}
+
 lazy_static! {
     pub static ref DEFAULT_STYLE: Style = Style {
         color: ColorStyle::terminal_default(),

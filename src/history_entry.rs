@@ -1,4 +1,4 @@
-use cursive::theme::{Effect, Style};
+use cursive::theme::Style;
 use cursive::utils::span::SpannedString;
 use regex::Regex;
 use url::Url;
@@ -8,7 +8,8 @@ use git_subtrees_improved::{SubtreeConfig, SubtreeOperation};
 use crate::commit::{Commit, Oid};
 use crate::search::SearchState;
 use crate::style::{
-    bold_style, date_style, id_style, mod_style, name_style, ref_style, DEFAULT_STYLE,
+    bold_style, date_style, id_style, mod_style, name_style, ref_style, reverse_style,
+    DEFAULT_STYLE,
 };
 
 use crate::fork_point::ForkPointCalculation;
@@ -231,9 +232,7 @@ impl HistoryEntry {
 
     fn default_style(&self) -> Style {
         if self.selected {
-            let mut style = *DEFAULT_STYLE;
-            style.effects |= Effect::Reverse;
-            style
+            reverse_style(&DEFAULT_STYLE)
         } else {
             *DEFAULT_STYLE
         }
