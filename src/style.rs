@@ -46,6 +46,7 @@ pub fn bold_style(default: &Style) -> Style {
     style
 }
 
+#[must_use]
 pub fn reverse_style(default: &Style) -> Style {
     let mut style = *default;
     style.effects |= Effect::Reverse;
@@ -59,6 +60,7 @@ lazy_static! {
     };
 }
 
+#[must_use]
 pub fn color_span(key: &str, content: &str, style: Style) -> SpannedString<Style> {
     let line = format!("{}{}\n", key, content);
     SpannedString::styled(line, style)
