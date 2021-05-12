@@ -4,6 +4,7 @@ use std::thread::JoinHandle;
 
 use crate::commit::Oid;
 use git_wrapper::is_ancestor;
+use std::fmt::{Debug, Formatter};
 use std::sync::mpsc;
 use std::thread;
 
@@ -24,9 +25,33 @@ pub struct ForkPointRequest {
     pub working_dir: String,
 }
 
+impl Debug for ForkPointRequest {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut first = self.first.0.clone();
+        let mut second = self.second.0.clone();
+        first.truncate(8);
+        second.truncate(8);
+        f.debug_struct("ForkPointRequest")
+            .field("oid", &first)
+            .field("oid", &second)
+            .finish()
+    }
+}
+
 pub struct ForkPointResponse {
     pub oid: Oid,
     pub value: bool,
+}
+
+impl Debug for ForkPointResponse {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut oid = self.oid.0.clone();
+        oid.truncate(8);
+        f.debug_tuple("ForkPointResponse")
+            .field(&oid)
+            .field(&self.value.to_string())
+            .finish()
+    }
 }
 
 impl ForkPointThread {
