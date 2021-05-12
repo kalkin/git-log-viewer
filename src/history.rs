@@ -12,7 +12,7 @@ use posix_errors::PosixError;
 
 use crate::commit::{child_history, commits_for_range, history_length, Commit};
 use crate::config::{author_name_width, author_rel_date_width, modules_width};
-use crate::fork_point::{ForkPointCalculation, ForkPointRequest, ForkPointThread};
+use crate::fork_point::{ForkPointCalculation, ForkPointThread};
 use crate::github::{GitHubRequest, GitHubThread};
 use crate::history_entry::{HistoryEntry, SpecialSubject, WidthConfig};
 use crate::scroll::{MoveDirection, ScrollableSelectable};
@@ -134,17 +134,9 @@ impl History {
                         oid: c.id().clone(),
                     })
                 }
-                let mut fork_point_calc = ForkPointCalculation::Done(false);
-                if let Some(c) = above_commit {
-                    if c.is_merge() {
-                        self.fork_point_thread.send(ForkPointRequest {
-                            first: c.id().clone(),
-                            second: above_commit.unwrap().children().first().unwrap().clone(),
-                            working_dir: self.working_dir.clone(),
-                        });
-                        fork_point_calc = ForkPointCalculation::InProgress;
-                    }
-                }
+                let fork_point_calc =
+                    self.fork_point_thread
+                        .request_calculation(&c, above_commit, &self.working_dir);
                 let entry: HistoryEntry = HistoryEntry::new(
                     c,
                     self.selected_entry().level() + 1,
@@ -274,17 +266,9 @@ impl History {
                     oid: c.id().clone(),
                 })
             }
-            let mut fork_point_calc = ForkPointCalculation::Done(false);
-            if let Some(c) = above_commit {
-                if c.is_merge() {
-                    self.fork_point_thread.send(ForkPointRequest {
-                        first: c.id().clone(),
-                        second: above_commit.unwrap().children().first().unwrap().clone(),
-                        working_dir: self.working_dir.clone(),
-                    });
-                    fork_point_calc = ForkPointCalculation::InProgress;
-                }
-            }
+            let fork_point_calc =
+                self.fork_point_thread
+                    .request_calculation(&c, above_commit, &self.working_dir);
             let e = HistoryEntry::new(c, level, self.selected_entry().url(), fork_point_calc);
             if let Some(url) = entry.url() {
                 if let SpecialSubject::PrMerge(pr_id) = entry.special() {
@@ -404,19 +388,9 @@ impl History {
                         oid: c.id().clone(),
                     })
                 }
-                let mut fork_point_calc = ForkPointCalculation::Done(false);
-                if let Some(c) = above_commit {
-                    fork_point_calc = if c.is_merge() {
-                        self.fork_point_thread.send(ForkPointRequest {
-                            first: c.id().clone(),
-                            second: above_commit.unwrap().children().first().unwrap().clone(),
-                            working_dir: self.working_dir.clone(),
-                        });
-                        ForkPointCalculation::InProgress
-                    } else {
-                        ForkPointCalculation::Done(false)
-                    }
-                }
+                let fork_point_calc =
+                    self.fork_point_thread
+                        .request_calculation(&c, above_commit, &self.working_dir);
                 let entry = HistoryEntry::new(c, 0, url, fork_point_calc);
                 if let Some(url) = entry.url() {
                     if let SpecialSubject::PrMerge(pr_id) = entry.special() {
