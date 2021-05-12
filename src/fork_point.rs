@@ -2,7 +2,7 @@
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::thread::JoinHandle;
 
-use crate::commit::Oid;
+use crate::commit::{Commit, Oid};
 use git_wrapper::is_ancestor;
 use std::fmt::{Debug, Formatter};
 use std::sync::mpsc;
@@ -69,6 +69,31 @@ impl ForkPointThread {
     #[allow(clippy::missing_errors_doc)]
     pub fn try_recv(&self) -> Result<ForkPointResponse, TryRecvError> {
         self.receiver.try_recv()
+    }
+
+    pub fn request_calculation(
+        &self,
+        t: &Commit,
+        above_commit: Option<&Commit>,
+        working_dir: &str,
+    ) -> ForkPointCalculation {
+        let mut fork_point_calc = ForkPointCalculation::Done(false);
+        if let Some(c) = above_commit {
+            fork_point_calc = if c.is_merge() {
+                let first = t.id().clone();
+                let second = c.children().first().expect("oid").clone();
+                let request = ForkPointRequest {
+                    first,
+                    second,
+                    working_dir: working_dir.to_string(),
+                };
+                self.send(request);
+                ForkPointCalculation::InProgress
+            } else {
+                ForkPointCalculation::Done(false)
+            }
+        }
+        fork_point_calc
     }
 }
 
