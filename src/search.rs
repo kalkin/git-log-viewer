@@ -1,7 +1,7 @@
 #![allow(clippy::module_name_repetitions)]
 use cursive::theme::{BaseColor, Color, ColorType, Effect, Style};
 
-use git_subtrees_improved::SubtreeConfig;
+use gsi::SubtreeConfig;
 use git_wrapper::is_ancestor;
 
 use crate::commit::{child_history, Commit, Oid};

@@ -7,7 +7,7 @@ use cursive::utils::span::SpannedString;
 use cursive::views::{ScrollView, TextContent, TextView};
 use cursive::{Printer, Vec2, View};
 
-use git_subtrees_improved::SubtreeConfig;
+use gsi::SubtreeConfig;
 
 use crate::commit::Commit;
 use crate::commit::Oid;

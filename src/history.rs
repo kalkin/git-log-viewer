@@ -6,7 +6,7 @@ use cursive::{Printer, Rect, Vec2, XY};
 use unicode_width::UnicodeWidthStr;
 use url::Url;
 
-use git_subtrees_improved::{subtrees, SubtreeConfig};
+use gsi::{subtrees, SubtreeConfig};
 use git_wrapper::is_ancestor;
 use posix_errors::PosixError;
 

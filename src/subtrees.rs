@@ -3,7 +3,7 @@ use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::thread;
 use std::thread::JoinHandle;
 
-use git_subtrees_improved::{changed_modules, SubtreeConfig};
+use gsi::{changed_modules, SubtreeConfig};
 
 use crate::commit::Oid;
 

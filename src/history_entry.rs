@@ -3,7 +3,7 @@ use cursive::utils::span::SpannedString;
 use regex::Regex;
 use url::Url;
 
-use git_subtrees_improved::{SubtreeConfig, SubtreeOperation};
+use gsi::{SubtreeConfig, SubtreeOperation};
 
 use crate::commit::{Commit, Oid};
 use crate::search::SearchState;
