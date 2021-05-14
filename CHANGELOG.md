@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-alpha.6] - 2021-05-14
+
+### Added
+
+- Debug impl to fork point Request/Response
+
+### Changed
+
+- Add `ForkPointThread::request_calculation()`
+- Subtree operation recognition
+- Migrate to clap@v3.0.0-beta.2 for argument parsing
+
+### Fixed
+
+- Showing subject module together with subtrees
+- style: Fix `clippy::must-use-candidate`
+
+### Refactored
+
+- out `color_span` to style module
+- out reversing test style
+- Reuse `ForkPointThread::request_calculation()`
+
 ## [3.0.0-alpha.5] - 2021-04-28
 
 ### Changed
