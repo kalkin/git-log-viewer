@@ -1,13 +1,14 @@
 use lazy_static::lazy_static;
-use regex::Regex;
 
+use crate::ui::base::search::Needle;
 use git_wrapper::git_cmd_out;
 use posix_errors::PosixError;
+use regex::Regex;
+use std::fmt::{Debug, Display, Formatter};
 
-#[macro_export]
 macro_rules! regex {
     ($r:literal) => {
-        Regex::new($r).expect("Valid RegEx")
+        regex::Regex::new($r).expect("Valid RegEx")
     };
 }
 
@@ -17,13 +18,31 @@ macro_rules! next_string {
     };
 }
 
-#[derive(derive_more::Display, derive_more::FromStr, Clone, Eq, PartialEq)]
-#[display(fmt = "{}", self.0)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Oid(pub String);
 
-#[derive(derive_more::Display, derive_more::FromStr, Eq, PartialEq, Clone)]
-#[display(fmt = "{}", self.0)]
+impl Display for Oid {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl Debug for Oid {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut text = self.0.clone();
+        text.truncate(8);
+        f.write_str(&text)
+    }
+}
+
+#[derive(Eq, PartialEq, Clone)]
 pub struct GitRef(pub String);
+
+impl Display for GitRef {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
 
 #[derive(Clone)]
 pub struct Commit {
@@ -141,6 +160,25 @@ impl Commit {
     #[must_use]
     pub fn subject(&self) -> &String {
         &self.subject
+    }
+
+    pub fn matches(&self, needle: &Needle) -> bool {
+        let candidates = vec![
+            self.author_name(),
+            self.short_id(),
+            &self.id().0,
+            self.author_name(),
+            self.author_email(),
+            self.committer_name(),
+            self.committer_email(),
+            &self.subject,
+        ];
+        for text in candidates {
+            if text.contains(needle.text()) {
+                return true;
+            }
+        }
+        false
     }
 }
 
@@ -266,7 +304,7 @@ impl Commit {
 pub fn history_length(
     working_dir: &str,
     rev_range: &str,
-    paths: Vec<&str>,
+    paths: &[String],
 ) -> Result<usize, PosixError> {
     let mut args = vec!["--first-parent", "--count", rev_range];
     if !paths.is_empty() {
@@ -441,4 +479,21 @@ lazy_static! {
         (regex!(r"(?i)^rename?\s*"), "\u{f044} "),
         (regex!(r"(?i).*"), "  "),
     ];
+}
+
+#[cfg(test)]
+mod test {
+    use crate::commit::commits_for_range;
+
+    #[test]
+    fn initial_commit() {
+        let working_dir = git_wrapper::top_level().unwrap();
+        let paths: &[&str] = &[];
+        let result = commits_for_range(&working_dir, "a17989470af", paths, None, None).unwrap();
+        assert_eq!(result.len(), 1);
+        let commit = &result[0];
+        assert_eq!(commit.children.len(), 0);
+        assert_eq!(commit.bellow, None);
+        assert!(!commit.is_merge);
+    }
 }

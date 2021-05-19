@@ -6,8 +6,8 @@ use cursive::{Printer, Rect, Vec2, XY};
 use unicode_width::UnicodeWidthStr;
 use url::Url;
 
-use gsi::{subtrees, SubtreeConfig};
 use git_wrapper::is_ancestor;
+use gsi::{subtrees, SubtreeConfig};
 use posix_errors::PosixError;
 
 use crate::commit::{child_history, commits_for_range, history_length, Commit};

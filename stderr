@@ -1,0 +1,55 @@
+warning: unused variable: `event`
+  --> glv/src/ui/widgets.rs:34:28
+   |
+34 |     fn on_event(&mut self, event: Event) -> HandleEvent {
+   |                            ^^^^^ help: if this is intentional, prefix it with an underscore: `_event`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: 1 warning emitted
+
+   Compiling glv v3.0.0-alpha.5 (/home/user/Projects/rust/glv)
+warning: unused import: `ErrorKind`
+  --> glv/src/bin/glv2.rs:15:33
+   |
+15 | use crossterm::{execute, queue, ErrorKind, Result};
+   |                                 ^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `std::alloc::Global`
+  --> glv/src/bin/glv2.rs:21:5
+   |
+21 | use std::alloc::Global;
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::any::Any`
+  --> glv/src/bin/glv2.rs:22:5
+   |
+22 | use std::any::Any;
+   |     ^^^^^^^^^^^^^
+
+error[E0658]: use of unstable library feature 'allocator_api'
+  --> glv/src/bin/glv2.rs:21:5
+   |
+21 | use std::alloc::Global;
+   |     ^^^^^^^^^^^^^^^^^^
+   |
+   = note: see issue #32838 <https://github.com/rust-lang/rust/issues/32838> for more information
+
+error[E0308]: mismatched types
+  --> glv/src/bin/glv2.rs:60:32
+   |
+60 |                     return Err(e);
+   |                                ^ expected enum `crossterm::ErrorKind`, found struct `Box`
+   |
+   = note: expected enum `crossterm::ErrorKind`
+            found struct `Box<dyn Any + Send>`
+
+error: aborting due to 2 previous errors; 3 warnings emitted
+
+Some errors have detailed explanations: E0308, E0658.
+For more information about an error, try `rustc --explain E0308`.
+error: could not compile `glv`
+
+To learn more, run the command again with --verbose.

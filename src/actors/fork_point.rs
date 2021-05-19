@@ -62,7 +62,7 @@ impl ForkPointThread {
 
     pub fn send(&self, req: ForkPointRequest) {
         if let Err(e) = self.sender.send(req) {
-            log::error!("Error {:?}", e)
+            eprintln!("Error {:?}", e)
         }
     }
 
@@ -95,10 +95,8 @@ impl ForkPointThread {
         }
         fork_point_calc
     }
-}
 
-impl Default for ForkPointThread {
-    fn default() -> Self {
+    pub fn new() -> Self {
         let (tx_1, rx_1): (Sender<ForkPointResponse>, Receiver<ForkPointResponse>) =
             mpsc::channel();
         let (tx_2, rx_2): (Sender<ForkPointRequest>, Receiver<ForkPointRequest>) = mpsc::channel();

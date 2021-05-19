@@ -64,13 +64,11 @@ impl GitHubThread {
                 }
                 let response_code = easy.response_code().unwrap();
                 if response_code != 200 {
-                    log::error!("GH Code {}: {:?}", response_code, body);
                     continue;
                 }
                 if let Ok(parsed) = body.parse::<JsonValue>() {
                     match &parsed["title"] {
                         JsonValue::String(title) => {
-                            log::info!("PR #{}: {}", pr_id, title);
                             tx_1.send(GitHubResponse {
                                 oid,
                                 subject: format!("{} (#{})", title, pr_id),
@@ -78,11 +76,11 @@ impl GitHubThread {
                             .unwrap();
                         }
                         _ => {
-                            log::error!("PR #{}: Got unexpected {:?}", pr_id, parsed["title"]);
+                            panic!("PR #{}: Got unexpected {:?}", pr_id, parsed["title"]);
                         }
                     }
                 } else {
-                    log::error!("INVALID JSON for PR #{}: {:?}", pr_id, body);
+                    panic!("INVALID JSON for PR #{}: {:?}", pr_id, body);
                 }
             }
         });
@@ -96,7 +94,7 @@ impl GitHubThread {
 
     pub(crate) fn send(&self, req: GitHubRequest) {
         if let Err(e) = self.sender.send(req) {
-            log::error!("Error {:?}", e)
+            panic!("Error {:?}", e)
         }
     }
 

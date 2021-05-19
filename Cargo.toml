@@ -5,34 +5,27 @@ authors = ["Bahtiar `kalkin-` Gadimov <bahtiar@gadimov.de>"]
 edition = "2018"
 description = "Git log viewer supporting un/folding merges"
 
-[[test]]
-name = "cucumber"
-harness = false # Allows Cucumber to print output instead of libtest
 
 [dependencies]
 configparser = "2"
-cursive = "0.16"
+crossterm = "0.19"
 curl = "0.4.36"
-derive_more = "0.99"
 git-wrapper = { path = "../git-wrapper" }
 gsi = { path = "../gsi" }
-log = "0.4"
 lazy_static = "1.4"
-serde = { version = "1", features = ["derive"] }
 vte = "0.10.1"
 posix-errors = { path = "../posix-errors" }
 regex = "1"
 tinyjson = "2"
 unicode-segmentation = "1.7.1"
 unicode-width = "0.1.7"
+unicode-truncate = "0.2.0"
 url = "2"
 which = "4"
 xdg = "^2.1"
 
 [dev-dependencies]
-cucumber_rust = { git = "https://github.com/bbqsrc/cucumber-rust", branch = "main" }
-tempfile = "3"
-tokio = { version = "1.2.0", features = ["rt-multi-thread", "macros", "time"] }
+lipsum = "0.7.0"
 
 [dependencies.clap]
 version = "3.0.0-beta.2"

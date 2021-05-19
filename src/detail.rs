@@ -1,127 +1,103 @@
 use std::process::{Command, Stdio};
 
-use cursive::event::{Event, EventResult};
-use cursive::theme::Style;
-use cursive::traits::Scrollable;
-use cursive::utils::span::SpannedString;
-use cursive::views::{ScrollView, TextContent, TextView};
-use cursive::{Printer, Vec2, View};
+use crossterm::event::Event;
+use crossterm::style::{style, ContentStyle, StyledContent};
 
 use gsi::SubtreeConfig;
 
 use crate::commit::Commit;
 use crate::commit::Oid;
+use crate::default_styles::{DATE_STYLE, DEFAULT_STYLE, ID_STYLE, NAME_STYLE};
 use crate::history_entry::HistoryEntry;
 use crate::raw;
-use crate::style::{bold_style, color_span, date_style, id_style, name_style, DEFAULT_STYLE};
-use crate::views::DetailView;
+use crate::ui::base::data::StyledAreaAdapter;
+use crate::ui::base::{Area, Drawable, HandleEvent, ListWidget, StyledArea, StyledLine};
+use crate::ui::layouts::DetailsWidget;
 
-pub struct CommitDetailView {
-    content: Option<ScrollView<TextView>>,
-}
+pub struct DiffView(ListWidget<String>);
 
-impl CommitDetailView {
-    pub fn new() -> Self {
-        CommitDetailView { content: None }
+impl Default for DiffView {
+    #[must_use]
+    fn default() -> Self {
+        let adapter = StyledAreaAdapter {
+            content: vec![],
+            thread: None,
+        };
+        Self(ListWidget::new(Box::new(adapter)))
     }
 }
 
-impl View for CommitDetailView {
-    fn draw(&self, printer: &Printer) {
-        if self.content.is_some() {
-            self.content.as_ref().unwrap().draw(printer);
-        }
+impl Drawable for DiffView {
+    fn render(&mut self, area: &Area) -> StyledArea<String> {
+        self.0.render(area)
     }
 
-    fn layout(&mut self, size: Vec2) {
-        if self.content.is_some() {
-            let content = self.content.as_mut().unwrap();
-            content.layout(size)
-        }
-    }
-
-    fn on_event(&mut self, e: Event) -> EventResult {
-        assert!(self.content.is_some());
-        match e {
-            Event::Char('/') | Event::Char('?') => {
-                log::warn!("Search in diff view NIY");
-                EventResult::Consumed(None)
-            }
-            _ => self.content.as_mut().unwrap().on_event(e),
-        }
+    fn on_event(&mut self, event: Event) -> HandleEvent {
+        self.0.on_event(event)
     }
 }
 
-impl DetailView for CommitDetailView {
-    fn set_detail(&mut self, entry: &HistoryEntry) {
-        let detail = entry.commit();
-        let content = TextContent::new("");
-        content.append(color_span(
-            "Commit:          ",
-            &detail.id().0,
-            id_style(&DEFAULT_STYLE),
-        ));
-
-        content.append(color_span(
-            "Author:          ",
-            &detail.author_name(),
-            name_style(&DEFAULT_STYLE),
-        ));
-
-        content.append(color_span(
-            "Author Date:     ",
-            &detail.author_date(),
-            date_style(&DEFAULT_STYLE),
-        ));
-
+impl DetailsWidget<HistoryEntry> for DiffView {
+    fn set_content(&mut self, content: &HistoryEntry) {
+        let mut data: StyledArea<String> = vec![
+            color_text("Commit:          ", &content.id().0, *ID_STYLE),
+            color_text("Author:          ", &content.author_name(), *NAME_STYLE),
+            color_text("Author Date:     ", &content.author_date(), *DATE_STYLE),
+        ];
         // Committer lines {
-        if detail.author_name() != detail.committer_name() {
-            content.append(color_span(
+        if content.author_name() != content.committer_name() {
+            data.push(color_text(
                 "Committer:       ",
-                &detail.author_name(),
-                name_style(&DEFAULT_STYLE),
+                &content.author_name(),
+                *NAME_STYLE,
             ));
         }
-        if detail.author_date() == detail.committer_date() {
-            content.append(color_span(
+
+        if content.author_date() != content.committer_date() {
+            data.push(color_text(
                 "Committer Date:  ",
-                &detail.committer_date(),
-                date_style(&DEFAULT_STYLE),
+                &content.committer_date(),
+                *DATE_STYLE,
             ));
         }
         // Committer lines }
 
         // Modules
-        if !entry.subtrees().is_empty() {
+        if !content.subtrees().is_empty() {
             let module_names: Vec<String> =
-                entry.subtrees().iter().map(SubtreeConfig::id).collect();
-            content.append(color_span(
+                content.subtrees().iter().map(SubtreeConfig::id).collect();
+            data.push(color_text(
                 "Modules:         ",
                 &module_names.join(", "),
-                date_style(&DEFAULT_STYLE),
+                *DATE_STYLE,
             ));
         }
 
-        // Subject
-        content.append("\n");
-        content.append(SpannedString::styled(
-            format!(" {}\n", detail.subject()),
-            bold_style(&DEFAULT_STYLE),
-        ));
-        content.append("\n");
-        for line in detail.body().lines() {
-            content.append(format!(" {}\n", line));
+        data.push(vec![]);
+        for subject_line in content.original_subject().trim().lines() {
+            data.push(color_text(" ", subject_line, *DEFAULT_STYLE));
         }
-        content.append("                                 ❦ ❦ ❦ ❦ \n\n");
-        for s in git_diff(detail) {
-            content.append(s);
+        data.push(vec![]);
+        for body_line in content.body().trim().lines() {
+            data.push(color_text(" ", body_line, *DEFAULT_STYLE));
         }
-        self.content = Some(TextView::new_with_content(content).scrollable());
+        data.push(vec![]);
+        data.push(vec![style(
+            "                                 ❦ ❦ ❦ ❦ ".to_string(),
+        )]);
+        data.push(vec![]);
+        for line in git_diff(content.working_dir(), content.commit()) {
+            data.push(line);
+        }
+        let adapter = StyledAreaAdapter {
+            content: data,
+            thread: None,
+        };
+        self.0 = ListWidget::new(Box::new(adapter));
     }
 }
 
-fn git_diff(commit: &Commit) -> Vec<SpannedString<Style>> {
-    let working_dir = &git_wrapper::top_level().unwrap()[..];
+fn git_diff(working_dir: &str, commit: &Commit) -> Vec<StyledLine<String>> {
     let default = Oid { 0: "".to_string() };
     let bellow = commit.bellow().unwrap_or(&default);
     let rev = format!("{}..{}", bellow.0, commit.id().0);
@@ -163,4 +139,9 @@ fn git_diff(commit: &Commit) -> Vec<SpannedString<Style>> {
         .unwrap();
         raw::parse_spans(proc.stdout)
     }
+}
+
+fn color_text(key: &str, value: &str, style: ContentStyle) -> StyledLine<String> {
+    let content = format!("{}{}", key, value);
+    vec![StyledContent::new(style, content)]
 }
