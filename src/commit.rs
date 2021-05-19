@@ -359,11 +359,6 @@ pub fn child_history(working_dir: &str, commit: &Commit) -> Vec<Commit> {
         && end_commit.bellow.is_some()
         && end_commit.bellow.as_ref().expect("Expected merge commit") != bellow
     {
-        // let fork_point = if end_commit.is_merge {
-        //     ForkPointCalculation::Needed
-        // } else {
-        //     ForkPointCalculation::Done(false)
-        // };
         let link = to_commit(
             working_dir,
             end_commit.bellow.as_ref().expect("Expected merge commit"),
