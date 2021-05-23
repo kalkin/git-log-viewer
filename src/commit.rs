@@ -159,6 +159,9 @@ impl Commit {
         let short_id = next_string!(split);
         let mut parents_record: Vec<&str> =
             split.next().expect("Parse parents").split(' ').collect();
+        if parents_record.len() == 1 && parents_record[0].is_empty() {
+            parents_record = vec![];
+        }
         let references_record = next_string!(split);
 
         let author_name = next_string!(split);
