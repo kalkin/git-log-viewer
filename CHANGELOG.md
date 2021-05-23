@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-beta.1] - 2021-05-23
+
+### Added
+
+- Shorten common prefix in remote branches
+- Search in diff view is working again
+
+### Changed
+
+- Replace `cursive` ui library with `crossterm`. This changed forced me to
+  rewrite the ui.
+- Async recursive search. The search is still slow, but now it returns visual
+  feedback about the progress.
+- Mouse selection actually works now
+
+### Fixed
+
+- Fixed calculating fork point
+
 ## [3.0.0-alpha.6] - 2021-05-14
 
 ### Added
