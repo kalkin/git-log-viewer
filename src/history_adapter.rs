@@ -11,6 +11,7 @@ use crate::history_entry::{HistoryEntry, SpecialSubject};
 use crate::ui::base::data::{DataAdapter, SearchProgress};
 use crate::ui::base::search::{Direction, Needle, SearchResult};
 use crate::ui::base::StyledLine;
+use git_wrapper::Remote;
 use std::fmt::{Debug, Formatter};
 use std::sync::mpsc;
 use std::thread;
@@ -20,6 +21,7 @@ pub struct HistoryAdapter {
     history: Vec<HistoryEntry>,
     length: usize,
     paths: Vec<String>,
+    remotes: Vec<Remote>,
     range: String,
     working_dir: String,
     github_thread: GitHubThread,
@@ -116,10 +118,15 @@ impl HistoryAdapter {
         let length = history_length(working_dir, range, &paths)?;
         let fork_point_thread = ForkPointThread::new();
         let subtree_thread = SubtreeThread::new(working_dir.to_string(), subtree_modules.to_vec());
+        let remotes = git_wrapper::remotes(working_dir)?
+            .into_iter()
+            .map(|(_k, v)| v)
+            .collect::<Vec<Remote>>();
         Ok(HistoryAdapter {
             history: vec![],
             length,
             paths,
+            remotes,
             range: range.to_string(),
             working_dir: working_dir.to_string(),
             github_thread: GitHubThread::new(),
@@ -205,8 +212,14 @@ impl HistoryAdapter {
                 let fork_point =
                     self.fork_point_thread
                         .request_calculation(&commit, above_commit, working_dir);
-                let entry =
-                    HistoryEntry::new(self.working_dir.clone(), commit, 0, None, fork_point);
+                let entry = HistoryEntry::new(
+                    self.working_dir.clone(),
+                    commit,
+                    0,
+                    None,
+                    fork_point,
+                    &self.remotes,
+                );
                 if let Some(url) = entry.url() {
                     if let SpecialSubject::PrMerge(pr_id) = entry.special() {
                         self.github_thread.send(GitHubRequest {
@@ -259,6 +272,7 @@ impl HistoryAdapter {
                     level,
                     selected.url(),
                     fork_point_calc,
+                    &self.remotes,
                 );
                 if let Some(url) = entry.url() {
                     if let SpecialSubject::PrMerge(pr_id) = entry.special() {

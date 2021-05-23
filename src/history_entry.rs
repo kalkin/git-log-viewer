@@ -3,9 +3,10 @@ use gsi::{SubtreeConfig, SubtreeOperation};
 use url::Url;
 
 use crate::actors::fork_point::ForkPointCalculation;
-use crate::commit::{Commit, Oid};
+use crate::commit::{Commit, GitRef, Oid};
 use crate::default_styles::{DATE_STYLE, ID_STYLE, MOD_STYLE, NAME_STYLE, REF_STYLE};
 use crate::ui::base::StyledLine;
+use git_wrapper::Remote;
 use lazy_static::lazy_static;
 use regex::Regex;
 use unicode_width::UnicodeWidthStr;
@@ -21,6 +22,7 @@ pub struct HistoryEntry {
     commit: Commit,
     folded: bool,
     level: u8,
+    remotes: Vec<Remote>,
     subtree_operation: SubtreeOperation,
     subject_module: Option<String>,
     subject: String,
@@ -39,6 +41,7 @@ impl HistoryEntry {
         level: u8,
         repo_url: Option<Url>,
         fork_point: ForkPointCalculation,
+        remotes: &[Remote],
     ) -> Self {
         let subtree_operation = SubtreeOperation::from(commit.subject());
 
@@ -46,11 +49,26 @@ impl HistoryEntry {
         let subject = short_subject.unwrap_or_else(|| commit.subject().clone());
 
         let special_subject = are_we_special(&commit);
+        let remotes = if commit.references().is_empty() {
+            vec![]
+        } else {
+            let mut result = vec![];
+            for remote in remotes {
+                for git_ref in commit.references() {
+                    if git_ref.to_string().starts_with(&remote.name) {
+                        result.push(remote.clone());
+                        break;
+                    }
+                }
+            }
+            result
+        };
 
         HistoryEntry {
             commit,
             folded: true,
             level,
+            remotes,
             subject,
             special_subject,
             subject_module,
@@ -132,9 +150,57 @@ impl HistoryEntry {
         Some(StyledContent::new(*MOD_STYLE, text))
     }
 
+    fn shorten_references(remotes: &[Remote], references: &[GitRef]) -> Vec<String> {
+        let mut result = vec![];
+        if !references.is_empty() {
+            if remotes.is_empty() {
+                for r in references {
+                    result.push(r.to_string());
+                }
+            } else {
+                let mut mut_refs = references.to_vec();
+                let mut tmp_result = vec![];
+                for remote in remotes {
+                    let mut remote_branches = vec![];
+                    if mut_refs.is_empty() {
+                        break;
+                    }
+                    for git_ref in references {
+                        if git_ref.to_string().starts_with(&remote.name) {
+                            remote_branches.push(git_ref);
+                            mut_refs.retain(|x| x != git_ref);
+                        }
+                    }
+                    if !remote_branches.is_empty() {
+                        if remote_branches.len() == 1 {
+                            result.push(remote_branches[0].to_string());
+                        } else {
+                            let prefix_len = remote.name.len() + 1;
+                            let mut text = remote.name.to_string();
+                            text.push('/');
+                            text.push('{');
+                            text.push_str(
+                                &remote_branches
+                                    .iter()
+                                    .map(|r| r.to_string().split_off(prefix_len))
+                                    .collect::<Vec<_>>()
+                                    .join(","),
+                            );
+                            text.push('}');
+                            tmp_result.push(text);
+                        }
+                    }
+                }
+                result.extend(mut_refs.iter().map(std::string::ToString::to_string));
+                result.extend(tmp_result);
+            }
+        }
+        result
+    }
+
     fn render_references(&self) -> Vec<StyledContent<String>> {
         let mut result = vec![];
-        for r in self.commit.references() {
+        for r in HistoryEntry::shorten_references(&self.remotes, self.commit.references()) {
             let separator = style(" ".to_string());
             result.push(separator);
 
