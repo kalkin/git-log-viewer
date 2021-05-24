@@ -7,15 +7,8 @@ use crate::commit::{Commit, GitRef, Oid};
 use crate::default_styles::{DATE_STYLE, ID_STYLE, MOD_STYLE, NAME_STYLE, REF_STYLE};
 use crate::ui::base::StyledLine;
 use git_wrapper::Remote;
-use lazy_static::lazy_static;
-use regex::Regex;
+use subject_classifier::Subject;
 use unicode_width::UnicodeWidthStr;
-
-#[derive(Eq, PartialEq)]
-pub enum SpecialSubject {
-    PrMerge(String),
-    None,
-}
 
 #[allow(clippy::module_name_repetitions, dead_code)]
 pub struct HistoryEntry {
@@ -24,9 +17,8 @@ pub struct HistoryEntry {
     level: u8,
     remotes: Vec<Remote>,
     subtree_operation: SubtreeOperation,
-    subject_module: Option<String>,
-    subject: String,
-    special_subject: SpecialSubject,
+    subject_text: String,
+    subject_struct: Subject,
     pub subtrees: Vec<SubtreeConfig>,
     repo_url: Option<Url>,
     fork_point: ForkPointCalculation,
@@ -45,10 +37,10 @@ impl HistoryEntry {
     ) -> Self {
         let subtree_operation = SubtreeOperation::from(commit.subject());
 
-        let (subject_module, short_subject) = split_subject(&commit.subject());
-        let subject = short_subject.unwrap_or_else(|| commit.subject().clone());
+        let subject_struct = Subject::from(commit.subject().as_str());
+        let subject_text = subject_struct.description().to_string();
 
-        let special_subject = are_we_special(&commit);
+        // let special_subject = are_we_special(&commit);
         let remotes = if commit.references().is_empty() {
             vec![]
         } else {
@@ -69,9 +61,8 @@ impl HistoryEntry {
             folded: true,
             level,
             remotes,
-            subject,
-            special_subject,
-            subject_module,
+            subject_text,
+            subject_struct,
             subtree_operation,
             subtrees: vec![],
             repo_url,
@@ -98,7 +89,7 @@ impl HistoryEntry {
     }
 
     fn render_icon(&self) -> StyledContent<String> {
-        style(self.commit.icon().clone())
+        style(self.subject_struct.icon().to_string())
     }
 
     fn render_graph(&self) -> StyledContent<String> {
@@ -134,7 +125,10 @@ impl HistoryEntry {
     }
     fn render_modules(&self, max_len: usize) -> Option<StyledContent<String>> {
         let mut text;
-        match (!self.subtrees.is_empty(), self.subject_module.is_some()) {
+        match (
+            !self.subtrees.is_empty(),
+            self.subject_struct.scope().is_some(),
+        ) {
             (true, _) => {
                 text = ":".to_string();
                 let subtree_modules: Vec<String> =
@@ -144,7 +138,7 @@ impl HistoryEntry {
                     text = format!("({} modules)", subtree_modules.len());
                 }
             }
-            (false, true) => text = self.subject_module.as_ref().unwrap().clone(),
+            (false, true) => text = self.subject_struct.scope().as_ref().unwrap().clone(),
             (false, false) => return None,
         };
         Some(StyledContent::new(*MOD_STYLE, text))
@@ -239,7 +233,7 @@ impl HistoryEntry {
                 }
                 let separator = style(" ".to_string());
                 buf.push(separator);
-                let text = self.subject.clone();
+                let text = self.subject_text.clone();
                 buf.push(style(text));
             }
         }
@@ -278,7 +272,7 @@ impl HistoryEntry {
 // Public interface
 impl HistoryEntry {
     pub fn set_subject(&mut self, subject: String) {
-        self.subject = subject
+        self.subject_text = subject
     }
 
     pub fn set_fork_point(&mut self, t: bool) {
@@ -286,8 +280,8 @@ impl HistoryEntry {
     }
 
     #[must_use]
-    pub fn special(&self) -> &SpecialSubject {
-        &self.special_subject
+    pub fn special(&self) -> &Subject {
+        &self.subject_struct
     }
 
     #[must_use]
@@ -297,7 +291,7 @@ impl HistoryEntry {
 
     #[must_use]
     pub fn subject(&self) -> &String {
-        &self.subject
+        &self.subject_text
     }
 
     #[must_use]
@@ -394,7 +388,7 @@ impl HistoryEntry {
             self.commit.author_email(),
             self.commit.committer_name(),
             self.commit.committer_email(),
-            &self.subject,
+            &self.subject_text,
         ];
 
         let x: Vec<String> = self.subtrees.iter().map(SubtreeConfig::id).collect();
@@ -436,45 +430,4 @@ impl HistoryEntry {
     pub fn working_dir(&self) -> &String {
         &self.working_dir
     }
-}
-
-lazy_static! {
-    static ref SPLIT_SUBJ_REGEX: Regex = regex!(r"^\w+\((.+)\):\s?.+");
-    static ref GH_SPECIAL_REGEX: Regex =
-        regex!(r"^Merge (?:remote-tracking branch '.+/pr/(\d+)'|pull request #(\d+) from .+)$");
-}
-#[must_use]
-pub fn split_subject(subject: &str) -> (Option<String>, Option<String>) {
-    let mut subject_module = None;
-    let mut short_subject = None;
-    if subject.contains("):") {
-        if let Some(caps) = SPLIT_SUBJ_REGEX.captures(&subject) {
-            let x = caps.get(1).expect("Expected 1 capture group");
-            subject_module = Some(x.as_str().to_string());
-            let mut f = subject.to_string();
-            f.truncate(x.start() - 1);
-            f.push_str(&subject.to_string().split_off(x.end() + 1));
-            short_subject = Some(f);
-        }
-    }
-    (subject_module, short_subject)
-}
-
-fn are_we_special(commit: &Commit) -> SpecialSubject {
-    let mut special_subject = SpecialSubject::None;
-    if commit.is_merge() && GH_SPECIAL_REGEX.is_match(&commit.subject()) {
-        if let Some(caps) = GH_SPECIAL_REGEX.captures(&commit.subject()) {
-            let pr_id = if let Some(n) = caps.get(1) {
-                n.as_str().to_string()
-            } else if let Some(n) = caps.get(2) {
-                n.as_str().to_string()
-            } else {
-                panic!("Failed to ideintify pr number {:?}", caps);
-            };
-
-            special_subject = SpecialSubject::PrMerge(pr_id);
-        }
-    }
-
-    special_subject
 }

@@ -2,12 +2,13 @@ use std::sync::mpsc::{Receiver, Sender};
 
 use gsi::{subtrees, SubtreeConfig};
 use posix_errors::PosixError;
+use subject_classifier::Subject;
 
 use crate::actors::fork_point::ForkPointThread;
 use crate::actors::github::{GitHubRequest, GitHubThread};
 use crate::actors::subtrees::{SubtreeChangesRequest, SubtreeThread};
 use crate::commit::{child_history, commits_for_range, history_length, Commit};
-use crate::history_entry::{HistoryEntry, SpecialSubject};
+use crate::history_entry::HistoryEntry;
 use crate::ui::base::data::{DataAdapter, SearchProgress};
 use crate::ui::base::search::{Direction, Needle, SearchResult};
 use crate::ui::base::StyledLine;
@@ -221,11 +222,11 @@ impl HistoryAdapter {
                     &self.remotes,
                 );
                 if let Some(url) = entry.url() {
-                    if let SpecialSubject::PrMerge(pr_id) = entry.special() {
+                    if let Subject::PullRequest { id, .. } = entry.special() {
                         self.github_thread.send(GitHubRequest {
                             oid: entry.id().clone(),
                             url,
-                            pr_id: pr_id.clone(),
+                            pr_id: id.to_string(),
                         });
                     }
                 }
@@ -275,11 +276,11 @@ impl HistoryAdapter {
                     &self.remotes,
                 );
                 if let Some(url) = entry.url() {
-                    if let SpecialSubject::PrMerge(pr_id) = entry.special() {
+                    if let Subject::PullRequest { id, .. } = entry.special() {
                         self.github_thread.send(GitHubRequest {
                             oid: entry.id().clone(),
                             url,
-                            pr_id: pr_id.clone(),
+                            pr_id: id.to_string(),
                         });
                     }
                 }

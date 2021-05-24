@@ -1,16 +1,8 @@
-use lazy_static::lazy_static;
-
 use crate::ui::base::search::Needle;
+
 use git_wrapper::git_cmd_out;
 use posix_errors::PosixError;
-use regex::Regex;
 use std::fmt::{Debug, Display, Formatter};
-
-macro_rules! regex {
-    ($r:literal) => {
-        regex::Regex::new($r).expect("Valid RegEx")
-    };
-}
 
 macro_rules! next_string {
     ($split:expr) => {
@@ -58,8 +50,6 @@ pub struct Commit {
     committer_rel_date: String,
     subject: String,
     body: String,
-
-    icon: String,
 
     bellow: Option<Oid>,
     children: Vec<Oid>,
@@ -127,11 +117,6 @@ impl Commit {
     #[must_use]
     pub fn id(&self) -> &Oid {
         &self.id
-    }
-
-    #[must_use]
-    pub fn icon(&self) -> &String {
-        &self.icon
     }
 
     #[allow(dead_code)]
@@ -256,14 +241,6 @@ impl Commit {
             children.push(Oid(c.to_string()));
         }
 
-        let mut icon = " ".to_string();
-        for (reg, c) in REGEXES.iter() {
-            if reg.is_match(&subject) {
-                icon = (*c).to_string();
-                break;
-            }
-        }
-
         Commit {
             id,
             short_id,
@@ -280,8 +257,6 @@ impl Commit {
 
             subject,
             body,
-
-            icon,
 
             bellow,
             children,
@@ -439,46 +414,6 @@ pub fn merge_base(working_dir: &str, p1: &Oid, p2: &Oid) -> Result<Option<Oid>, 
     } else {
         Ok(Some(Oid { 0: tmp }))
     }
-}
-
-lazy_static! {
-    static ref REGEXES: Vec<(Regex, &'static str)> = vec![
-        (regex!(r"(?i)^Revert:?\s*"), " "),
-        (regex!(r"(?i)^archive:?\s*"), "\u{f53b} "),
-        (regex!(r"(?i)^issue:?\s*"), "\u{f145} "),
-        (regex!(r"(?i)^BREAKING CHANGE:?\s*"), "⚠ "),
-        (regex!(r"(?i)^fixup!\s+"), "\u{f0e3} "),
-        (regex!(r"(?i)^ADD:\s?[a-z0-9]+"), " "),
-        (regex!(r"(?i)^ref(actor)?:?\s*"), "↺ "),
-        (regex!(r"(?i)^lang:?\s*"), "\u{fac9}"),
-        (regex!(r"(?i)^deps(\(.+\))?:?\s*"), "\u{f487} "),
-        (regex!(r"(?i)^config:?\s*"), "\u{f462} "),
-        (regex!(r"(?i)^test(\(.+\))?:?\s*"), "\u{f45e} "),
-        (regex!(r"(?i)^ci(\(.+\))?:?\s*"), "\u{f085} "),
-        (regex!(r"(?i)^perf(\(.+\))?:?\s*"), "\u{f9c4}"),
-        (
-            regex!(r"(?i)^(bug)?fix(ing|ed)?(\(.+\))?[/:\s]+"),
-            "\u{f188} "
-        ),
-        (regex!(r"(?i)^doc(s|umentation)?:?\s*"), "✎ "),
-        (regex!(r"(?i)^improve(ment)?:?\s*"), "\u{e370} "),
-        (regex!(r"(?i)^CHANGE/?:?\s*"), "\u{e370} "),
-        (regex!(r"(?i)^hotfix:?\s*"), "\u{f490} "),
-        (regex!(r"(?i)^feat:?\s*"), "➕"),
-        (regex!(r"(?i)^add:?\s*"), "➕"),
-        (regex!(r"(?i)^(release|bump):?\s*"), "\u{f412} "),
-        (regex!(r"(?i)^build:?\s*"), "🔨"),
-        (regex!(r"(?i).*\bchangelog\b.*"), "✎ "),
-        (regex!(r"(?i)^refactor:?\s*"), "↺ "),
-        (regex!(r"(?i)^.* Import .*"), "⮈ "),
-        (regex!(r"(?i)^Split .*"), "\u{f403} "),
-        (regex!(r"(?i)^Remove:?\s+.*"), "\u{f48e} "),
-        (regex!(r"(?i)^Update :\w+.*"), "\u{f419} "),
-        (regex!(r"(?i)^style:?\s*"), "♥ "),
-        (regex!(r"(?i)^DONE:?\s?[a-z0-9]+"), "\u{f41d} "),
-        (regex!(r"(?i)^rename?\s*"), "\u{f044} "),
-        (regex!(r"(?i).*"), "  "),
-    ];
 }
 
 #[cfg(test)]
