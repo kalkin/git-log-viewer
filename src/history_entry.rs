@@ -1,5 +1,5 @@
 use crossterm::style::{style, Attribute, ContentStyle, StyledContent};
-use gsi::{SubtreeConfig, SubtreeOperation};
+use gsi::SubtreeConfig;
 use url::Url;
 
 use crate::actors::fork_point::ForkPointCalculation;
@@ -7,7 +7,7 @@ use crate::commit::{Commit, GitRef, Oid};
 use crate::default_styles::{DATE_STYLE, ID_STYLE, MOD_STYLE, NAME_STYLE, REF_STYLE};
 use crate::ui::base::StyledLine;
 use git_wrapper::Remote;
-use subject_classifier::Subject;
+use subject_classifier::{Subject, SubtreeOperation};
 use unicode_width::UnicodeWidthStr;
 
 #[allow(clippy::module_name_repetitions, dead_code)]
@@ -16,7 +16,6 @@ pub struct HistoryEntry {
     folded: bool,
     level: u8,
     remotes: Vec<Remote>,
-    subtree_operation: SubtreeOperation,
     subject_text: String,
     subject_struct: Subject,
     pub subtrees: Vec<SubtreeConfig>,
@@ -35,8 +34,6 @@ impl HistoryEntry {
         fork_point: ForkPointCalculation,
         remotes: &[Remote],
     ) -> Self {
-        let subtree_operation = SubtreeOperation::from(commit.subject());
-
         let subject_struct = Subject::from(commit.subject().as_str());
         let subject_text = subject_struct.description().to_string();
 
@@ -63,7 +60,6 @@ impl HistoryEntry {
             remotes,
             subject_text,
             subject_struct,
-            subtree_operation,
             subtrees: vec![],
             repo_url,
             fork_point,
@@ -107,7 +103,7 @@ impl HistoryEntry {
         }
 
         if self.has_children() {
-            if self.subtree_operation.is_import() || self.subtree_operation.is_update() {
+            if self.is_subtree_import() || self.is_subtree_update() {
                 if self.is_fork_point() {
                     text.push_str("⇤┤");
                 } else {
@@ -124,24 +120,18 @@ impl HistoryEntry {
         style(text)
     }
     fn render_modules(&self, max_len: usize) -> Option<StyledContent<String>> {
-        let mut text;
-        match (
-            !self.subtrees.is_empty(),
-            self.subject_struct.scope().is_some(),
-        ) {
-            (true, _) => {
-                text = ":".to_string();
-                let subtree_modules: Vec<String> =
-                    self.subtrees.iter().map(SubtreeConfig::id).collect();
-                text.push_str(&subtree_modules.join(" :"));
-                if text.width() > max_len {
-                    text = format!("({} modules)", subtree_modules.len());
-                }
+        if self.subtrees.is_empty() {
+            None
+        } else {
+            let mut text = ":".to_string();
+            let subtree_modules: Vec<String> =
+                self.subtrees.iter().map(SubtreeConfig::id).collect();
+            text.push_str(&subtree_modules.join(" :"));
+            if text.width() > max_len {
+                text = format!("({} strees)", subtree_modules.len());
             }
-            (false, true) => text = self.subject_struct.scope().as_ref().unwrap().clone(),
-            (false, false) => return None,
-        };
-        Some(StyledContent::new(*MOD_STYLE, text))
+            Some(StyledContent::new(*MOD_STYLE, text))
+        }
     }
 
     fn shorten_references(remotes: &[Remote], references: &[GitRef]) -> Vec<String> {
@@ -192,6 +182,13 @@ impl HistoryEntry {
         result
     }
 
+    fn format_scope(scope: &str) -> StyledContent<String> {
+        let mut text = "(".to_string();
+        text.push_str(scope);
+        text.push(')');
+        StyledContent::new(ContentStyle::default(), text)
+    }
+
     fn render_references(&self) -> Vec<StyledContent<String>> {
         let mut result = vec![];
         for r in HistoryEntry::shorten_references(&self.remotes, self.commit.references()) {
@@ -205,36 +202,46 @@ impl HistoryEntry {
         result
     }
     fn render_subject(&self) -> Vec<StyledContent<String>> {
-        let mut bold_style = ContentStyle::default();
-        bold_style.attributes.set(Attribute::Bold);
         let mut buf = vec![];
-        match &self.subtree_operation {
-            SubtreeOperation::Update { subtree, git_ref } => {
-                buf.push(StyledContent::new(*MOD_STYLE, subtree.to_owned()));
-                buf.push(style(" Update to ".to_string()));
-                let sc = StyledContent::new(bold_style, git_ref.to_owned());
-                buf.push(sc);
-            }
-            SubtreeOperation::Split { subtree, git_ref } => {
-                buf.push(StyledContent::new(*MOD_STYLE, subtree.to_owned()));
-                buf.push(style(" Split into commit ".to_string()));
-                let sc = StyledContent::new(bold_style, git_ref.to_owned());
-                buf.push(sc);
-            }
-            SubtreeOperation::Import { subtree, git_ref } => {
-                buf.push(StyledContent::new(*MOD_STYLE, subtree.to_owned()));
-                buf.push(style(" Import from ".to_string()));
-                let sc = StyledContent::new(bold_style, git_ref.to_owned());
-                buf.push(sc);
-            }
-            _ => {
-                if let Some(modules) = self.render_modules(32) {
-                    buf.push(modules);
+        let separator = style(" ".to_string());
+        if let Some(modules) = self.render_modules(32) {
+            buf.push(modules);
+            buf.push(separator.clone());
+        }
+        match &self.subject_struct {
+            Subject::ConventionalCommit {
+                scope, description, ..
+            } => {
+                if let Some(scope) = scope {
+                    buf.push(HistoryEntry::format_scope(&scope));
+                    buf.push(separator);
                 }
-                let separator = style(" ".to_string());
-                buf.push(separator);
-                let text = self.subject_text.clone();
-                buf.push(style(text));
+                buf.push(StyledContent::new(
+                    ContentStyle::default(),
+                    description.clone(),
+                ))
+            }
+            Subject::PullRequest { description, .. }
+            | Subject::Release { description, .. }
+            | Subject::Fixup(description)
+            | Subject::Remove(description)
+            | Subject::Rename(description)
+            | Subject::Revert(description)
+            | Subject::Simple(description) => buf.push(StyledContent::new(
+                ContentStyle::default(),
+                description.clone(),
+            )),
+            Subject::SubtreeCommit { operation, .. } => {
+                let mut bold_style = ContentStyle::default();
+                bold_style.attributes.set(Attribute::Bold);
+                let (text, git_ref) = match operation {
+                    SubtreeOperation::Import { git_ref, .. } => ("Import from ", git_ref),
+                    SubtreeOperation::Split { git_ref, .. } => ("Split into commit ", git_ref),
+                    SubtreeOperation::Update { git_ref, .. } => ("Update to ", git_ref),
+                };
+                buf.push(style(text.to_string()));
+                let sc = StyledContent::new(bold_style, git_ref.clone());
+                buf.push(sc);
             }
         }
 
@@ -267,6 +274,23 @@ impl HistoryEntry {
             }
         };
         result
+    }
+    fn is_subtree_import(&self) -> bool {
+        match &self.subject_struct {
+            Subject::SubtreeCommit { operation, .. } => {
+                matches!(operation, SubtreeOperation::Import { .. })
+            }
+            _ => false,
+        }
+    }
+
+    fn is_subtree_update(&self) -> bool {
+        match &self.subject_struct {
+            Subject::SubtreeCommit { operation, .. } => {
+                matches!(operation, SubtreeOperation::Update { .. })
+            }
+            _ => false,
+        }
     }
 }
 // Public interface
