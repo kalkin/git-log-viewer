@@ -118,7 +118,7 @@ impl HistoryAdapter {
         let subtree_modules = subtrees(working_dir)?;
         let length = history_length(working_dir, range, &paths)?;
         let fork_point_thread = ForkPointThread::new();
-        let subtree_thread = SubtreeThread::new(working_dir.to_string(), subtree_modules.to_vec());
+        let subtree_thread = SubtreeThread::new(working_dir.to_string(), subtree_modules.clone());
         let remotes = git_wrapper::remotes(working_dir)?
             .into_iter()
             .map(|(_k, v)| v)
@@ -150,10 +150,13 @@ impl HistoryAdapter {
             if last_level - 1 != (entry.level() as usize) {
                 assert_eq!(entry.level() as usize, level);
                 if !entry.is_foldable() {
-                    let foo = entry.id().clone();
                     panic!(
                         "\nError during {:?} #{}\n{:#?}\nExpected a merge, got {}\n{:#?}",
-                        sr, result, seen_ids, foo, self
+                        sr,
+                        result,
+                        seen_ids,
+                        entry.id().clone(),
+                        self
                     );
                 }
                 seen_ids.push(entry.id().to_string());
@@ -167,12 +170,12 @@ impl HistoryAdapter {
         result
     }
     fn addr_to_index(&mut self, start_index: usize, level: usize, addr: usize) -> usize {
-        assert_eq!(self.get_data(start_index).level(), level as u8);
+        assert_eq!(self.get_data(start_index).level() as usize, level);
         let mut result: usize = 0;
         let mut stop: usize = 0;
         for i in start_index..self.length {
             let entry = self.get_data(i);
-            if entry.level() == level as u8 {
+            if entry.level() as usize == level {
                 result = i;
                 if stop == addr {
                     break;

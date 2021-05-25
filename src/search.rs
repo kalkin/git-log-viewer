@@ -42,7 +42,7 @@ pub fn search_link_recursive(
                 let mut insert_position = i;
                 for child in &mut children {
                     insert_position += 1;
-                    commits.insert(insert_position, child.to_owned());
+                    commits.insert(insert_position, child.clone());
                 }
                 return Some((needle_position, commits));
             }

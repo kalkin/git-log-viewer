@@ -101,7 +101,7 @@ fn main() {
 }
 
 fn run_ui(
-    working_dir: &String,
+    working_dir: &str,
     revision: &str,
     paths: Vec<String>,
 ) -> Result<(), crossterm::ErrorKind> {

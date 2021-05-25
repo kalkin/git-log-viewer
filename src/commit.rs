@@ -244,23 +244,18 @@ impl Commit {
         Commit {
             id,
             short_id,
-
             author_name,
-            author_date,
             author_email,
+            author_date,
             author_rel_date,
-
             committer_name,
             committer_email,
             committer_date,
             committer_rel_date,
-
             subject,
             body,
-
             bellow,
             children,
-
             is_commit_link,
             is_head,
             is_merge,

@@ -276,21 +276,23 @@ impl HistoryEntry {
         result
     }
     fn is_subtree_import(&self) -> bool {
-        match &self.subject_struct {
-            Subject::SubtreeCommit { operation, .. } => {
-                matches!(operation, SubtreeOperation::Import { .. })
+        matches!(
+            &self.subject_struct,
+            Subject::SubtreeCommit {
+                operation: SubtreeOperation::Import { .. },
+                ..
             }
-            _ => false,
-        }
+        )
     }
 
     fn is_subtree_update(&self) -> bool {
-        match &self.subject_struct {
-            Subject::SubtreeCommit { operation, .. } => {
-                matches!(operation, SubtreeOperation::Update { .. })
+        matches!(
+            &self.subject_struct,
+            Subject::SubtreeCommit {
+                operation: SubtreeOperation::Update { .. },
+                ..
             }
-            _ => false,
-        }
+        )
     }
 }
 // Public interface
