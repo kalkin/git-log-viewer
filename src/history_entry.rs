@@ -8,6 +8,7 @@ use crate::default_styles::{DATE_STYLE, ID_STYLE, MOD_STYLE, NAME_STYLE, REF_STY
 use crate::ui::base::StyledLine;
 use git_wrapper::Remote;
 use subject_classifier::{Subject, SubtreeOperation};
+use unicode_truncate::UnicodeTruncateStr;
 use unicode_width::UnicodeWidthStr;
 
 #[allow(clippy::module_name_repetitions, dead_code)]
@@ -128,7 +129,13 @@ impl HistoryEntry {
                 self.subtrees.iter().map(SubtreeConfig::id).collect();
             text.push_str(&subtree_modules.join(" :"));
             if text.width() > max_len {
-                text = format!("({} strees)", subtree_modules.len());
+                match subtree_modules.len() {
+                    1 => {
+                        text = text.unicode_truncate(max_len - 1).0.to_string();
+                        text.push('…');
+                    }
+                    x => text = format!("({} strees)", x),
+                }
             }
             Some(StyledContent::new(*MOD_STYLE, text))
         }
