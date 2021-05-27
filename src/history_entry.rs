@@ -228,8 +228,7 @@ impl HistoryEntry {
                     description.clone(),
                 ))
             }
-            Subject::PullRequest { description, .. }
-            | Subject::Release { description, .. }
+            Subject::Release { description, .. }
             | Subject::Fixup(description)
             | Subject::Remove(description)
             | Subject::Rename(description)
@@ -238,6 +237,7 @@ impl HistoryEntry {
                 ContentStyle::default(),
                 description.clone(),
             )),
+            Subject::PullRequest { .. } => buf.push(style(self.subject_text.clone())),
             Subject::SubtreeCommit { operation, .. } => {
                 let mut bold_style = ContentStyle::default();
                 bold_style.attributes.set(Attribute::Bold);
