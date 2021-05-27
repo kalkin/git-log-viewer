@@ -67,7 +67,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
             let module_names: Vec<String> =
                 content.subtrees().iter().map(SubtreeConfig::id).collect();
             data.push(color_text(
-                "Modules:         ",
+                "Strees:          ",
                 &module_names.join(", "),
                 *DATE_STYLE,
             ));
