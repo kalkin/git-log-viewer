@@ -79,10 +79,20 @@ impl vte::Perform for Counter {
                 37 => self.style.foreground_color = Some(Color::Grey),
 
                 38 => {
-                    assert_eq!(iter.next().unwrap()[0], 5);
-                    #[allow(clippy::cast_possible_truncation)]
-                    let color = iter.next().unwrap()[0] as u8;
-                    self.style.foreground_color = Some(Color::AnsiValue(color));
+                    let kind = iter.next().unwrap()[0];
+                    match kind {
+                        5 =>  {
+                            let color = iter.next().unwrap()[0] as u8;
+                            self.style.foreground_color = Some(Color::AnsiValue(color));
+                        }
+                        2 =>  {
+                            let r = iter.next().unwrap()[0] as u8;
+                            let g = iter.next().unwrap()[0] as u8;
+                            let b = iter.next().unwrap()[0] as u8;
+                            self.style.foreground_color = Some(Color::from((r, g, b)));
+                        }
+                        x => panic!("Unexpected value {:?}", x),
+                    }
                 }
 
                 40 => self.style.background_color = Some(Color::Black),
@@ -95,10 +105,20 @@ impl vte::Perform for Counter {
                 47 => self.style.background_color = Some(Color::Grey),
 
                 48 => {
-                    assert_eq!(iter.next().unwrap()[0], 5);
-                    #[allow(clippy::cast_possible_truncation)]
-                    let color = iter.next().unwrap()[0] as u8;
-                    self.style.background_color = Some(Color::AnsiValue(color));
+                    let kind = iter.next().unwrap()[0];
+                    match kind {
+                        5 =>  {
+                            let color = iter.next().unwrap()[0] as u8;
+                            self.style.background_color = Some(Color::AnsiValue(color));
+                        }
+                        2 =>  {
+                            let r = iter.next().unwrap()[0] as u8;
+                            let g = iter.next().unwrap()[0] as u8;
+                            let b = iter.next().unwrap()[0] as u8;
+                            self.style.background_color = Some(Color::from((r, g, b)));
+                        }
+                        x => panic!("Unexpected value {:?}", x),
+                    }
                 }
 
                 90 => self.style.foreground_color = Some(Color::DarkGrey),
