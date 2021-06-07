@@ -81,13 +81,17 @@ impl vte::Perform for Counter {
                 38 => {
                     let kind = iter.next().unwrap()[0];
                     match kind {
-                        5 =>  {
+                        5 => {
+                            #[allow(clippy::cast_possible_truncation)]
                             let color = iter.next().unwrap()[0] as u8;
                             self.style.foreground_color = Some(Color::AnsiValue(color));
                         }
-                        2 =>  {
+                        2 => {
+                            #[allow(clippy::cast_possible_truncation)]
                             let r = iter.next().unwrap()[0] as u8;
+                            #[allow(clippy::cast_possible_truncation)]
                             let g = iter.next().unwrap()[0] as u8;
+                            #[allow(clippy::cast_possible_truncation)]
                             let b = iter.next().unwrap()[0] as u8;
                             self.style.foreground_color = Some(Color::from((r, g, b)));
                         }
@@ -107,13 +111,17 @@ impl vte::Perform for Counter {
                 48 => {
                     let kind = iter.next().unwrap()[0];
                     match kind {
-                        5 =>  {
+                        5 => {
+                            #[allow(clippy::cast_possible_truncation)]
                             let color = iter.next().unwrap()[0] as u8;
                             self.style.background_color = Some(Color::AnsiValue(color));
                         }
-                        2 =>  {
+                        2 => {
+                            #[allow(clippy::cast_possible_truncation)]
                             let r = iter.next().unwrap()[0] as u8;
+                            #[allow(clippy::cast_possible_truncation)]
                             let g = iter.next().unwrap()[0] as u8;
+                            #[allow(clippy::cast_possible_truncation)]
                             let b = iter.next().unwrap()[0] as u8;
                             self.style.background_color = Some(Color::from((r, g, b)));
                         }
