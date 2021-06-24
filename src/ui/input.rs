@@ -22,11 +22,7 @@ impl Drawable for InputLine {
         match event {
             Event::Key(KeyEvent {
                 code: KeyCode::Char(c),
-                modifiers: KeyModifiers::NONE,
-            })
-            | Event::Key(KeyEvent {
-                code: KeyCode::Char(c),
-                modifiers: KeyModifiers::SHIFT,
+                modifiers: KeyModifiers::NONE | KeyModifiers::SHIFT,
             }) => {
                 self.0.push(c);
                 HandleEvent::Handled
