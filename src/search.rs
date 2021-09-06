@@ -116,7 +116,7 @@ fn search_styled_content(sc: &StyledContent<String>, state: &Needle) -> Vec<Text
         result.push(TextMatch {
             start: i,
             end: i + s.len(),
-        })
+        });
     }
 
     result
@@ -134,7 +134,7 @@ pub fn search_line(line: &StyledLine<String>, state: &Needle) -> Vec<SearchResul
     let needle = state.text();
     let indices = haystack.match_indices(needle);
     for (i, s) in indices {
-        result.push(SearchResult(vec![i, i + s.len()]))
+        result.push(SearchResult(vec![i, i + s.len()]));
     }
     result
 }

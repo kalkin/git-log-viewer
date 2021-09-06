@@ -66,7 +66,7 @@ pub fn render(lines: &StyledArea<String>, area: &Area) -> Result<()> {
             "Height does not match expected: {} got: {}",
             area.height(),
             lines.len()
-        )
+        );
     }
 
     for rows in lines {
@@ -79,7 +79,7 @@ pub fn render(lines: &StyledArea<String>, area: &Area) -> Result<()> {
                 "Width does not match expected: {} got: {}",
                 area.width(),
                 width
-            )
+            );
         }
     }
     // End validate data }

@@ -64,7 +64,7 @@ impl<T> Drawable for ListWidget<T> {
         }
         if self.search_progress_tx.is_some() {
             for progress in self.search_progress_tx.as_ref().unwrap().try_iter() {
-                self.search_input.consume(progress)
+                self.search_input.consume(progress);
             }
         }
         self.paging.page_height(page_height, self.adapter.len());

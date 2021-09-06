@@ -94,7 +94,7 @@ impl GitHubThread {
 
     pub(crate) fn send(&self, req: GitHubRequest) {
         if let Err(e) = self.sender.send(req) {
-            panic!("Error {:?}", e)
+            panic!("Error {:?}", e);
         }
     }
 

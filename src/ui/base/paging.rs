@@ -109,19 +109,19 @@ impl Paging {
             while i < self.top {
                 self.prev_page();
             }
-            self.selected = i
+            self.selected = i;
         } else if i > self.bottom {
             while i > self.bottom {
                 self.next_page();
             }
-            self.selected = i
+            self.selected = i;
         }
     }
 
     #[allow(dead_code)]
     /// Set total length of the data
     pub fn set_total_length(&mut self, length: usize) {
-        self.total_length = length
+        self.total_length = length;
     }
 
     /// Move selection to next data index

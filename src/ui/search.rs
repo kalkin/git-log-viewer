@@ -30,7 +30,7 @@ impl ResultManager {
             SearchProgress::Searched(n) => self.seen += n,
             SearchProgress::Found(result) => {
                 if self.selected.is_none() {
-                    self.selected = Some(0)
+                    self.selected = Some(0);
                 }
                 self.results.push(result);
             }

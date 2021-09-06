@@ -92,15 +92,15 @@ impl HistoryEntry {
     fn render_graph(&self) -> StyledContent<String> {
         let mut text = "".to_string();
         for _ in 0..self.level {
-            text.push_str("│ ")
+            text.push_str("│ ");
         }
 
         if self.commit.bellow().is_none() {
-            text.push('◉')
+            text.push('◉');
         } else if self.is_commit_link() {
-            text.push('⭞')
+            text.push('⭞');
         } else {
-            text.push('●')
+            text.push('●');
         }
 
         if self.has_children() {
@@ -113,10 +113,10 @@ impl HistoryEntry {
             } else if self.is_fork_point() {
                 text.push_str("─┤");
             } else {
-                text.push_str("─┐")
+                text.push_str("─┐");
             }
         } else if self.is_fork_point() {
-            text.push_str("─┘")
+            text.push_str("─┘");
         }
         style(text)
     }
@@ -226,7 +226,7 @@ impl HistoryEntry {
                 buf.push(StyledContent::new(
                     ContentStyle::default(),
                     description.clone(),
-                ))
+                ));
             }
             Subject::Release { description, .. }
             | Subject::Fixup(description)
@@ -305,7 +305,7 @@ impl HistoryEntry {
 // Public interface
 impl HistoryEntry {
     pub fn set_subject(&mut self, subject: String) {
-        self.subject_text = subject
+        self.subject_text = subject;
     }
 
     pub fn set_fork_point(&mut self, t: bool) {

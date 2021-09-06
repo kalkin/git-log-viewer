@@ -206,7 +206,7 @@ impl Commit {
         let mut tags: Vec<GitRef> = Vec::new();
         for s in references_record.split(", ") {
             if s == "HEAD" {
-                is_head = true
+                is_head = true;
             } else if s.starts_with("HEAD -> ") {
                 is_head = true;
                 let split_2: Vec<&str> = s.splitn(2, " -> ").collect();

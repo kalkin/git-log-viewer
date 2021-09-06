@@ -111,7 +111,7 @@ fn run_ui(
         thread::spawn(move || {
             while let Ok(event) = read() {
                 if let Err(err) = tx.send(event) {
-                    panic!("Error: {:?}", err)
+                    panic!("Error: {:?}", err);
                 }
             }
         });
@@ -156,7 +156,7 @@ fn run_ui(
                     thread::sleep(hundred_millis);
                 }
                 TryRecvError::Disconnected => {
-                    panic!("Something gone wrong: {:?}", err)
+                    panic!("Something gone wrong: {:?}", err);
                 }
             },
         }

@@ -51,7 +51,7 @@ impl SubtreeThread {
 
     pub(crate) fn send(&self, req: SubtreeChangesRequest) {
         if let Err(e) = self.sender.send(req) {
-            eprintln!("Error {:?}", e)
+            eprintln!("Error {:?}", e);
         }
     }
 

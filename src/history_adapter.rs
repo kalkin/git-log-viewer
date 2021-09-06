@@ -211,7 +211,7 @@ impl HistoryAdapter {
                 if !self.subtree_modules.is_empty() {
                     self.subtree_thread.send(SubtreeChangesRequest {
                         oid: commit.id().clone(),
-                    })
+                    });
                 }
                 let fork_point =
                     self.fork_point_thread
@@ -264,7 +264,7 @@ impl HistoryAdapter {
                 if !self.subtree_modules.is_empty() {
                     self.subtree_thread.send(SubtreeChangesRequest {
                         oid: t.id().clone(),
-                    })
+                    });
                 }
                 let fork_point_calc =
                     self.fork_point_thread

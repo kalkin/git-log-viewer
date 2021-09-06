@@ -62,7 +62,7 @@ impl ForkPointThread {
 
     pub fn send(&self, req: ForkPointRequest) {
         if let Err(e) = self.sender.send(req) {
-            eprintln!("Error {:?}", e)
+            eprintln!("Error {:?}", e);
         }
     }
 

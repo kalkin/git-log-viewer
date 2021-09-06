@@ -109,7 +109,7 @@ impl NeedleCapture {
                 }
                 Event::Cancel => self.0 = State::Hidden,
                 Event::Text(text) => {
-                    self.0 = State::Search(Needle::new(&text, *needle.direction()))
+                    self.0 = State::Search(Needle::new(&text, *needle.direction()));
                 }
             },
         }
