@@ -41,14 +41,14 @@ impl DetailsWidget<HistoryEntry> for DiffView {
     fn set_content(&mut self, content: &HistoryEntry) {
         let mut data: StyledArea<String> = vec![
             color_text("Commit:          ", &content.id().0, *ID_STYLE),
-            color_text("Author:          ", &content.author_name(), *NAME_STYLE),
-            color_text("Author Date:     ", &content.author_date(), *DATE_STYLE),
+            color_text("Author:          ", content.author_name(), *NAME_STYLE),
+            color_text("Author Date:     ", content.author_date(), *DATE_STYLE),
         ];
         // Committer lines {
         if content.author_name() != content.committer_name() {
             data.push(color_text(
                 "Committer:       ",
-                &content.author_name(),
+                content.author_name(),
                 *NAME_STYLE,
             ));
         }
@@ -56,7 +56,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
         if content.author_date() != content.committer_date() {
             data.push(color_text(
                 "Committer Date:  ",
-                &content.committer_date(),
+                content.committer_date(),
                 *DATE_STYLE,
             ));
         }

@@ -182,7 +182,7 @@ impl Drawable for TableWidget {
 
 impl Selectable<HistoryEntry> for TableWidget {
     fn selected_item(&mut self) -> &HistoryEntry {
-        let tmp: &HistoryEntry = &(self.adapter.get_data(self.paging.selected()));
+        let tmp: &HistoryEntry = self.adapter.get_data(self.paging.selected());
         tmp
     }
 }

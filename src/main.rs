@@ -117,7 +117,7 @@ fn run_ui(
         });
     }
 
-    let mut drawable = build_drawable(&working_dir, revision, paths);
+    let mut drawable = build_drawable(working_dir, revision, paths);
     let mut last_rendered = drawable.render(&area);
 
     setup_screen("glv")?;
@@ -189,7 +189,7 @@ fn build_drawable(
     paths: Vec<String>,
 ) -> SplitLayout<TableWidget, DiffView, HistoryEntry> {
     let history_list = {
-        let history_adapter = HistoryAdapter::new(&working_dir, revision, paths).unwrap();
+        let history_adapter = HistoryAdapter::new(working_dir, revision, paths).unwrap();
         TableWidget::new(history_adapter)
     };
     let diff = DiffView::default();

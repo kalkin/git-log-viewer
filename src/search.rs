@@ -64,7 +64,7 @@ pub fn highlight_search_line(
 ) -> StyledLine<String> {
     let mut result = vec![];
     for sc in line {
-        result.append(&mut highlight_search(sc, &search_state));
+        result.append(&mut highlight_search(sc, search_state));
     }
     result
 }

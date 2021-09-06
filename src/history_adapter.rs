@@ -430,7 +430,7 @@ impl HistoryAdapter {
             seen += 1;
             let mut r = search_path.to_vec();
             r.push(i);
-            if c.matches(&needle)
+            if c.matches(needle)
                 && rx
                     .send(SearchProgress::Found(SearchResult(r.clone())))
                     .is_err()
@@ -438,9 +438,8 @@ impl HistoryAdapter {
                 return KeepGoing::Canceled;
             }
             if c.is_merge() {
-                let tmp = child_history(working_dir, &c);
-                let result =
-                    HistoryAdapter::search_recursive(&needle, 0, rx, &tmp, &r, working_dir);
+                let tmp = child_history(working_dir, c);
+                let result = HistoryAdapter::search_recursive(needle, 0, rx, &tmp, &r, working_dir);
                 if result == KeepGoing::Canceled {
                     return result;
                 }

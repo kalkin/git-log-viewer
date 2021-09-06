@@ -220,7 +220,7 @@ impl HistoryEntry {
                 scope, description, ..
             } => {
                 if let Some(scope) = scope {
-                    buf.push(HistoryEntry::format_scope(&scope));
+                    buf.push(HistoryEntry::format_scope(scope));
                     buf.push(separator);
                 }
                 buf.push(StyledContent::new(
@@ -319,7 +319,7 @@ impl HistoryEntry {
 
     #[must_use]
     pub fn body(&self) -> &String {
-        &self.commit.body()
+        self.commit.body()
     }
 
     #[must_use]
@@ -329,7 +329,7 @@ impl HistoryEntry {
 
     #[must_use]
     pub fn original_subject(&self) -> &String {
-        &self.commit.subject()
+        self.commit.subject()
     }
 
     #[must_use]
