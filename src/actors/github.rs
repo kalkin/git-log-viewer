@@ -104,8 +104,7 @@ impl GitHubThread {
 
     pub(crate) fn can_handle(url: &Url) -> bool {
         if let (Some(domain), Some(path_segments)) = (url.domain(), url.path_segments()) {
-            let segs: Vec<&str> = path_segments.collect();
-            return domain == "github.com" && segs.len() == 2;
+            return domain == "github.com" && path_segments.count() == 2;
         }
         false
     }
