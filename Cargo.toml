@@ -24,10 +24,7 @@ unicode-truncate = "0.2.0"
 url = "2"
 which = "4"
 xdg = "^2.1"
+clap = { version="=3.0.0-beta.4", default-features=false, features=["std", "cargo"] }
 
 [dev-dependencies]
 lipsum = "0.7.0"
-
-[dependencies.clap]
-version = "3.0.0-beta.4"
-features = ["suggestions", "cargo", "color", "std", "wrap_help"]
