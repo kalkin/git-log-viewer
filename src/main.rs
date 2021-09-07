@@ -178,7 +178,7 @@ fn arg_parser() -> App<'static> {
         .required(false);
     let paths_arg = Arg::new("path")
         .about("Show only commits touching the paths")
-        .multiple(true)
+        .multiple_values(true)
         .last(true);
     app_from_crate!().arg(w_arg).arg(rev_arg).arg(paths_arg)
 }

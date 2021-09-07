@@ -29,5 +29,5 @@ xdg = "^2.1"
 lipsum = "0.7.0"
 
 [dependencies.clap]
-version = "3.0.0-beta.2"
+version = "3.0.0-beta.4"
 features = ["suggestions", "cargo", "color", "std", "wrap_help"]
