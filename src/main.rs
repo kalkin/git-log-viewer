@@ -14,7 +14,7 @@ use crate::ui::base::{
 };
 use crate::ui::layouts::SplitLayout;
 use crossterm::ErrorKind;
-use posix_errors::{PosixError, EINVAL, EINVALEXIT, ENODEV, ENXIO, EUTF8};
+use posix_errors::PosixError;
 use std::process::exit;
 use std::sync::mpsc::TryRecvError;
 use std::time;
@@ -54,17 +54,7 @@ fn same(a: &StyledArea<String>, b: &StyledArea<String>) -> bool {
 struct UiError(PosixError);
 impl From<ErrorKind> for UiError {
     fn from(err: ErrorKind) -> Self {
-        UiError(match err {
-            ErrorKind::IoError(io_err) => PosixError::from(io_err),
-            ErrorKind::FmtError(e) => PosixError::new(135, e.to_string()),
-            ErrorKind::Utf8Error(e) => PosixError::new(EUTF8, e.to_string()),
-            ErrorKind::ParseIntError(e) => PosixError::new(EINVALEXIT + EINVAL, e.to_string()),
-            ErrorKind::ResizingTerminalFailure(e) => PosixError::new(EINVALEXIT + ENXIO, e),
-            ErrorKind::SettingTerminalTitleFailure => {
-                PosixError::new(ENODEV, "Failed to set title".to_string())
-            }
-            e => PosixError::new(1, e.to_string()),
-        })
+        UiError(PosixError::from(err))
     }
 }
 

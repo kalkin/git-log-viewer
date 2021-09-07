@@ -9,7 +9,7 @@ use crossterm::terminal::{
     EnterAlternateScreen, LeaveAlternateScreen, SetTitle,
 };
 use crossterm::Result;
-use crossterm::{execute, queue, ErrorKind};
+use crossterm::{execute, queue};
 use unicode_width::UnicodeWidthStr;
 
 pub use data::DataAdapter;
@@ -109,7 +109,7 @@ pub fn setup_screen(title: &str) -> Result<()> {
     execute!(stdout, EnterAlternateScreen)?;
     execute!(stdout, SetTitle(title))?;
     if let Err(e) = stdout.flush() {
-        return Err(ErrorKind::from(e));
+        return Err(e);
     }
     Ok(())
 }
@@ -126,7 +126,7 @@ pub fn shutdown_screen() -> Result<()> {
     execute!(stdout, LeaveAlternateScreen)?;
     disable_raw_mode()?;
     if let Err(e) = stdout.flush() {
-        return Err(ErrorKind::from(e));
+        return Err(e);
     }
     Ok(())
 }

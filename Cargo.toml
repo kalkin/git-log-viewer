@@ -8,7 +8,7 @@ description = "Git log viewer supporting un/folding merges"
 
 [dependencies]
 configparser = "2"
-crossterm = "0.19"
+crossterm = "^0.21.0"
 curl = "0.4.36"
 git-wrapper = { path = "../git-wrapper" }
 gsi = { path = "../gsi" }
