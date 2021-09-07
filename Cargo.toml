@@ -27,4 +27,4 @@ xdg = "^2.1"
 clap = { version="=3.0.0-beta.4", default-features=false, features=["std", "cargo"] }
 
 [dev-dependencies]
-lipsum = "0.7.0"
+lipsum = "^0.8.0"
