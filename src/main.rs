@@ -179,10 +179,10 @@ fn build_drawable(
     paths: Vec<String>,
 ) -> SplitLayout<TableWidget, DiffView, HistoryEntry> {
     let history_list = {
-        let history_adapter = HistoryAdapter::new(working_dir, revision, paths).unwrap();
+        let history_adapter = HistoryAdapter::new(working_dir, revision, paths.clone()).unwrap();
         TableWidget::new(history_adapter)
     };
-    let diff = DiffView::default();
+    let diff = DiffView::new(paths);
 
     SplitLayout::new(history_list, diff)
 }

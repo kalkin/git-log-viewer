@@ -14,16 +14,15 @@ use crate::ui::base::data::StyledAreaAdapter;
 use crate::ui::base::{Area, Drawable, HandleEvent, ListWidget, StyledArea, StyledLine};
 use crate::ui::layouts::DetailsWidget;
 
-pub struct DiffView(ListWidget<String>);
+pub struct DiffView(ListWidget<String>, Vec<String>);
 
-impl Default for DiffView {
-    #[must_use]
-    fn default() -> Self {
+impl DiffView {
+    pub fn new(paths: Vec<String>) -> Self {
         let adapter = StyledAreaAdapter {
             content: vec![],
             thread: None,
         };
-        Self(ListWidget::new(Box::new(adapter)))
+        Self(ListWidget::new(Box::new(adapter)), paths)
     }
 }
 
@@ -86,7 +85,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
             "                                 ❦ ❦ ❦ ❦ ".to_string(),
         )]);
         data.push(vec![]);
-        for line in git_diff(content.working_dir(), content.commit()) {
+        for line in git_diff(content.working_dir(), content.commit(), self.1.clone()) {
             data.push(line);
         }
         let adapter = StyledAreaAdapter {
@@ -97,7 +96,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
     }
 }
 
-fn git_diff(working_dir: &str, commit: &Commit) -> Vec<StyledLine<String>> {
+fn git_diff(working_dir: &str, commit: &Commit, paths: Vec<String>) -> Vec<StyledLine<String>> {
     let default = Oid { 0: "".to_string() };
     let bellow = commit.bellow().unwrap_or(&default);
     let rev = format!("{}..{}", bellow.0, commit.id().0);
@@ -113,6 +112,8 @@ fn git_diff(working_dir: &str, commit: &Commit) -> Vec<StyledLine<String>> {
                 "--full-index",
                 &rev,
             ])
+            .arg("--")
+            .args(paths)
             .stdout(Stdio::piped())
             .spawn()
             .unwrap();
