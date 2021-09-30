@@ -258,7 +258,8 @@ impl HistoryAdapter {
         let mut tmp: Vec<HistoryEntry> = vec![];
         let selected = &self.history[i];
         if selected.is_folded() {
-            let children: Vec<Commit> = child_history(&self.working_dir, selected.commit());
+            let children: Vec<Commit> =
+                child_history(&self.working_dir, selected.commit(), &self.paths);
             let mut above_commit = Some(selected.commit());
             for t in children {
                 if !self.subtree_modules.is_empty() {
@@ -387,7 +388,7 @@ impl DataAdapter<HistoryEntry> for HistoryAdapter {
             let mut result = commits_for_range(&wd, &range, &paths, None, None);
 
             if let Ok(commits) = &mut result {
-                HistoryAdapter::search_recursive(&needle, start, &rx, commits, &[], &wd);
+                HistoryAdapter::search_recursive(&needle, start, &rx, commits, &[], &wd, &paths);
             }
 
             #[allow(unused_must_use)]
@@ -414,6 +415,7 @@ impl HistoryAdapter {
         commits: &[Commit],
         search_path: &[usize],
         working_dir: &str,
+        paths: &[String],
     ) -> KeepGoing {
         let mut seen = 0;
         let range = {
@@ -438,8 +440,9 @@ impl HistoryAdapter {
                 return KeepGoing::Canceled;
             }
             if c.is_merge() {
-                let tmp = child_history(working_dir, c);
-                let result = HistoryAdapter::search_recursive(needle, 0, rx, &tmp, &r, working_dir);
+                let tmp = child_history(working_dir, c, paths);
+                let result =
+                    HistoryAdapter::search_recursive(needle, 0, rx, &tmp, &r, working_dir, paths);
                 if result == KeepGoing::Canceled {
                     return result;
                 }

@@ -337,6 +337,7 @@ impl History {
                     e.commit(),
                     &self.subtree_modules,
                     &link,
+                    &self.paths,
                 ) {
                     e.folded(false);
                     let level = e.level() + 1;

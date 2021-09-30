@@ -19,12 +19,13 @@ pub fn search_link_recursive(
     commit: &Commit,
     subtree_modules: &[SubtreeConfig],
     link: &Oid,
+    paths: &[String],
 ) -> Option<(usize, Vec<Commit>)> {
     if !commit.is_merge() {
         panic!("Expected a merge commit");
     }
 
-    let mut commits = child_history(working_dir, commit);
+    let mut commits = child_history(working_dir, commit, paths);
     for (i, c) in commits.iter_mut().enumerate() {
         if !c.is_commit_link() && c.id() == link {
             return Some((i, commits));
@@ -36,7 +37,7 @@ pub fn search_link_recursive(
                 continue;
             }
             if let Some((pos, mut children)) =
-                search_link_recursive(working_dir, c, subtree_modules, link)
+                search_link_recursive(working_dir, c, subtree_modules, link, paths)
             {
                 let needle_position = i + pos;
                 let mut insert_position = i;

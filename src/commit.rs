@@ -344,7 +344,7 @@ pub fn commits_for_range<T: AsRef<str>>(
 }
 
 #[must_use]
-pub fn child_history(working_dir: &str, commit: &Commit) -> Vec<Commit> {
+pub fn child_history(working_dir: &str, commit: &Commit, paths: &[String]) -> Vec<Commit> {
     let bellow = commit.bellow.as_ref().expect("Expected merge commit");
     let first_child = commit.children.get(0).expect("Expected merge commit");
     let end = merge_base(working_dir, bellow, first_child).expect("merge-base invocation");
@@ -358,7 +358,6 @@ pub fn child_history(working_dir: &str, commit: &Commit) -> Vec<Commit> {
     } else {
         revision = first_child.0.clone();
     }
-    let paths: &[&str] = &[];
     #[allow(clippy::expect_fun_call)]
     let mut result = commits_for_range(working_dir, revision.as_str(), paths, None, None)
         .expect(&format!("Expected child commits for range {}", revision));
