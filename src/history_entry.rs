@@ -132,7 +132,7 @@ impl HistoryEntry {
         } else {
             let mut text = ":".to_string();
             let subtree_modules: Vec<String> =
-                self.subtrees.iter().map(SubtreeConfig::id).collect();
+                self.subtrees.iter().map(|e| e.id().clone()).collect();
             text.push_str(&subtree_modules.join(" :"));
             if text.width() > max_len {
                 match subtree_modules.len() {
@@ -414,7 +414,7 @@ impl HistoryEntry {
             &self.subject_text,
         ];
 
-        let x: Vec<String> = self.subtrees.iter().map(SubtreeConfig::id).collect();
+        let x: Vec<String> = self.subtrees.iter().map(|e| e.id().clone()).collect();
         candidates.extend(&x);
 
         for r in self.commit.references().iter() {
@@ -436,8 +436,13 @@ impl HistoryEntry {
     #[must_use]
     pub fn url(&self) -> Option<Url> {
         if let Some(module) = self.subtrees.first() {
-            if let Some(v) = module.upstream().or_else(|| module.origin()) {
-                if let Ok(u) = Url::parse(&v) {
+            let url_option = if module.upstream().is_some() {
+                module.upstream()
+            } else {
+                module.origin()
+            };
+            if let Some(v) = url_option {
+                if let Ok(u) = Url::parse(v) {
                     return Some(u);
                 }
             }

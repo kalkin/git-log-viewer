@@ -3,8 +3,6 @@ use std::process::{Command, Stdio};
 use crossterm::event::Event;
 use crossterm::style::{style, ContentStyle, StyledContent};
 
-use gsi::SubtreeConfig;
-
 use crate::commit::Commit;
 use crate::commit::Oid;
 use crate::default_styles::{DATE_STYLE, DEFAULT_STYLE, ID_STYLE, NAME_STYLE};
@@ -64,7 +62,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
         // Modules
         if !content.subtrees().is_empty() {
             let module_names: Vec<String> =
-                content.subtrees().iter().map(SubtreeConfig::id).collect();
+                content.subtrees().iter().map(|e| e.id().clone()).collect();
             data.push(color_text(
                 "Strees:          ",
                 &module_names.join(", "),
