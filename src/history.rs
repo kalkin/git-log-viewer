@@ -20,7 +20,7 @@ use crate::search::{search_link_recursive, SearchDirection, SearchState};
 use crate::style::DEFAULT_STYLE;
 use crate::subtrees::{SubtreeChangesRequest, SubtreeThread};
 
-pub struct History {
+struct History {
     range: String,
     history: Vec<HistoryEntry>,
     selected: usize,
