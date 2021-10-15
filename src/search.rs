@@ -30,7 +30,7 @@ pub fn search_link_recursive(
         if !c.is_commit_link() && c.id() == link {
             return Some((i, commits));
         } else if c.is_merge() {
-            let bellow = &c.bellow().expect("Expected Merge").to_string();
+            let bellow = &c.bellow().as_ref().expect("Expected Merge").to_string();
             let link_id = &link.to_string();
             // Heuristic skip examining merge if link is ancestor of the first child
             if is_ancestor(working_dir, link_id, bellow).unwrap() {

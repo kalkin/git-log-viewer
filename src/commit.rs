@@ -1,5 +1,6 @@
 use crate::ui::base::search::Needle;
 
+use getset::Getters;
 use git_wrapper::git_cmd_out;
 use posix_errors::PosixError;
 use std::fmt::{Debug, Display, Formatter};
@@ -36,115 +37,51 @@ impl Display for GitRef {
     }
 }
 
-#[derive(Clone)]
+#[derive(Getters, Clone)]
 pub struct Commit {
+    #[getset(get = "pub")]
     id: Oid,
+    #[getset(get = "pub")]
     short_id: String,
+    #[getset(get = "pub")]
     author_name: String,
+    #[getset(get = "pub")]
     author_email: String,
+    #[getset(get = "pub")]
     author_date: String,
+    #[getset(get = "pub")]
     author_rel_date: String,
+    #[getset(get = "pub")]
     committer_name: String,
+    #[getset(get = "pub")]
     committer_email: String,
+    #[getset(get = "pub")]
     committer_date: String,
+    #[getset(get = "pub")]
     committer_rel_date: String,
+    #[getset(get = "pub")]
     subject: String,
+    #[getset(get = "pub")]
     body: String,
 
+    #[getset(get = "pub")]
     bellow: Option<Oid>,
+    #[getset(get = "pub")]
     children: Vec<Oid>,
+    #[getset(get = "pub")]
     is_commit_link: bool,
     is_head: bool,
     is_merge: bool,
     branches: Vec<GitRef>,
+    #[getset(get = "pub")]
     references: Vec<GitRef>,
     tags: Vec<GitRef>,
 }
 
 impl Commit {
     #[must_use]
-    pub fn author_name(&self) -> &String {
-        &self.author_name
-    }
-    #[must_use]
-    pub fn author_email(&self) -> &String {
-        &self.author_email
-    }
-    #[must_use]
-    pub fn author_date(&self) -> &String {
-        &self.author_date
-    }
-
-    #[must_use]
-    pub fn author_rel_date(&self) -> &String {
-        &self.author_rel_date
-    }
-
-    #[must_use]
-    pub fn bellow(&self) -> Option<&Oid> {
-        self.bellow.as_ref()
-    }
-
-    #[allow(dead_code)]
-    #[must_use]
-    pub fn branches(&self) -> &Vec<GitRef> {
-        &self.branches
-    }
-
-    #[must_use]
-    pub fn body(&self) -> &String {
-        &self.body
-    }
-
-    #[must_use]
-    pub fn committer_name(&self) -> &String {
-        &self.committer_name
-    }
-    #[must_use]
-    pub fn committer_email(&self) -> &String {
-        &self.committer_email
-    }
-    #[must_use]
-    pub fn committer_date(&self) -> &String {
-        &self.committer_date
-    }
-
-    #[must_use]
-    pub fn children(&self) -> &Vec<Oid> {
-        &self.children
-    }
-
-    #[must_use]
-    pub fn id(&self) -> &Oid {
-        &self.id
-    }
-
-    #[allow(dead_code)]
-    #[must_use]
-    pub fn is_head(&self) -> bool {
-        self.is_head
-    }
-
-    #[must_use]
     pub fn is_merge(&self) -> bool {
         self.bellow.is_some() && !self.children.is_empty()
-    }
-    #[must_use]
-    pub fn is_commit_link(&self) -> bool {
-        self.is_commit_link
-    }
-
-    #[must_use]
-    pub fn references(&self) -> &Vec<GitRef> {
-        &self.references
-    }
-    #[must_use]
-    pub fn short_id(&self) -> &String {
-        &self.short_id
-    }
-    #[must_use]
-    pub fn subject(&self) -> &String {
-        &self.subject
     }
 
     pub fn matches(&self, needle: &Needle) -> bool {

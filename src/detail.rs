@@ -98,7 +98,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
 
 fn git_diff(working_dir: &str, commit: &Commit, paths: Vec<String>) -> Vec<StyledLine<String>> {
     let default = Oid { 0: "".to_string() };
-    let bellow = commit.bellow().unwrap_or(&default);
+    let bellow = commit.bellow().as_ref().unwrap_or(&default);
     let rev = format!("{}..{}", bellow.0, commit.id().0);
     if which::which("delta").is_ok() {
         let proc = Command::new("git")

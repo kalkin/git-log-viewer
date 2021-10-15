@@ -406,7 +406,7 @@ impl HistoryEntry {
 
     #[must_use]
     pub fn is_commit_link(&self) -> bool {
-        self.commit.is_commit_link()
+        *self.commit.is_commit_link()
     }
 
     /// Check if string is contained any where in commit data
