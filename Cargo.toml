@@ -10,6 +10,7 @@ description = "Git log viewer supporting un/folding merges"
 configparser = "2"
 crossterm = "^0.21.0"
 curl = "0.4.36"
+getset = "0.1.*"
 git-wrapper = { path = "../git-wrapper" }
 gsi = { path = "../gsi" }
 lazy_static = "1.4"
