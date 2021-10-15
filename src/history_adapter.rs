@@ -325,7 +325,7 @@ impl HistoryAdapter {
         while let Ok(v) = self.subtree_thread.try_recv() {
             for e in &mut self.history {
                 if e.id() == &v.oid {
-                    e.subtrees = v.subtrees;
+                    e.set_subtrees(v.subtrees);
                     break;
                 }
             }

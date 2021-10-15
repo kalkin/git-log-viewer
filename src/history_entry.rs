@@ -1,4 +1,5 @@
 use crossterm::style::{style, Attribute, ContentStyle, StyledContent};
+use getset::{CopyGetters, Getters, Setters};
 use gsi::SubtreeConfig;
 use url::Url;
 
@@ -12,16 +13,21 @@ use unicode_truncate::UnicodeTruncateStr;
 use unicode_width::UnicodeWidthStr;
 
 #[allow(clippy::module_name_repetitions, dead_code)]
+#[derive(CopyGetters, Getters, Setters)]
 pub struct HistoryEntry {
+    #[getset(get = "pub")]
     commit: Commit,
     folded: bool,
+    #[getset(get_copy = "pub")]
     level: u8,
     remotes: Vec<Remote>,
     subject_text: String,
     subject_struct: Subject,
-    pub subtrees: Vec<SubtreeConfig>,
+    #[getset(get = "pub", set = "pub")]
+    subtrees: Vec<SubtreeConfig>,
     repo_url: Option<Url>,
     fork_point: ForkPointCalculation,
+    #[getset(get = "pub")]
     working_dir: String,
 }
 
@@ -321,20 +327,9 @@ impl HistoryEntry {
     pub fn body(&self) -> &String {
         self.commit.body()
     }
-
-    #[must_use]
-    pub fn subject(&self) -> &String {
-        &self.subject_text
-    }
-
     #[must_use]
     pub fn original_subject(&self) -> &String {
         self.commit.subject()
-    }
-
-    #[must_use]
-    pub fn commit(&self) -> &Commit {
-        &self.commit
     }
 
     #[must_use]
@@ -400,11 +395,6 @@ impl HistoryEntry {
     }
 
     #[must_use]
-    pub fn level(&self) -> u8 {
-        self.level
-    }
-
-    #[must_use]
     pub fn is_commit_link(&self) -> bool {
         *self.commit.is_commit_link()
     }
@@ -444,10 +434,6 @@ impl HistoryEntry {
     }
 
     #[must_use]
-    pub fn subtrees(&self) -> &Vec<SubtreeConfig> {
-        &self.subtrees
-    }
-    #[must_use]
     pub fn url(&self) -> Option<Url> {
         if let Some(module) = self.subtrees.first() {
             if let Some(v) = module.upstream().or_else(|| module.origin()) {
@@ -457,10 +443,5 @@ impl HistoryEntry {
             }
         }
         self.repo_url.clone()
-    }
-
-    #[must_use]
-    pub fn working_dir(&self) -> &String {
-        &self.working_dir
     }
 }
