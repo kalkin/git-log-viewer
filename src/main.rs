@@ -157,9 +157,12 @@ fn run_ui(
 }
 
 fn arg_parser() -> App<'static> {
-    let w_arg = Arg::new("working_dir")
-        .long("working-dir")
-        .short('w')
+    let dir_arg = Arg::new("dir")
+        .short('C')
+        .takes_value(true)
+        .about("Change to <dir> before start");
+    let w_arg = Arg::new("working-tree")
+        .long("work-tree")
         .takes_value(true)
         .about("Directory where the git repository is.");
     let rev_arg = Arg::new("REVISION")
@@ -170,7 +173,11 @@ fn arg_parser() -> App<'static> {
         .about("Show only commits touching the paths")
         .multiple_values(true)
         .last(true);
-    app_from_crate!().arg(w_arg).arg(rev_arg).arg(paths_arg)
+    app_from_crate!()
+        .arg(dir_arg)
+        .arg(w_arg)
+        .arg(rev_arg)
+        .arg(paths_arg)
 }
 
 fn build_drawable(
