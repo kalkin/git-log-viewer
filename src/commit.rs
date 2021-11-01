@@ -7,7 +7,7 @@ use std::fmt::{Debug, Display, Formatter};
 
 macro_rules! next_string {
     ($split:expr) => {
-        $split.next().expect("Another split").to_string();
+        $split.next().expect("Another split").to_string()
     };
 }
 
