@@ -6,22 +6,12 @@ use crate::ui::base::search::{Direction, Needle, SearchResult, State};
 use crate::ui::base::{search, shorten_line, Drawable, HandleEvent, StyledLine};
 use crate::ui::input::InputLine;
 
+#[derive(Default)]
 struct ResultManager {
     finished: bool,
     selected: Option<usize>,
     results: Vec<SearchResult>,
     seen: usize,
-}
-
-impl Default for ResultManager {
-    fn default() -> Self {
-        Self {
-            finished: false,
-            selected: None,
-            results: vec![],
-            seen: 0,
-        }
-    }
 }
 
 impl ResultManager {

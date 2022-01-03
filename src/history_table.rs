@@ -22,6 +22,7 @@ pub enum ColumnStyle {
 }
 
 #[allow(clippy::module_name_repetitions)]
+#[derive(Default)]
 pub struct TableStyle(Vec<ColumnStyle>);
 
 impl TableStyle {
@@ -29,12 +30,6 @@ impl TableStyle {
         self.0
             .get(col_number)
             .map_or(ColumnStyle::None, |result| *result)
-    }
-}
-
-impl Default for TableStyle {
-    fn default() -> Self {
-        TableStyle(vec![])
     }
 }
 

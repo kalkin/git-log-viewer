@@ -3,24 +3,13 @@ use core::default::Default;
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 
 /// This structs helps to display only a `page_height` of data
+#[derive(Default)]
 pub struct Paging {
     top: usize,
     bottom: usize,
     page_height: Height,
     total_length: usize,
     selected: Pos,
-}
-
-impl Default for Paging {
-    fn default() -> Self {
-        Self {
-            selected: 0,
-            top: 0,
-            bottom: 0,
-            page_height: 0,
-            total_length: 0,
-        }
-    }
 }
 
 impl Paging {
