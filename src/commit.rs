@@ -70,11 +70,15 @@ pub struct Commit {
     children: Vec<Oid>,
     #[getset(get = "pub")]
     is_commit_link: bool,
+    #[allow(dead_code)]
     is_head: bool,
+    #[allow(dead_code)]
     is_merge: bool,
+    #[allow(dead_code)]
     branches: Vec<GitRef>,
     #[getset(get = "pub")]
     references: Vec<GitRef>,
+    #[allow(dead_code)]
     tags: Vec<GitRef>,
 }
 
