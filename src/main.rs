@@ -193,3 +193,8 @@ fn build_drawable(
 
     SplitLayout::new(history_list, diff)
 }
+
+#[test]
+fn verify_app() {
+    arg_parser().debug_assert();
+}
