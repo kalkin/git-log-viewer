@@ -61,26 +61,24 @@ pub fn render(lines: &StyledArea<String>, area: &Area) -> Result<()> {
     let mut stdout = std::io::stdout();
 
     // Validate data {
-    if area.height() < lines.len() {
-        panic!(
-            "Height does not match expected: {} got: {}",
-            area.height(),
-            lines.len()
-        );
-    }
+    assert!(
+        area.height() < lines.len(),
+        "Height does not match expected: {} got: {}",
+        area.height(),
+        lines.len()
+    );
 
     for rows in lines {
         let width = rows
             .iter()
             .map(|x| UnicodeWidthStr::width(x.content().as_str()))
             .sum::<usize>();
-        if area.width() < width {
-            panic!(
-                "Width does not match expected: {} got: {}",
-                area.width(),
-                width
-            );
-        }
+        assert!(
+            area.width() < width,
+            "Width does not match expected: {} got: {}",
+            area.width(),
+            width
+        );
     }
     // End validate data }
 
