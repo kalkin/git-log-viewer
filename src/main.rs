@@ -160,17 +160,17 @@ fn arg_parser() -> App<'static> {
     let dir_arg = Arg::new("dir")
         .short('C')
         .takes_value(true)
-        .about("Change to <dir> before start");
+        .help("Change to <dir> before start");
     let w_arg = Arg::new("working-tree")
         .long("work-tree")
         .takes_value(true)
-        .about("Directory where the git repository is.");
+        .help("Directory where the git repository is.");
     let rev_arg = Arg::new("REVISION")
-        .about("Branch, tag or commit id")
+        .help("Branch, tag or commit id")
         .default_value("HEAD")
         .required(false);
     let paths_arg = Arg::new("path")
-        .about("Show only commits touching the paths")
+        .help("Show only commits touching the paths")
         .multiple_values(true)
         .last(true);
     app_from_crate!()
