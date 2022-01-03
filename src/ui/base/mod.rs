@@ -137,7 +137,7 @@ pub fn new_area() -> Area {
 #[must_use]
 #[allow(clippy::ptr_arg)]
 pub fn line_length(line: &StyledLine<String>) -> usize {
-    line.iter().map(|sc| content_length(sc)).sum()
+    line.iter().map(content_length).sum()
 }
 
 #[must_use]
