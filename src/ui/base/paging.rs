@@ -86,12 +86,12 @@ impl Paging {
 
     /// Set the selected data entry index
     pub fn set_selected(&mut self, i: usize) {
-        assert!(
-            !(self.total_length <= i),
-            "Expected selected({}) < total_length({})",
-            i,
-            self.total_length
-        );
+        if self.total_length <= i {
+            panic!(
+                "Expected selected({}) < total_length({})",
+                i, self.total_length
+            );
+        }
         if self.top <= i && i <= self.bottom {
             self.selected = i;
         } else if i < self.top {

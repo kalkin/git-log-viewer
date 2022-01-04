@@ -21,7 +21,9 @@ pub fn search_link_recursive(
     link: &Oid,
     paths: &[String],
 ) -> Option<(usize, Vec<Commit>)> {
-    assert!(commit.is_merge(), "Expected a merge commit");
+    if !commit.is_merge() {
+        panic!("Expected a merge commit");
+    }
 
     let mut commits = child_history(working_dir, commit, paths);
     for (i, c) in commits.iter_mut().enumerate() {

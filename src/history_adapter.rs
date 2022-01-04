@@ -149,15 +149,16 @@ impl HistoryAdapter {
             let entry = self.get_data(result);
             if last_level - 1 != (entry.level() as usize) {
                 assert_eq!(entry.level() as usize, level);
-                assert!(
-                    !entry.is_foldable(),
-                    "\nError during {:?} #{}\n{:#?}\nExpected a merge, got {}\n{:#?}",
-                    sr,
-                    result,
-                    seen_ids,
-                    entry.id().clone(),
-                    self
-                );
+                if !entry.is_foldable() {
+                    panic!(
+                        "\nError during {:?} #{}\n{:#?}\nExpected a merge, got {}\n{:#?}",
+                        sr,
+                        result,
+                        seen_ids,
+                        entry.id().clone(),
+                        self
+                    );
+                }
                 seen_ids.push(entry.id().to_string());
                 if entry.is_folded() {
                     self.toggle_folding(result);
