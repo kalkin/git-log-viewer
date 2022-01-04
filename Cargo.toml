@@ -7,7 +7,7 @@ description = "Git log viewer supporting un/folding merges"
 
 
 [dependencies]
-configparser = "2"
+configparser = "3"
 crossterm = "^0.21.0"
 curl = "0.4.36"
 getset = "0.1.*"
