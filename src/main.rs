@@ -63,7 +63,7 @@ fn glv() -> Result<(), PosixError> {
 
     let matches = app.get_matches();
 
-    let working_dir = if let Some(wd) = matches.value_of("working_dir") {
+    let working_dir = if let Some(wd) = matches.value_of("working-tree") {
         wd.to_string()
     } else {
         git_wrapper::top_level()?
