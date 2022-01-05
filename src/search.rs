@@ -2,55 +2,8 @@
 
 use crossterm::style::{Attribute, Color, ContentStyle, StyledContent};
 
-use git_wrapper::is_ancestor;
-use gsi::SubtreeConfig;
-
-use crate::commit::{child_history, Commit, Oid};
 use crate::ui::base::search::{Needle, SearchResult};
 use crate::ui::base::StyledLine;
-
-#[must_use]
-#[allow(dead_code)]
-/// # Panics
-///
-/// Panics when a non merge commit provided
-pub fn search_link_recursive(
-    working_dir: &str,
-    commit: &Commit,
-    subtree_modules: &[SubtreeConfig],
-    link: &Oid,
-    paths: &[String],
-) -> Option<(usize, Vec<Commit>)> {
-    if !commit.is_merge() {
-        panic!("Expected a merge commit");
-    }
-
-    let mut commits = child_history(working_dir, commit, paths);
-    for (i, c) in commits.iter_mut().enumerate() {
-        if !c.is_commit_link() && c.id() == link {
-            return Some((i, commits));
-        } else if c.is_merge() {
-            let bellow = &c.bellow().as_ref().expect("Expected Merge").to_string();
-            let link_id = &link.to_string();
-            // Heuristic skip examining merge if link is ancestor of the first child
-            if is_ancestor(working_dir, link_id, bellow).unwrap() {
-                continue;
-            }
-            if let Some((pos, mut children)) =
-                search_link_recursive(working_dir, c, subtree_modules, link, paths)
-            {
-                let needle_position = i + pos;
-                let mut insert_position = i;
-                for child in &mut children {
-                    insert_position += 1;
-                    commits.insert(insert_position, child.clone());
-                }
-                return Some((needle_position, commits));
-            }
-        }
-    }
-    None
-}
 
 struct TextMatch {
     start: usize,
