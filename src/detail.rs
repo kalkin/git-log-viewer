@@ -3,6 +3,8 @@ use std::process::{Command, Stdio};
 use crossterm::event::Event;
 use crossterm::style::{style, ContentStyle, StyledContent};
 
+use git_wrapper::Repository;
+
 use crate::commit::Commit;
 use crate::commit::Oid;
 use crate::default_styles::{DATE_STYLE, DEFAULT_STYLE, ID_STYLE, NAME_STYLE};
@@ -12,15 +14,15 @@ use crate::ui::base::data::StyledAreaAdapter;
 use crate::ui::base::{Area, Drawable, HandleEvent, ListWidget, StyledArea, StyledLine};
 use crate::ui::layouts::DetailsWidget;
 
-pub struct DiffView(ListWidget<String>, Vec<String>);
+pub struct DiffView(ListWidget<String>, Vec<String>, Repository);
 
 impl DiffView {
-    pub fn new(paths: Vec<String>) -> Self {
+    pub fn new(repo: Repository, paths: Vec<String>) -> Self {
         let adapter = StyledAreaAdapter {
             content: vec![],
             thread: None,
         };
-        Self(ListWidget::new(Box::new(adapter)), paths)
+        Self(ListWidget::new(Box::new(adapter)), paths, repo)
     }
 }
 
@@ -83,7 +85,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
             "                                 ❦ ❦ ❦ ❦ ".to_string(),
         )]);
         data.push(vec![]);
-        for line in git_diff(content.working_dir(), content.commit(), self.1.clone()) {
+        for line in git_diff(&self.2, content.commit(), self.1.clone()) {
             data.push(line);
         }
         let adapter = StyledAreaAdapter {
@@ -94,13 +96,13 @@ impl DetailsWidget<HistoryEntry> for DiffView {
     }
 }
 
-fn git_diff(working_dir: &str, commit: &Commit, paths: Vec<String>) -> Vec<StyledLine<String>> {
+fn git_diff(repo: &Repository, commit: &Commit, paths: Vec<String>) -> Vec<StyledLine<String>> {
     let default = Oid { 0: "".to_string() };
     let bellow = commit.bellow().as_ref().unwrap_or(&default);
     let rev = format!("{}..{}", bellow.0, commit.id().0);
     if which::which("delta").is_ok() {
-        let proc = Command::new("git")
-            .args(&["-C", working_dir])
+        let proc = repo
+            .git()
             .args(&[
                 "diff",
                 "--color=always",
@@ -123,9 +125,9 @@ fn git_diff(working_dir: &str, commit: &Commit, paths: Vec<String>) -> Vec<Style
             .unwrap();
         raw::parse_spans(delta_p.stdout)
     } else {
-        let proc = git_wrapper::git_cmd_out(
-            working_dir,
-            vec![
+        let proc = repo
+            .git()
+            .args(vec![
                 "diff",
                 "--color=always",
                 "--stat",
@@ -133,9 +135,9 @@ fn git_diff(working_dir: &str, commit: &Commit, paths: Vec<String>) -> Vec<Style
                 "-M",
                 "--full-index",
                 &rev,
-            ],
-        )
-        .unwrap();
+            ])
+            .output()
+            .expect("Failed to execute git-diff(1)");
         raw::parse_spans(proc.stdout)
     }
 }

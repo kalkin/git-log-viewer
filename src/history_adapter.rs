@@ -1,6 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender};
 
-use gsi::{subtrees, SubtreeConfig};
+use gsi::{SubtreeConfig, Subtrees};
 use posix_errors::PosixError;
 use subject_classifier::Subject;
 
@@ -13,6 +13,7 @@ use crate::ui::base::data::{DataAdapter, SearchProgress};
 use crate::ui::base::search::{Direction, Needle, SearchResult};
 use crate::ui::base::StyledLine;
 use git_wrapper::Remote;
+use git_wrapper::Repository;
 use std::fmt::{Debug, Formatter};
 use std::sync::mpsc;
 use std::thread;
@@ -24,7 +25,7 @@ pub struct HistoryAdapter {
     paths: Vec<String>,
     remotes: Vec<Remote>,
     range: String,
-    working_dir: String,
+    repo: Repository,
     github_thread: GitHubThread,
     fork_point_thread: ForkPointThread,
     subtree_modules: Vec<SubtreeConfig>,
@@ -114,22 +115,26 @@ impl HistoryAdapter {
     /// # Errors
     ///
     /// Will return an error if git `working_dir` does not exist or git executable is missing
-    pub fn new(working_dir: &str, range: &str, paths: Vec<String>) -> Result<Self, PosixError> {
-        let subtree_modules = subtrees(working_dir)?;
-        let length = history_length(working_dir, range, &paths)?;
-        let fork_point_thread = ForkPointThread::new();
-        let subtree_thread = SubtreeThread::new(working_dir.to_string(), subtree_modules.clone());
-        let remotes = git_wrapper::remotes(working_dir)?
-            .into_iter()
-            .map(|(_k, v)| v)
-            .collect::<Vec<Remote>>();
+    pub fn new(repo: Repository, range: &str, paths: Vec<String>) -> Result<Self, PosixError> {
+        let remotes: Vec<Remote>;
+        if let Some(r) = repo.remotes() {
+            remotes = r.into_iter().map(|(_k, v)| v).collect::<Vec<Remote>>();
+        } else {
+            remotes = vec![];
+        }
+
+        let length = history_length(&repo, range, &paths)?;
+        let subtrees = Subtrees::from_repo(repo.clone()).expect("Read subtree config");
+        let subtree_modules = subtrees.all().unwrap();
+        let subtree_thread = SubtreeThread::new(subtrees);
+        let fork_point_thread = ForkPointThread::new(repo.clone());
         Ok(HistoryAdapter {
             history: vec![],
             length,
             paths,
             remotes,
             range: range.to_string(),
-            working_dir: working_dir.to_string(),
+            repo,
             github_thread: GitHubThread::new(),
             fork_point_thread,
             subtree_modules,
@@ -187,60 +192,50 @@ impl HistoryAdapter {
         result
     }
 
+    // TODO return nothing
     fn fill_up(&mut self, max: usize) -> bool {
         let skip = self.history.len();
         let range = self.range.as_str();
-        let working_dir = self.working_dir.as_str();
-        if let Ok(tmp) = commits_for_range(
-            working_dir,
+        let tmp = commits_for_range(
+            &self.repo,
             range,
             self.paths.as_ref(),
             Some(skip),
             Some(max),
-        ) {
-            if tmp.is_empty() {
-                return false;
+        );
+        if tmp.is_empty() {
+            return false;
+        }
+        let mut above_commit = if self.history.is_empty() {
+            None
+        } else {
+            Some(self.history.last().expect("a commit").commit())
+        };
+        let mut tmp2 = Vec::with_capacity(tmp.len());
+        for commit in tmp {
+            if !self.subtree_modules.is_empty() {
+                self.subtree_thread.send(SubtreeChangesRequest {
+                    oid: commit.id().clone(),
+                });
             }
-            let mut above_commit = if self.history.is_empty() {
-                None
-            } else {
-                Some(self.history.last().expect("a commit").commit())
-            };
-            let mut tmp2 = Vec::with_capacity(tmp.len());
-            for commit in tmp {
-                if !self.subtree_modules.is_empty() {
-                    self.subtree_thread.send(SubtreeChangesRequest {
-                        oid: commit.id().clone(),
+            let fork_point = self
+                .fork_point_thread
+                .request_calculation(&commit, above_commit);
+            let entry = HistoryEntry::new(commit, 0, None, fork_point, &self.remotes);
+            if let Some(url) = entry.url() {
+                if let Subject::PullRequest { id, .. } = entry.special() {
+                    self.github_thread.send(GitHubRequest {
+                        oid: entry.id().clone(),
+                        url,
+                        pr_id: id.to_string(),
                     });
                 }
-                let fork_point =
-                    self.fork_point_thread
-                        .request_calculation(&commit, above_commit, working_dir);
-                let entry = HistoryEntry::new(
-                    self.working_dir.clone(),
-                    commit,
-                    0,
-                    None,
-                    fork_point,
-                    &self.remotes,
-                );
-                if let Some(url) = entry.url() {
-                    if let Subject::PullRequest { id, .. } = entry.special() {
-                        self.github_thread.send(GitHubRequest {
-                            oid: entry.id().clone(),
-                            url,
-                            pr_id: id.to_string(),
-                        });
-                    }
-                }
-                tmp2.push(entry);
-                above_commit = Some(tmp2.last().expect("a commit").commit());
             }
-            self.history.append(tmp2.as_mut());
-            true
-        } else {
-            false
+            tmp2.push(entry);
+            above_commit = Some(tmp2.last().expect("a commit").commit());
         }
+        self.history.append(tmp2.as_mut());
+        true
     }
 
     fn is_fill_up_needed(&self, i: usize) -> bool {
@@ -258,8 +253,7 @@ impl HistoryAdapter {
         let mut tmp: Vec<HistoryEntry> = vec![];
         let selected = &self.history[i];
         if selected.is_folded() {
-            let children: Vec<Commit> =
-                child_history(&self.working_dir, selected.commit(), &self.paths);
+            let children: Vec<Commit> = child_history(&self.repo, selected.commit(), &self.paths);
             let mut above_commit = Some(selected.commit());
             for t in children {
                 if !self.subtree_modules.is_empty() {
@@ -267,18 +261,10 @@ impl HistoryAdapter {
                         oid: t.id().clone(),
                     });
                 }
-                let fork_point_calc =
-                    self.fork_point_thread
-                        .request_calculation(&t, above_commit, &self.working_dir);
+                let fork_point_calc = self.fork_point_thread.request_calculation(&t, above_commit);
                 let level = selected.level() + 1;
-                let entry: HistoryEntry = HistoryEntry::new(
-                    self.working_dir.clone(),
-                    t,
-                    level,
-                    selected.url(),
-                    fork_point_calc,
-                    &self.remotes,
-                );
+                let entry: HistoryEntry =
+                    HistoryEntry::new(t, level, selected.url(), fork_point_calc, &self.remotes);
                 if let Some(url) = entry.url() {
                     if let Subject::PullRequest { id, .. } = entry.special() {
                         self.github_thread.send(GitHubRequest {
@@ -380,15 +366,15 @@ impl DataAdapter<HistoryEntry> for HistoryAdapter {
 
     fn search(&mut self, needle: Needle, start: usize) -> Receiver<SearchProgress> {
         let range = self.range.clone();
-        let wd = self.working_dir.clone();
         let paths = self.paths.clone();
+        let repo = self.repo.clone();
 
         let (rx, tx) = mpsc::channel::<SearchProgress>();
         let thread = thread::spawn(move || {
-            let mut result = commits_for_range(&wd, &range, &paths, None, None);
+            let commits = commits_for_range(&repo, &range, &paths, None, None);
 
-            if let Ok(commits) = &mut result {
-                HistoryAdapter::search_recursive(&needle, start, &rx, commits, &[], &wd, &paths);
+            if !commits.is_empty() {
+                HistoryAdapter::search_recursive(&needle, start, &rx, &commits, &[], &repo, &paths);
             }
 
             #[allow(unused_must_use)]
@@ -414,7 +400,7 @@ impl HistoryAdapter {
         rx: &Sender<SearchProgress>,
         commits: &[Commit],
         search_path: &[usize],
-        working_dir: &str,
+        repo: &Repository,
         paths: &[String],
     ) -> KeepGoing {
         let mut seen = 0;
@@ -440,9 +426,8 @@ impl HistoryAdapter {
                 return KeepGoing::Canceled;
             }
             if c.is_merge() {
-                let tmp = child_history(working_dir, c, paths);
-                let result =
-                    HistoryAdapter::search_recursive(needle, 0, rx, &tmp, &r, working_dir, paths);
+                let tmp = child_history(repo, c, paths);
+                let result = HistoryAdapter::search_recursive(needle, 0, rx, &tmp, &r, repo, paths);
                 if result == KeepGoing::Canceled {
                     return result;
                 }
@@ -464,22 +449,23 @@ impl HistoryAdapter {
 #[cfg(test)]
 mod test {
     use crate::history_adapter::HistoryAdapter;
+    use git_wrapper::Repository;
 
     #[test]
     #[should_panic]
     fn not_loaded_default_action() {
-        let working_dir = git_wrapper::top_level().unwrap();
         let range = "6be11cb7f9e..df622aa0149";
-        let mut adapter = HistoryAdapter::new(&working_dir, range, vec![]).unwrap();
+        let repo = Repository::default().unwrap();
+        let mut adapter = HistoryAdapter::new(repo, range, vec![]).unwrap();
         assert_eq!(adapter.history.len(), 0);
         adapter.default_action(8);
     }
 
     #[test]
     fn folding() {
-        let working_dir = git_wrapper::top_level().unwrap();
         let range = "6be11cb7f9e..df622aa0149";
-        let mut adapter = HistoryAdapter::new(&working_dir, range, vec![]).unwrap();
+        let repo = Repository::default().unwrap();
+        let mut adapter = HistoryAdapter::new(repo, range, vec![]).unwrap();
         assert_eq!(adapter.length, 9);
         adapter.fill_up(50);
         assert_eq!(adapter.history.len(), 9);

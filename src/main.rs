@@ -4,6 +4,8 @@ use std::thread;
 use clap::{app_from_crate, App, Arg};
 use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyModifiers};
 
+use git_wrapper::Repository;
+
 use history_adapter::HistoryAdapter;
 use history_entry::HistoryEntry;
 
@@ -62,12 +64,12 @@ fn glv() -> Result<(), PosixError> {
     let app = arg_parser();
 
     let matches = app.get_matches();
-
-    let working_dir = if let Some(wd) = matches.value_of("working-tree") {
-        wd.to_string()
-    } else {
-        git_wrapper::top_level()?
-    };
+    let repo = Repository::from_args(
+        matches.value_of("dir"),
+        matches.value_of("git-dir"),
+        matches.value_of("working-tree"),
+    )
+    .unwrap();
 
     let revision = matches.value_of("REVISION").unwrap();
 
@@ -76,7 +78,7 @@ fn glv() -> Result<(), PosixError> {
     } else {
         vec![]
     };
-    if let Err(err) = run_ui(&working_dir, revision, paths) {
+    if let Err(err) = run_ui(repo, revision, paths) {
         Err(UiError::from(err).0)
     } else {
         Ok(())
@@ -91,7 +93,7 @@ fn main() {
 }
 
 fn run_ui(
-    working_dir: &str,
+    repo: Repository,
     revision: &str,
     paths: Vec<String>,
 ) -> Result<(), crossterm::ErrorKind> {
@@ -107,7 +109,7 @@ fn run_ui(
         });
     }
 
-    let mut drawable = build_drawable(working_dir, revision, paths);
+    let mut drawable = build_drawable(repo, revision, paths);
     let mut last_rendered = drawable.render(&area);
 
     setup_screen("glv")?;
@@ -180,20 +182,21 @@ fn arg_parser() -> App<'static> {
     app_from_crate!()
         .arg(dir_arg)
         .arg(w_arg)
+        .arg(gd_arg)
         .arg(rev_arg)
         .arg(paths_arg)
 }
 
 fn build_drawable(
-    working_dir: &str,
+    repo: Repository,
     revision: &str,
     paths: Vec<String>,
 ) -> SplitLayout<TableWidget, DiffView, HistoryEntry> {
     let history_list = {
-        let history_adapter = HistoryAdapter::new(working_dir, revision, paths.clone()).unwrap();
+        let history_adapter = HistoryAdapter::new(repo.clone(), revision, paths.clone()).unwrap();
         TableWidget::new(history_adapter)
     };
-    let diff = DiffView::new(paths);
+    let diff = DiffView::new(repo, paths);
 
     SplitLayout::new(history_list, diff)
 }

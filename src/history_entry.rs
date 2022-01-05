@@ -12,7 +12,6 @@ use subject_classifier::{Subject, SubtreeOperation};
 use unicode_truncate::UnicodeTruncateStr;
 use unicode_width::UnicodeWidthStr;
 
-#[allow(clippy::module_name_repetitions, dead_code)]
 #[derive(CopyGetters, Getters, Setters)]
 pub struct HistoryEntry {
     #[getset(get = "pub")]
@@ -27,14 +26,11 @@ pub struct HistoryEntry {
     subtrees: Vec<SubtreeConfig>,
     repo_url: Option<Url>,
     fork_point: ForkPointCalculation,
-    #[getset(get = "pub")]
-    working_dir: String,
 }
 
 impl HistoryEntry {
     #[must_use]
     pub fn new(
-        working_dir: String,
         commit: Commit,
         level: u8,
         repo_url: Option<Url>,
@@ -70,7 +66,6 @@ impl HistoryEntry {
             subtrees: vec![],
             repo_url,
             fork_point,
-            working_dir,
         }
     }
 }

@@ -1,7 +1,7 @@
 use crate::ui::base::search::Needle;
 
 use getset::Getters;
-use git_wrapper::git_cmd_out;
+use git_wrapper::Repository;
 use posix_errors::PosixError;
 use std::fmt::{Debug, Display, Formatter};
 
@@ -213,105 +213,114 @@ impl Commit {
 ///
 /// Returns a [`PosixError`] if `working_dir` does not exist or `rev_range` is invalid.
 pub fn history_length(
-    working_dir: &str,
+    repo: &Repository,
     rev_range: &str,
     paths: &[String],
 ) -> Result<usize, PosixError> {
-    let mut args = vec!["--first-parent", "--count", rev_range];
+    let mut git = repo.git();
+    git.args(vec!["rev-list", "--first-parent", "--count", rev_range]);
     if !paths.is_empty() {
-        args.push("--");
+        git.arg("--");
         for p in paths {
-            args.push(p);
+            git.arg(p);
         }
     }
+    let proc = git.output().expect("Failed to run rev-list");
 
-    let output = git_wrapper::rev_list(working_dir, args)?;
-    Ok(output
-        .parse::<usize>()
-        .expect("Failed to parse commit length"))
+    if proc.status.success() {
+        let text = String::from_utf8_lossy(&proc.stdout).trim_end().to_string();
+        return Ok(text
+            .parse::<usize>()
+            .expect("Failed to parse commit length"));
+    }
+
+    Err(PosixError::from(proc))
 }
 
-/// Return specified amount of commits for a `rev_range`.
-///
-/// # Errors
-///
-/// Returns a [`PosixError`] if `working_dir` does not exist, `rev_range` is invalid or `max` &
-/// `skip` combination is `>` commit length with `--first-parent`.
 pub fn commits_for_range<T: AsRef<str>>(
-    working_dir: &str,
+    repo: &Repository,
     rev_range: &str,
     paths: &[T],
     skip: Option<usize>,
     max: Option<usize>,
-) -> Result<Vec<Commit>, PosixError> {
-    let mut args = vec!["--date=human", "--first-parent", REV_FORMAT];
+) -> Vec<Commit> {
+    let mut cmd = repo.git();
+    cmd.arg("rev-list")
+        .args(vec!["--date=human", "--first-parent", REV_FORMAT]);
 
     let tmp;
     if let Some(val) = skip {
         tmp = format!("--skip={}", val);
-        args.push(&tmp);
+        cmd.arg(&tmp);
     }
 
     let tmp2;
     if let Some(val) = max {
         tmp2 = format!("--max-count={}", val);
-        args.push(&tmp2);
+        cmd.arg(&tmp2);
     }
 
-    args.push(rev_range);
+    cmd.arg(rev_range);
 
     if !paths.is_empty() {
-        args.push("--");
+        cmd.arg("--");
         for p in paths {
-            args.push(p.as_ref());
+            cmd.arg(p.as_ref());
         }
     }
 
-    let output = git_wrapper::rev_list(working_dir, args)?;
-    let lines = output.split('\u{1e}');
-    let mut result: Vec<Commit> = Vec::new();
-    // let mut fork_point = ForkPointCalculation::Done(false);
-    for data in lines {
-        if data.is_empty() {
-            break;
+    let proc = cmd.output().expect("Failed to run git-rev-list(1)");
+    if proc.status.success() {
+        let output = String::from_utf8_lossy(&proc.stdout);
+        let lines = output.split('\u{1e}');
+        let mut result: Vec<Commit> = Vec::new();
+        for data in lines {
+            if data.is_empty() || data == "\n" {
+                break;
+            }
+            result.push(Commit::new(data, false));
         }
-        let commit = Commit::new(data, false);
-        // if commit.is_merge {
-        //     fork_point = ForkPointCalculation::Needed;
-        // }
-        result.push(commit);
+        return result;
     }
-    Ok(result)
+    eprintln!(
+        "Failed to find commits for range({}), with skip({:?}) / max({:?}) & path({})",
+        rev_range,
+        skip,
+        max,
+        paths.is_empty()
+    );
+    return vec![];
 }
 
 #[must_use]
-pub fn child_history(working_dir: &str, commit: &Commit, paths: &[String]) -> Vec<Commit> {
+pub fn child_history(repo: &Repository, commit: &Commit, paths: &[String]) -> Vec<Commit> {
     let bellow = commit.bellow.as_ref().expect("Expected merge commit");
     let first_child = commit.children.get(0).expect("Expected merge commit");
-    let end = merge_base(working_dir, bellow, first_child).expect("merge-base invocation");
+    let end = repo
+        .merge_base(&[&bellow.0, &first_child.0])
+        .expect("merge base shouldn't fail");
+
     let revision;
     if let Some(v) = &end {
-        if v == first_child {
+        if v == &first_child.0 {
             revision = first_child.0.clone();
         } else {
-            revision = format!("{}..{}", v.0, first_child.0);
+            revision = format!("{}..{}", v, first_child.0);
         }
     } else {
         revision = first_child.0.clone();
     }
-    #[allow(clippy::expect_fun_call)]
-    let mut result = commits_for_range(working_dir, revision.as_str(), paths, None, None)
-        .expect(&format!("Expected child commits for range {}", revision));
-    #[allow(clippy::expect_fun_call)]
+    let mut result = commits_for_range(repo, revision.as_str(), paths, None, None);
+
     let end_commit = result
         .last()
-        .expect(&format!("No child commits for range {}", revision));
+        .unwrap_or_else(|| panic!("No child commits for range {}", revision));
     if end.is_some()
         && end_commit.bellow.is_some()
         && end_commit.bellow.as_ref().expect("Expected merge commit") != bellow
     {
         let link = to_commit(
-            working_dir,
+            repo,
             end_commit.bellow.as_ref().expect("Expected merge commit"),
             true,
         );
@@ -322,44 +331,31 @@ pub fn child_history(working_dir: &str, commit: &Commit, paths: &[String]) -> Ve
     result
 }
 
-fn to_commit(working_dir: &str, oid: &Oid, is_commit_link: bool) -> Commit {
-    let output = git_cmd_out(
-        working_dir,
-        vec!["rev-list", "--date=human", REV_FORMAT, "-1", &oid.0],
-    );
-    let tmp = String::from_utf8(output.unwrap().stdout);
-    let lines: Vec<&str> = tmp.as_ref().expect("Valid UTF-8").lines().collect();
-    // XXX FIXME lines? really?
-    assert!(lines.len() >= 2, "Did not got enough data for {}", oid);
-    Commit::new(lines.get(1).unwrap(), is_commit_link)
-}
-
-/// Return the mergebase for two commit ids
-///
-/// # Errors
-/// Return [`PosixError`] when `merge-base` command fails. Should never happen.
-pub fn merge_base(working_dir: &str, p1: &Oid, p2: &Oid) -> Result<Option<Oid>, PosixError> {
-    let output = git_wrapper::git_cmd_out(working_dir, vec!["merge-base", &p1.0, &p2.0]);
-    let tmp = String::from_utf8(output?.stdout)
-        .expect("Valid UTF-8")
-        .trim_end()
-        .to_string();
-    if tmp.is_empty() {
-        Ok(None)
+fn to_commit(repo: &Repository, oid: &Oid, is_commit_link: bool) -> Commit {
+    let mut cmd = repo.git();
+    cmd.args(["rev-list", "--date=human", REV_FORMAT, "-1", &oid.0]);
+    let proc = cmd.output().expect("Failed to run git-rev-list(1)");
+    if proc.status.success() {
+        let tmp = String::from_utf8_lossy(&proc.stdout);
+        let lines: Vec<&str> = tmp.lines().collect();
+        // XXX FIXME lines? really?
+        assert!(lines.len() >= 2, "Did not got enough data for {}", oid);
+        Commit::new(lines.get(1).unwrap(), is_commit_link)
     } else {
-        Ok(Some(Oid { 0: tmp }))
+        panic!("Failed to get data for commit {}", oid);
     }
 }
 
 #[cfg(test)]
 mod test {
     use crate::commit::commits_for_range;
+    use git_wrapper::Repository;
 
     #[test]
     fn initial_commit() {
-        let working_dir = git_wrapper::top_level().unwrap();
+        let repo = Repository::default().unwrap();
         let paths: &[&str] = &[];
-        let result = commits_for_range(&working_dir, "a17989470af", paths, None, None).unwrap();
+        let result = commits_for_range(&repo, "a17989470af", paths, None, None);
         assert_eq!(result.len(), 1);
         let commit = &result[0];
         assert_eq!(commit.children.len(), 0);

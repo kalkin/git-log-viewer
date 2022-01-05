@@ -1,9 +1,10 @@
+use gsi::Subtrees;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::thread;
 use std::thread::JoinHandle;
 
-use gsi::{changed_modules, SubtreeConfig};
+use gsi::SubtreeConfig;
 
 use crate::commit::Oid;
 
@@ -22,7 +23,7 @@ pub struct SubtreeThread {
 }
 
 impl SubtreeThread {
-    pub(crate) fn new(working_dir: String, all_subtrees: Vec<SubtreeConfig>) -> Self {
+    pub(crate) fn new(subtrees: Subtrees) -> Self {
         let (tx_1, rx_1): (
             Sender<SubtreeChangesResponse>,
             Receiver<SubtreeChangesResponse>,
@@ -34,12 +35,13 @@ impl SubtreeThread {
 
         let child = thread::spawn(move || {
             while let Ok(v) = rx_2.recv() {
-                let result = changed_modules(&working_dir, &v.oid.to_string(), &all_subtrees);
-                tx_1.send(SubtreeChangesResponse {
-                    oid: v.oid,
-                    subtrees: result,
-                })
-                .unwrap();
+                if let Ok(result) = subtrees.changed_modules(&v.oid.to_string()) {
+                    tx_1.send(SubtreeChangesResponse {
+                        oid: v.oid,
+                        subtrees: result,
+                    })
+                    .unwrap();
+                }
             }
         });
         SubtreeThread {
