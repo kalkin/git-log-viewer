@@ -5,11 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2021-11-02
+## [3.0.0-beta.4] - 2022-01-05
 
 ### Added
 
 - Add support for 'dev' conventional commit icon
+- Support git(1) like -C, --git-dir & --work-tree cli args
+
+### Changed
+
+- Fix clippy::manual-assert
+
+### Fixed
+
+- Accessing the command line argument --work-tree
 
 ## [3.0.0-beta.3] - 2021-09-30
 
