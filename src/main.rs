@@ -164,7 +164,11 @@ fn arg_parser() -> App<'static> {
     let w_arg = Arg::new("working-tree")
         .long("work-tree")
         .takes_value(true)
-        .help("Directory where the git repository is.");
+        .help("Directory where the GIT_WORK_TREE is.");
+    let gd_arg = Arg::new("git-dir")
+        .long("git-dir")
+        .takes_value(true)
+        .help("Directory where the GIT_DIR is.");
     let rev_arg = Arg::new("REVISION")
         .help("Branch, tag or commit id")
         .default_value("HEAD")
