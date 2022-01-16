@@ -78,7 +78,9 @@ fn glv() -> Result<(), PosixError> {
     } else {
         vec![]
     };
-    if let Err(err) = run_ui(repo, revision, paths) {
+
+    let history_adapter = HistoryAdapter::new(repo.clone(), revision, paths.clone())?;
+    if let Err(err) = run_ui(history_adapter, repo, paths) {
         Err(UiError::from(err).0)
     } else {
         Ok(())
@@ -93,8 +95,8 @@ fn main() {
 }
 
 fn run_ui(
+    history_adapter: HistoryAdapter,
     repo: Repository,
-    revision: &str,
     paths: Vec<String>,
 ) -> Result<(), crossterm::ErrorKind> {
     let mut area = new_area();
@@ -109,7 +111,8 @@ fn run_ui(
         });
     }
 
-    let mut drawable = build_drawable(repo, revision, paths);
+
+    let mut drawable = build_drawable(repo, history_adapter, paths);
     let mut last_rendered = drawable.render(&area);
 
     setup_screen("glv")?;
@@ -189,11 +192,10 @@ fn arg_parser() -> App<'static> {
 
 fn build_drawable(
     repo: Repository,
-    revision: &str,
+    history_adapter: HistoryAdapter,
     paths: Vec<String>,
 ) -> SplitLayout<TableWidget, DiffView, HistoryEntry> {
     let history_list = {
-        let history_adapter = HistoryAdapter::new(repo.clone(), revision, paths.clone()).unwrap();
         TableWidget::new(history_adapter)
     };
     let diff = DiffView::new(repo, paths);

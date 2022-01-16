@@ -234,7 +234,12 @@ pub fn history_length(
             .expect("Failed to parse commit length"));
     }
 
-    Err(PosixError::from(proc))
+    let err = PosixError::from(proc);
+    if err.code() == 128 {
+        let msg = "error: No revisions match the given arguments".to_string();
+        return Err(PosixError::new(128, msg));
+    }
+    Err(err)
 }
 
 pub fn commits_for_range<T: AsRef<str>>(
