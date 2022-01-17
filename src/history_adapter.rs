@@ -86,8 +86,10 @@ impl Debug for AdapterState {
 
 impl From<&HistoryAdapter> for AdapterState {
     fn from(adapter: &HistoryAdapter) -> Self {
-        assert!(!adapter.history.is_empty());
         let mut result: Vec<CommitRange> = vec![];
+        if !(adapter.history.is_empty()) {
+            return Self(result);
+        }
         let mut start = RangePart {
             i: 0,
             id: adapter.history[0].short_id().clone(),
