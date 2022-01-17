@@ -114,26 +114,28 @@ impl DetailsWidget<HistoryEntry> for DiffView {
 }
 
 fn git_diff(repo: &Repository, commit: &Commit, paths: Vec<String>) -> Vec<StyledLine<String>> {
-    let empty_tree = Oid { 0: "4b825dc642cb6eb9a060e54bf8d69288fbee4904".to_string() };
+    let empty_tree = Oid {
+        0: "4b825dc642cb6eb9a060e54bf8d69288fbee4904".to_string(),
+    };
     let bellow = commit.bellow().as_ref().unwrap_or(&empty_tree);
     let rev = format!("{}..{}", bellow.0, commit.id().0);
+    let mut cmd = repo.git();
+    cmd.args(&[
+        "diff",
+        "--color=always",
+        "--stat",
+        "-p",
+        "-M",
+        "--full-index",
+        &rev,
+    ]);
+    if !paths.is_empty() {
+        cmd.arg("--");
+        cmd.args(&paths);
+    }
+
     if which::which("delta").is_ok() {
-        let proc = repo
-            .git()
-            .args(&[
-                "diff",
-                "--color=always",
-                "--stat",
-                "-p",
-                "-M",
-                "--full-index",
-                &rev,
-            ])
-            .arg("--")
-            .args(paths)
-            .stdout(Stdio::piped())
-            .spawn()
-            .unwrap();
+        let proc = cmd.stdout(Stdio::piped()).spawn().unwrap();
 
         let delta_p = Command::new("delta")
             .arg("--paging=never")
@@ -142,17 +144,8 @@ fn git_diff(repo: &Repository, commit: &Commit, paths: Vec<String>) -> Vec<Style
             .unwrap();
         raw::parse_spans(delta_p.stdout)
     } else {
-        let proc = repo
-            .git()
-            .args(vec![
-                "diff",
-                "--color=always",
-                "--stat",
-                "-p",
-                "-M",
-                "--full-index",
-                &rev,
-            ])
+        let proc = cmd
+            .args(paths)
             .output()
             .expect("Failed to execute git-diff(1)");
         raw::parse_spans(proc.stdout)
