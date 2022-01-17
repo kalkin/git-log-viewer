@@ -112,7 +112,7 @@ fn glv() -> Result<(), PosixError> {
 
 fn main() {
     if let Err(e) = glv() {
-        eprintln!("{}", e.message());
+        eprintln!(" error: {}", e.message());
         exit(e.code());
     }
 }
