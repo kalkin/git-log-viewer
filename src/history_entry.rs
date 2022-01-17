@@ -1,6 +1,6 @@
 use crossterm::style::{style, Attribute, ContentStyle, StyledContent};
 use getset::{CopyGetters, Getters, Setters};
-use gsi::SubtreeConfig;
+use git_stree::SubtreeConfig;
 use url::Url;
 
 use crate::actors::fork_point::ForkPointCalculation;

@@ -1,6 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender};
 
-use gsi::{SubtreeConfig, Subtrees};
+use git_stree::{SubtreeConfig, Subtrees};
 use posix_errors::PosixError;
 use subject_classifier::Subject;
 

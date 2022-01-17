@@ -1,10 +1,10 @@
-use gsi::Subtrees;
+use git_stree::Subtrees;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::thread;
 use std::thread::JoinHandle;
 
-use gsi::SubtreeConfig;
+use git_stree::SubtreeConfig;
 
 use crate::commit::Oid;
 
