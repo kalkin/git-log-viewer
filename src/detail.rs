@@ -24,7 +24,7 @@ use git_wrapper::Repository;
 
 use crate::commit::Commit;
 use crate::commit::Oid;
-use crate::default_styles::{DATE_STYLE, DEFAULT_STYLE, ID_STYLE, NAME_STYLE};
+use crate::default_styles::{DATE_STYLE, DEFAULT_STYLE, ID_STYLE, NAME_STYLE, MOD_STYLE};
 use crate::history_entry::HistoryEntry;
 use crate::raw;
 use crate::ui::base::data::StyledAreaAdapter;
@@ -85,7 +85,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
             data.push(color_text(
                 "Strees:          ",
                 &module_names.join(", "),
-                *DATE_STYLE,
+                *MOD_STYLE,
             ));
         }
 
