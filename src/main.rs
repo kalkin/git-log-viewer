@@ -128,7 +128,6 @@ fn run_ui(
         });
     }
 
-
     let mut drawable = build_drawable(repo, history_adapter, paths);
     let mut last_rendered = drawable.render(&area);
 
@@ -212,9 +211,7 @@ fn build_drawable(
     history_adapter: HistoryAdapter,
     paths: Vec<String>,
 ) -> SplitLayout<TableWidget, DiffView, HistoryEntry> {
-    let history_list = {
-        TableWidget::new(history_adapter)
-    };
+    let history_list = { TableWidget::new(history_adapter) };
     let diff = DiffView::new(repo, paths);
 
     SplitLayout::new(history_list, diff)
