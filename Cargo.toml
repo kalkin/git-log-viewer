@@ -17,7 +17,7 @@ lazy_static = "1.4"
 vte = "0.10.1"
 posix-errors = { path = "../posix-errors" }
 regex = "1"
-subject-classifier = { path = "../subject-classifier"}
+subject-classifier = { path = "../subject-classifier", version="0.2.*"}
 tinyjson = "2"
 unicode-segmentation = "1.7.1"
 unicode-width = "0.1.7"
