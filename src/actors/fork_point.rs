@@ -117,7 +117,7 @@ impl ForkPointThread {
                 .unwrap();
             }
         });
-        ForkPointThread {
+        Self {
             _thread: child,
             receiver: rx_1,
             sender: tx_2,

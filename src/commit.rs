@@ -199,7 +199,7 @@ impl Commit {
             children.push(Oid(c.to_string()));
         }
 
-        Commit {
+        Self {
             id,
             short_id,
             author_name,

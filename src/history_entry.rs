@@ -73,7 +73,7 @@ impl HistoryEntry {
             result
         };
 
-        HistoryEntry {
+        Self {
             commit,
             folded: true,
             level,
@@ -216,7 +216,7 @@ impl HistoryEntry {
 
     fn render_references(&self) -> Vec<StyledContent<String>> {
         let mut result = vec![];
-        for r in HistoryEntry::shorten_references(&self.remotes, self.commit.references()) {
+        for r in Self::shorten_references(&self.remotes, self.commit.references()) {
             let separator = style(" ".to_string());
             result.push(separator);
 
@@ -238,7 +238,7 @@ impl HistoryEntry {
                 scope, description, ..
             } => {
                 if let Some(scope) = scope {
-                    buf.push(HistoryEntry::format_scope(scope));
+                    buf.push(Self::format_scope(scope));
                     buf.push(separator);
                 }
                 buf.push(StyledContent::new(

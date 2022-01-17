@@ -49,7 +49,7 @@ impl GitHubThread {
         let (tx_2, rx_2): (Sender<GitHubRequest>, Receiver<GitHubRequest>) = mpsc::channel();
         let child = thread::spawn(move || {
             while let Ok(v) = rx_2.recv() {
-                if !GitHubThread::can_handle(&v.url) {
+                if !Self::can_handle(&v.url) {
                     continue;
                 }
 

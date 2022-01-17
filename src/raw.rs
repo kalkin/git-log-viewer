@@ -26,8 +26,8 @@ struct Counter {
 }
 
 impl Counter {
-    pub fn new() -> Counter {
-        Counter {
+    pub fn new() -> Self {
+        Self {
             style: ContentStyle::default(),
             buf: String::new(),
             lines: vec![],

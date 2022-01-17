@@ -63,7 +63,7 @@ impl Drawable for InputLine {
 
 impl Default for InputLine {
     fn default() -> Self {
-        InputLine("".to_string())
+        Self("".to_string())
     }
 }
 

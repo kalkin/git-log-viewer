@@ -147,7 +147,7 @@ impl HistoryAdapter {
         let subtree_modules = subtrees.all().unwrap();
         let subtree_thread = SubtreeThread::new(subtrees);
         let fork_point_thread = ForkPointThread::new(repo.clone());
-        Ok(HistoryAdapter {
+        Ok(Self {
             history: vec![],
             length,
             paths,
@@ -393,7 +393,7 @@ impl DataAdapter<HistoryEntry> for HistoryAdapter {
             let commits = commits_for_range(&repo, &range, &paths, None, None);
 
             if !commits.is_empty() {
-                HistoryAdapter::search_recursive(&needle, start, &rx, &commits, &[], &repo, &paths);
+                Self::search_recursive(&needle, start, &rx, &commits, &[], &repo, &paths);
             }
 
             #[allow(unused_must_use)]
@@ -446,7 +446,7 @@ impl HistoryAdapter {
             }
             if c.is_merge() {
                 let tmp = child_history(repo, c, paths);
-                let result = HistoryAdapter::search_recursive(needle, 0, rx, &tmp, &r, repo, paths);
+                let result = Self::search_recursive(needle, 0, rx, &tmp, &r, repo, paths);
                 if result == KeepGoing::Canceled {
                     return result;
                 }

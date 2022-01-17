@@ -43,7 +43,7 @@ impl<T> ListWidget<T> {
     #[must_use]
     pub fn new(adapter: Box<dyn DataAdapter<T>>) -> Self {
         let search_input = SearchWidget::default();
-        ListWidget {
+        Self {
             adapter,
             paging: Paging::default(),
             search_input,

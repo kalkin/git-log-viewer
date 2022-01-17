@@ -37,7 +37,7 @@ impl Debug for Area {
 impl Area {
     #[must_use]
     pub fn new(width: usize, height: usize) -> Self {
-        Area { width, height }
+        Self { width, height }
     }
     #[must_use]
     pub fn width(&self) -> usize {
@@ -52,7 +52,7 @@ impl Area {
 
 impl From<(u16, u16)> for Area {
     fn from(size: (u16, u16)) -> Self {
-        Area {
+        Self {
             width: size.0 as usize,
             height: size.1 as usize,
         }
@@ -61,7 +61,7 @@ impl From<(u16, u16)> for Area {
 
 impl Default for Area {
     fn default() -> Self {
-        Area {
+        Self {
             width: 80,
             height: 25,
         }

@@ -31,7 +31,7 @@ pub struct Needle {
 
 impl Default for Needle {
     fn default() -> Self {
-        Needle {
+        Self {
             text: "".to_string(),
             direction: Direction::Forward,
         }

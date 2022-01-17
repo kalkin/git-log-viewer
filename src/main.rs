@@ -73,7 +73,7 @@ fn same(a: &StyledArea<String>, b: &StyledArea<String>) -> bool {
 struct UiError(PosixError);
 impl From<ErrorKind> for UiError {
     fn from(err: ErrorKind) -> Self {
-        UiError(PosixError::from(err))
+        Self(PosixError::from(err))
     }
 }
 
