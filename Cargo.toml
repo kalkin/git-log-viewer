@@ -13,13 +13,13 @@ configparser = "3"
 crossterm = "^0.22.0"
 curl = "0.4.*"
 getset = "0.1.*"
-git-wrapper = { path = "../git-wrapper", version = "0.5.*" }
-git-stree = { path = "../git-stree", version = "0.2.*" }
+git-wrapper = "0.5.*"
+git-stree = "0.2.*"
 lazy_static = "1.4"
 vte = "0.10.1"
-posix-errors = { path = "../posix-errors", version = "^1.2.0" }
+posix-errors = "^1.2.0"
 regex = "1"
-subject-classifier = { path = "../subject-classifier", version="0.2.*"}
+subject-classifier = "0.2.*"
 tinyjson = "2"
 unicode-segmentation = "1.7.1"
 unicode-width = "0.1.7"
