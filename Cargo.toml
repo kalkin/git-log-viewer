@@ -15,7 +15,7 @@ git-wrapper = { path = "../git-wrapper", version = "0.5.*" }
 git-stree = { path = "../git-stree", version = "0.2.*" }
 lazy_static = "1.4"
 vte = "0.10.1"
-posix-errors = { path = "../posix-errors" }
+posix-errors = { path = "../posix-errors", version = "^1.2.0" }
 regex = "1"
 subject-classifier = { path = "../subject-classifier", version="0.2.*"}
 tinyjson = "2"
