@@ -187,12 +187,11 @@ impl Commit {
 
         let is_merge = parents_record.len() >= 2;
 
-        let bellow;
-        if parents_record.is_empty() {
-            bellow = None;
+        let bellow = if parents_record.is_empty() {
+            None
         } else {
-            bellow = Some(Oid(parents_record.remove(0).to_string()));
-        }
+            Some(Oid(parents_record.remove(0).to_string()))
+        };
 
         let mut children = Vec::new();
         for c in parents_record {
