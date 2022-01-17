@@ -253,7 +253,7 @@ pub fn history_length(
 
     let err = PosixError::from(proc);
     if err.code() == 128 {
-        let msg = "error: No revisions match the given arguments".to_string();
+        let msg = "No revisions match the given arguments".to_string();
         return Err(PosixError::new(128, msg));
     }
     Err(err)
