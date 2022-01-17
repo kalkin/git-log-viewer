@@ -5,6 +5,7 @@ authors = ["Bahtiar `kalkin-` Gadimov <bahtiar@gadimov.de>"]
 edition = "2018"
 description = "Git log viewer supporting un/folding merges"
 license = "AGPL-3.0-or-later"
+repository = "https://github.com/kalkin/git-log-viewer"
 
 
 [dependencies]
