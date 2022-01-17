@@ -81,12 +81,18 @@ fn glv() -> Result<(), PosixError> {
     let app = arg_parser();
 
     let matches = app.get_matches();
-    let repo = Repository::from_args(
+    let repo_tmp = Repository::from_args(
         matches.value_of("dir"),
         matches.value_of("git-dir"),
         matches.value_of("working-tree"),
-    )
-    .unwrap();
+    );
+
+    if let Err(err) = repo_tmp {
+        let msg = format!("{}", err);
+        return Err(PosixError::new(128, msg));
+    }
+
+    let repo = repo_tmp.unwrap();
 
     let revision = matches.value_of("REVISION").unwrap();
 
