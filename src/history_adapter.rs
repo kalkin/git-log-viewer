@@ -452,6 +452,9 @@ impl HistoryAdapter {
                 }
             }
             if seen % 100 == 0 {
+                // This should be fixed in the next clippy version (0.1.59?).
+                // https://github.com/rust-lang/rust-clippy/issues/8269
+                #[allow(clippy::question_mark)]
                 if rx.send(SearchProgress::Searched(seen)).is_err() {
                     return KeepGoing::Canceled;
                 }
