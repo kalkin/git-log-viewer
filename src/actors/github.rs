@@ -120,8 +120,8 @@ impl GitHubThread {
     }
 
     pub(crate) fn can_handle(url: &Url) -> bool {
-        if let (Some(domain), Some(path_segments)) = (url.domain(), url.path_segments()) {
-            return domain == "github.com" && path_segments.count() == 2;
+        if let Some(domain) = url.domain() {
+            return domain == "github.com";
         }
         false
     }
