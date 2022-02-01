@@ -83,12 +83,15 @@ fn glv() -> Result<(), PosixError> {
 
     let matches = app.get_matches();
 
+    simple_logger::SimpleLogger::new().init().unwrap();
     match matches.occurrences_of("debug") {
         0 => log::set_max_level(log::LevelFilter::Warn),
         1 => log::set_max_level(log::LevelFilter::Info),
         2 => log::set_max_level(log::LevelFilter::Debug),
         _ => log::set_max_level(log::LevelFilter::Trace),
     }
+
+    log::info!("Log Level is set to {}", log::max_level());
 
     let repo_tmp = Repository::from_args(
         matches.value_of("dir"),
@@ -111,6 +114,7 @@ fn glv() -> Result<(), PosixError> {
         vec![]
     };
 
+    log::debug!("Initialising HistoryAdapter with revision {} & paths {:?})", revision, paths);
     let history_adapter = HistoryAdapter::new(repo.clone(), revision, paths.clone())?;
     if let Err(err) = run_ui(history_adapter, repo, paths) {
         Err(UiError::from(err).0)
