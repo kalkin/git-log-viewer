@@ -18,7 +18,6 @@
 use crossterm::style::{style, Attribute, ContentStyle, StyledContent};
 use getset::{CopyGetters, Getters, Setters};
 use git_stree::SubtreeConfig;
-use url::Url;
 
 use crate::actors::fork_point::ForkPointCalculation;
 use crate::commit::{Commit, GitRef, Oid};
@@ -41,7 +40,8 @@ pub struct HistoryEntry {
     subject_struct: Subject,
     #[getset(get = "pub", set = "pub")]
     subtrees: Vec<SubtreeConfig>,
-    repo_url: Option<Url>,
+    #[getset(get = "pub", set = "pub")]
+    forge_url: Option<String>,
     fork_point: ForkPointCalculation,
 }
 
@@ -50,7 +50,7 @@ impl HistoryEntry {
     pub fn new(
         commit: Commit,
         level: u8,
-        repo_url: Option<Url>,
+        forge_url: Option<String>,
         fork_point: ForkPointCalculation,
         remotes: &[Remote],
     ) -> Self {
@@ -81,7 +81,7 @@ impl HistoryEntry {
             subject_text,
             subject_struct,
             subtrees: vec![],
-            repo_url,
+            forge_url,
             fork_point,
         }
     }
@@ -446,7 +446,7 @@ impl HistoryEntry {
     }
 
     #[must_use]
-    pub fn url(&self) -> Option<Url> {
+    pub fn url(&self) -> Option<String> {
         if let Some(module) = self.subtrees.first() {
             let url_option = if module.upstream().is_some() {
                 module.upstream()
@@ -454,11 +454,9 @@ impl HistoryEntry {
                 module.origin()
             };
             if let Some(v) = url_option {
-                if let Ok(u) = Url::parse(v) {
-                    return Some(u);
-                }
+                return Some(v.clone());
             }
         }
-        self.repo_url.clone()
+        self.forge_url.clone()
     }
 }

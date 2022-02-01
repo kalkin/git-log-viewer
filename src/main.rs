@@ -77,7 +77,6 @@ impl From<ErrorKind> for UiError {
     }
 }
 
-
 fn glv() -> Result<(), PosixError> {
     let app = arg_parser();
 
@@ -114,7 +113,11 @@ fn glv() -> Result<(), PosixError> {
         vec![]
     };
 
-    log::debug!("Initialising HistoryAdapter with revision {} & paths {:?})", revision, paths);
+    log::debug!(
+        "Initialising HistoryAdapter with revision {} & paths {:?})",
+        revision,
+        paths
+    );
     let history_adapter = HistoryAdapter::new(repo.clone(), revision, paths.clone())?;
     if let Err(err) = run_ui(history_adapter, repo, paths) {
         Err(UiError::from(err).0)

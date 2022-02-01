@@ -20,6 +20,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use git_stree::{SubtreeConfig, Subtrees};
 use posix_errors::PosixError;
 use subject_classifier::Subject;
+use url::Url;
 
 use crate::actors::fork_point::ForkPointThread;
 use crate::actors::github::{GitHubRequest, GitHubThread};
@@ -31,6 +32,7 @@ use crate::ui::base::search::{Direction, Needle, SearchResult};
 use crate::ui::base::StyledLine;
 use git_wrapper::Remote;
 use git_wrapper::Repository;
+use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::sync::mpsc;
 use std::thread;
@@ -43,6 +45,7 @@ pub struct HistoryAdapter {
     remotes: Vec<Remote>,
     range: String,
     repo: Repository,
+    forge_url: Option<String>,
     github_thread: GitHubThread,
     fork_point_thread: ForkPointThread,
     subtree_modules: Vec<SubtreeConfig>,
@@ -129,6 +132,22 @@ impl From<&HistoryAdapter> for AdapterState {
     }
 }
 
+fn find_forge_url(hash_map: &HashMap<String, Remote>) -> Option<String> {
+    if let Some(remote) = hash_map.get("origin") {
+        if let Some(s) = &remote.url() {
+            return Some((*s).to_string());
+        }
+    }
+    for r in hash_map.values() {
+        if r.fetch.is_some() {
+            return r.fetch.clone();
+        } else if r.push.is_some() {
+            return r.push.clone();
+        }
+    }
+    None
+}
+
 impl HistoryAdapter {
     ///
     /// # Errors
@@ -136,10 +155,19 @@ impl HistoryAdapter {
     /// Will return an error if git `working_dir` does not exist or git executable is missing
     pub fn new(repo: Repository, range: &str, paths: Vec<String>) -> Result<Self, PosixError> {
         let remotes: Vec<Remote>;
-        if let Some(r) = repo.remotes() {
-            remotes = r.into_iter().map(|(_k, v)| v).collect::<Vec<Remote>>();
+        let forge_url: Option<String>;
+        if let Some(hash_map) = repo.remotes() {
+            forge_url = find_forge_url(&hash_map);
+            remotes = hash_map
+                .into_iter()
+                .map(|(_k, v)| v)
+                .collect::<Vec<Remote>>();
         } else {
+            forge_url = None;
             remotes = vec![];
+        }
+        if forge_url.is_some() {
+            log::debug!("Found forge url {}", forge_url.clone().unwrap());
         }
 
         let length = history_length(&repo, range, &paths)?;
@@ -152,6 +180,7 @@ impl HistoryAdapter {
             length,
             paths,
             remotes,
+            forge_url,
             range: range.to_string(),
             repo,
             github_thread: GitHubThread::new(),
@@ -240,14 +269,18 @@ impl HistoryAdapter {
             let fork_point = self
                 .fork_point_thread
                 .request_calculation(&commit, above_commit);
-            let entry = HistoryEntry::new(commit, 0, None, fork_point, &self.remotes);
-            if let Some(url) = entry.url() {
+            let entry =
+                HistoryEntry::new(commit, 0, self.forge_url.clone(), fork_point, &self.remotes);
+            if let Some(text) = entry.url() {
                 if let Subject::PullRequest { id, .. } = entry.special() {
-                    self.github_thread.send(GitHubRequest {
-                        oid: entry.id().clone(),
-                        url,
-                        pr_id: id.to_string(),
-                    });
+                    log::debug!("Checking {} for GitHub PR", id);
+                    if let Ok(url) = Url::parse(&text) {
+                        self.github_thread.send(GitHubRequest {
+                            oid: entry.id().clone(),
+                            url,
+                            pr_id: id.to_string(),
+                        });
+                    }
                 }
             }
             tmp2.push(entry);
@@ -284,13 +317,15 @@ impl HistoryAdapter {
                 let level = selected.level() + 1;
                 let entry: HistoryEntry =
                     HistoryEntry::new(t, level, selected.url(), fork_point_calc, &self.remotes);
-                if let Some(url) = entry.url() {
+                if let Some(text) = entry.url() {
                     if let Subject::PullRequest { id, .. } = entry.special() {
-                        self.github_thread.send(GitHubRequest {
-                            oid: entry.id().clone(),
-                            url,
-                            pr_id: id.to_string(),
-                        });
+                        if let Ok(url) = Url::parse(&text) {
+                            self.github_thread.send(GitHubRequest {
+                                oid: entry.id().clone(),
+                                url,
+                                pr_id: id.to_string(),
+                            });
+                        }
                     }
                 }
                 tmp.push(entry);
@@ -337,6 +372,7 @@ impl HistoryAdapter {
         }
         while let Ok(v) = self.github_thread.try_recv() {
             for e in &mut self.history {
+                log::debug!("Resolved PR for {}", v.oid);
                 if e.id() == &v.oid {
                     e.set_subject(v.subject);
                     break;
