@@ -82,13 +82,13 @@ fn glv() -> Result<(), PosixError> {
 
     let matches = app.get_matches();
 
-    simple_logger::SimpleLogger::new().init().unwrap();
-    match matches.occurrences_of("debug") {
-        0 => log::set_max_level(log::LevelFilter::Warn),
-        1 => log::set_max_level(log::LevelFilter::Info),
-        2 => log::set_max_level(log::LevelFilter::Debug),
-        _ => log::set_max_level(log::LevelFilter::Trace),
-    }
+    let log_level = match matches.occurrences_of("debug") {
+        0 => log::Level::Warn,
+        1 => log::Level::Info,
+        2 => log::Level::Debug,
+        _ => log::Level::Trace,
+    };
+    simple_logger::init_with_level(log_level).unwrap();
 
     log::info!("Log Level is set to {}", log::max_level());
 
