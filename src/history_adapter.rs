@@ -273,7 +273,6 @@ impl HistoryAdapter {
                 HistoryEntry::new(commit, 0, self.forge_url.clone(), fork_point, &self.remotes);
             if let Some(text) = entry.url() {
                 if let Subject::PullRequest { id, .. } = entry.special() {
-                    log::debug!("Checking {} for GitHub PR", id);
                     if let Ok(url) = Url::parse(&text) {
                         self.github_thread.send(GitHubRequest {
                             oid: entry.id().clone(),
@@ -372,7 +371,6 @@ impl HistoryAdapter {
         }
         while let Ok(v) = self.github_thread.try_recv() {
             for e in &mut self.history {
-                log::debug!("Resolved PR for {}", v.oid);
                 if e.id() == &v.oid {
                     e.set_subject(v.subject);
                     break;
