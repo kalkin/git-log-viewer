@@ -77,10 +77,19 @@ impl From<ErrorKind> for UiError {
     }
 }
 
+
 fn glv() -> Result<(), PosixError> {
     let app = arg_parser();
 
     let matches = app.get_matches();
+
+    match matches.occurrences_of("debug") {
+        0 => log::set_max_level(log::LevelFilter::Warn),
+        1 => log::set_max_level(log::LevelFilter::Info),
+        2 => log::set_max_level(log::LevelFilter::Debug),
+        _ => log::set_max_level(log::LevelFilter::Trace),
+    }
+
     let repo_tmp = Repository::from_args(
         matches.value_of("dir"),
         matches.value_of("git-dir"),
@@ -204,10 +213,16 @@ fn arg_parser() -> App<'static> {
         .help("Show only commits touching the paths")
         .multiple_values(true)
         .last(true);
+    let debug_arg = Arg::new("debug")
+        .long("debug")
+        .short('d')
+        .max_occurrences(3)
+        .help("Log level up to -ddd");
     app_from_crate!()
         .arg(dir_arg)
         .arg(w_arg)
         .arg(gd_arg)
+        .arg(debug_arg)
         .arg(rev_arg)
         .arg(paths_arg)
 }
