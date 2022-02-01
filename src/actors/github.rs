@@ -18,6 +18,9 @@
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::thread::JoinHandle;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use std::collections::HashMap;
 
 use curl::easy::Easy;
 
@@ -44,31 +47,67 @@ pub struct GitHubThread {
 }
 
 impl GitHubThread {
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn new() -> Self {
         let (tx_1, rx_1): (Sender<GitHubResponse>, Receiver<GitHubResponse>) = mpsc::channel();
         let (tx_2, rx_2): (Sender<GitHubRequest>, Receiver<GitHubRequest>) = mpsc::channel();
         let child = thread::spawn(move || {
+            let mut rate_limit = false;
+            let mut rate_limit_reset = u64::MAX;
             while let Ok(v) = rx_2.recv() {
                 if !Self::can_handle(&v.url) {
+                    log::debug!("Can not handle url {}", &v.url);
                     continue;
+                }
+
+                let pr_id = v.pr_id;
+                if rate_limit {
+                    let now = SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs();
+                    if now < rate_limit_reset {
+                        let remainder = rate_limit_reset - now;
+                        log::info!(
+                            "Skipping lookup #{} Rate limited for {} seconds",
+                            pr_id,
+                            remainder
+                        );
+                        continue;
+                    }
                 }
 
                 let mut segments = v.url.path_segments().unwrap();
                 let owner = segments.next().unwrap();
                 let repo = segments.next().unwrap();
                 let oid = v.oid;
-                let pr_id = v.pr_id;
+                log::debug!("Looking up PR #{} for {}", pr_id, oid);
 
-                let mut easy = Easy::new();
                 let url = format!(
                     "https://api.github.com/repos/{}/{}/pulls/{}",
                     owner, repo, pr_id
                 );
-                easy.useragent("kalkin/glv").unwrap();
-                easy.url(&url).unwrap();
+                let mut headers: HashMap<String, String> = HashMap::with_capacity(25);
                 let mut body: String = String::new();
+                let mut easy = Easy::new();
                 {
+                    // Fetch data
+                    easy.useragent("kalkin/glv").unwrap();
+                    easy.url(&url).unwrap();
                     let mut transfer = easy.transfer();
+                    transfer
+                        .header_function(|line| {
+                            let line = String::from_utf8_lossy(line);
+                            let line = line.trim();
+                            let tmp: Vec<_> = line.splitn(2, ": ").collect();
+                            if tmp.len() == 2 {
+                                let key = tmp[0].to_string();
+                                let value = tmp[1].to_string();
+                                headers.insert(key, value);
+                            }
+                            true
+                        })
+                        .unwrap();
                     transfer
                         .write_function(|data| {
                             // body = String::from_utf8(Vec::from(data)).unwrap();
@@ -79,25 +118,64 @@ impl GitHubThread {
 
                     transfer.perform().unwrap();
                 }
-                let response_code = easy.response_code().unwrap();
-                if response_code != 200 {
-                    continue;
-                }
-                if let Ok(parsed) = body.parse::<JsonValue>() {
-                    match &parsed["title"] {
-                        JsonValue::String(title) => {
-                            tx_1.send(GitHubResponse {
-                                oid,
-                                subject: format!("{} (#{})", title, pr_id),
-                            })
-                            .unwrap();
-                        }
-                        _ => {
-                            panic!("PR #{}: Got unexpected {:?}", pr_id, parsed["title"]);
+
+                {
+                    // Check rate limiting headers
+                    if let Some(value) = headers.get("X-RateLimit-Remaining") {
+                        if let Ok(remainder) = value.parse::<u32>() {
+                            log::debug!("RateLimit-Remaining: {}", remainder);
+                            rate_limit = remainder == 0;
                         }
                     }
-                } else {
-                    panic!("INVALID JSON for PR #{}: {:?}", pr_id, body);
+
+                    if let Some(value) = headers.get("X-RateLimit-Reset") {
+                        if let Ok(since_epoch) = value.parse::<u64>() {
+                            let now = SystemTime::now()
+                                .duration_since(UNIX_EPOCH)
+                                .unwrap()
+                                .as_secs();
+                            log::debug!("RateLimit-Reset in {} seconds", since_epoch - now);
+                            rate_limit_reset = since_epoch;
+                        }
+                    }
+                }
+
+                let response_code = easy.response_code().unwrap();
+                log::trace!("Response {} {}", response_code, url);
+
+                match response_code {
+                    200 => {
+                        if let Ok(parsed) = body.parse::<JsonValue>() {
+                            match &parsed["title"] {
+                                JsonValue::String(title) => {
+                                    log::debug!("PR #{} - {}", pr_id, title);
+                                    tx_1.send(GitHubResponse {
+                                        oid,
+                                        subject: format!("{} (#{})", title, pr_id),
+                                    })
+                                    .unwrap();
+                                }
+                                _ => {
+                                    log::warn!(
+                                        "PR #{}: Got unexpected {:?}",
+                                        pr_id,
+                                        parsed["title"]
+                                    );
+                                }
+                            }
+                        } else {
+                            log::warn!("Got invalid JSON for PR #{}: {:?}", pr_id, body);
+                        }
+                    }
+                    403 => {
+                        log::warn!("We are asked to rate limit our selfs");
+                        log::debug!("{}", body);
+                        rate_limit = true;
+                    }
+                    _ => {
+                        log::warn!("Unexpected API Response {}", response_code);
+                        log::debug!("{}", body);
+                    }
                 }
             }
         });
