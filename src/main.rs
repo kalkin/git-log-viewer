@@ -49,6 +49,7 @@ mod history_table;
 mod raw;
 mod search;
 mod ui;
+mod utils;
 
 #[allow(clippy::ptr_arg)]
 fn same(a: &StyledArea<String>, b: &StyledArea<String>) -> bool {
