@@ -93,7 +93,9 @@ impl GitHubThread {
                 );
                 let mut easy = Easy::new();
                 easy.url(&url).unwrap();
-                if let Some((response_code, headers, body)) = crate::utils::transfer(easy) {
+                if let Some((response_code, headers, body)) =
+                    crate::utils::transfer(easy, v.url.domain().unwrap())
+                {
                     {
                         // Check rate limiting headers
                         if let Some(value) = headers.get("X-RateLimit-Remaining") {

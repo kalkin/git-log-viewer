@@ -25,7 +25,6 @@ use tinyjson::JsonValue;
 use url::Url;
 
 use crate::commit::Oid;
-use crate::credentials;
 
 #[allow(clippy::module_name_repetitions)]
 pub struct BitbucketRequest {
@@ -104,7 +103,9 @@ impl BitbucketThread {
 
                 let mut easy = Easy::new();
                 easy.url(url.as_str()).unwrap();
-                if let Some((response_code, _headers, body)) = crate::utils::transfer(easy) {
+                if let Some((response_code, _headers, body)) =
+                    crate::utils::transfer(easy, v.url.domain().unwrap())
+                {
                     match response_code {
                         200 => {
                             if let Ok(parsed) = body.parse::<JsonValue>() {

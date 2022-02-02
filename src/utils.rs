@@ -1,7 +1,25 @@
+use crate::credentials;
 use curl::easy::Easy;
 use std::collections::HashMap;
 
-pub fn transfer(mut easy: Easy) -> Option<(u32, HashMap<String, String>, String)> {
+pub fn transfer(mut easy: Easy, domain: &str) -> Option<(u32, HashMap<String, String>, String)> {
+    if let Some((username, maybe_pw)) = credentials::token(domain) {
+        if let Some(password) = maybe_pw {
+            log::trace!("Authentication via username {} for {}", username, domain);
+            easy.username(&username).unwrap();
+            easy.password(&password).unwrap();
+        } else {
+            log::trace!("Authentication via token for {}", domain);
+            let mut headers = curl::easy::List::new();
+            let token = username;
+            headers
+                .append(&format!("Authorization: Bearer {}", token))
+                .unwrap();
+            easy.http_headers(headers).unwrap();
+        }
+    } else {
+        log::trace!("No authentication for {}", domain);
+    }
     let mut headers: HashMap<String, String> = HashMap::with_capacity(25);
     let mut body: String = String::new();
     let transfer_result = {
