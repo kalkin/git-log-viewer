@@ -15,12 +15,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+use url::Url;
+
 use crossterm::style::{style, Attribute, ContentStyle, StyledContent};
 use getset::{CopyGetters, Getters, Setters};
 use git_stree::SubtreeConfig;
 
 use crate::actors::fork_point::ForkPointCalculation;
-use crate::commit::{Commit, GitRef, Oid};
+use crate::commit::{parse_remote_url, Commit, GitRef, Oid};
 use crate::default_styles::{DATE_STYLE, ID_STYLE, MOD_STYLE, NAME_STYLE, REF_STYLE};
 use crate::ui::base::StyledLine;
 use git_wrapper::Remote;
@@ -41,7 +43,7 @@ pub struct HistoryEntry {
     #[getset(get = "pub", set = "pub")]
     subtrees: Vec<SubtreeConfig>,
     #[getset(get = "pub", set = "pub")]
-    forge_url: Option<String>,
+    forge_url: Option<Url>,
     fork_point: ForkPointCalculation,
 }
 
@@ -50,7 +52,7 @@ impl HistoryEntry {
     pub fn new(
         commit: Commit,
         level: u8,
-        forge_url: Option<String>,
+        forge_url: Option<Url>,
         fork_point: ForkPointCalculation,
         remotes: &[Remote],
     ) -> Self {
@@ -446,7 +448,7 @@ impl HistoryEntry {
     }
 
     #[must_use]
-    pub fn url(&self) -> Option<String> {
+    pub fn url(&self) -> Option<Url> {
         if let Some(module) = self.subtrees.first() {
             let url_option = if module.upstream().is_some() {
                 module.upstream()
@@ -454,7 +456,9 @@ impl HistoryEntry {
                 module.origin()
             };
             if let Some(v) = url_option {
-                return Some(v.clone());
+                if let Some(u) = parse_remote_url(v) {
+                    return Some(u);
+                };
             }
         }
         self.forge_url.clone()

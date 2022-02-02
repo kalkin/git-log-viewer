@@ -16,6 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::ui::base::search::Needle;
+use url::Url;
 
 use getset::Getters;
 use git_wrapper::Repository;
@@ -365,6 +366,22 @@ fn to_commit(repo: &Repository, oid: &Oid, is_commit_link: bool) -> Commit {
     } else {
         panic!("Failed to get data for commit {}", oid);
     }
+}
+
+pub fn parse_remote_url(input: &str) -> Option<Url> {
+    if let Ok(u) = Url::parse(input) {
+        return Some(u);
+    }
+    if input.contains(':') {
+        let tmp: Vec<&str> = input.splitn(2, ':').collect();
+        if tmp.len() == 2 {
+            let candidate = format!("ssh://{}/{}", tmp[0], tmp[1]);
+            if let Ok(u) = Url::parse(&candidate) {
+                return Some(u);
+            }
+        }
+    }
+    None
 }
 
 #[cfg(test)]

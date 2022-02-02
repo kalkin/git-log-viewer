@@ -25,7 +25,7 @@ use url::Url;
 use crate::actors::fork_point::ForkPointThread;
 use crate::actors::github::{GitHubRequest, GitHubThread};
 use crate::actors::subtrees::{SubtreeChangesRequest, SubtreeThread};
-use crate::commit::{child_history, commits_for_range, history_length, Commit};
+use crate::commit::{child_history, commits_for_range, history_length, parse_remote_url, Commit};
 use crate::history_entry::HistoryEntry;
 use crate::ui::base::data::{DataAdapter, SearchProgress};
 use crate::ui::base::search::{Direction, Needle, SearchResult};
@@ -45,7 +45,7 @@ pub struct HistoryAdapter {
     remotes: Vec<Remote>,
     range: String,
     repo: Repository,
-    forge_url: Option<String>,
+    forge_url: Option<Url>,
     github_thread: GitHubThread,
     fork_point_thread: ForkPointThread,
     subtree_modules: Vec<SubtreeConfig>,
@@ -132,17 +132,29 @@ impl From<&HistoryAdapter> for AdapterState {
     }
 }
 
-fn find_forge_url(hash_map: &HashMap<String, Remote>) -> Option<String> {
+fn find_forge_url(hash_map: &HashMap<String, Remote>) -> Option<Url> {
     if let Some(remote) = hash_map.get("origin") {
-        if let Some(s) = &remote.url() {
-            return Some((*s).to_string());
+        if let Some(s) = &remote.fetch {
+            if let Some(u) = parse_remote_url(s) {
+                return Some(u);
+            }
+        }
+        if let Some(s) = &remote.push {
+            if let Some(u) = parse_remote_url(s) {
+                return Some(u);
+            }
         }
     }
     for r in hash_map.values() {
-        if r.fetch.is_some() {
-            return r.fetch.clone();
-        } else if r.push.is_some() {
-            return r.push.clone();
+        if let Some(s) = &r.fetch {
+            if let Some(u) = parse_remote_url(s) {
+                return Some(u);
+            }
+        }
+        if let Some(s) = &r.push {
+            if let Some(u) = parse_remote_url(s) {
+                return Some(u);
+            }
         }
     }
     None
@@ -155,7 +167,7 @@ impl HistoryAdapter {
     /// Will return an error if git `working_dir` does not exist or git executable is missing
     pub fn new(repo: Repository, range: &str, paths: Vec<String>) -> Result<Self, PosixError> {
         let remotes: Vec<Remote>;
-        let forge_url: Option<String>;
+        let forge_url: Option<Url>;
         if let Some(hash_map) = repo.remotes() {
             forge_url = find_forge_url(&hash_map);
             remotes = hash_map
@@ -271,15 +283,13 @@ impl HistoryAdapter {
                 .request_calculation(&commit, above_commit);
             let entry =
                 HistoryEntry::new(commit, 0, self.forge_url.clone(), fork_point, &self.remotes);
-            if let Some(text) = entry.url() {
+            if let Some(url) = entry.url() {
                 if let Subject::PullRequest { id, .. } = entry.special() {
-                    if let Ok(url) = Url::parse(&text) {
-                        self.github_thread.send(GitHubRequest {
-                            oid: entry.id().clone(),
-                            url,
-                            pr_id: id.to_string(),
-                        });
-                    }
+                    self.github_thread.send(GitHubRequest {
+                        oid: entry.id().clone(),
+                        url,
+                        pr_id: id.to_string(),
+                    });
                 }
             }
             tmp2.push(entry);
@@ -316,15 +326,13 @@ impl HistoryAdapter {
                 let level = selected.level() + 1;
                 let entry: HistoryEntry =
                     HistoryEntry::new(t, level, selected.url(), fork_point_calc, &self.remotes);
-                if let Some(text) = entry.url() {
+                if let Some(url) = entry.url() {
                     if let Subject::PullRequest { id, .. } = entry.special() {
-                        if let Ok(url) = Url::parse(&text) {
-                            self.github_thread.send(GitHubRequest {
-                                oid: entry.id().clone(),
-                                url,
-                                pr_id: id.to_string(),
-                            });
-                        }
+                        self.github_thread.send(GitHubRequest {
+                            oid: entry.id().clone(),
+                            url,
+                            pr_id: id.to_string(),
+                        });
                     }
                 }
                 tmp.push(entry);
