@@ -22,6 +22,7 @@ use posix_errors::PosixError;
 use subject_classifier::Subject;
 use url::Url;
 
+use crate::actors::bitbucket::{BitbucketRequest, BitbucketThread};
 use crate::actors::fork_point::ForkPointThread;
 use crate::actors::github::{GitHubRequest, GitHubThread};
 use crate::actors::subtrees::{SubtreeChangesRequest, SubtreeThread};
@@ -47,6 +48,7 @@ pub struct HistoryAdapter {
     repo: Repository,
     forge_url: Option<Url>,
     github_thread: GitHubThread,
+    bb_server_thread: BitbucketThread,
     fork_point_thread: ForkPointThread,
     subtree_modules: Vec<SubtreeConfig>,
     subtree_thread: SubtreeThread,
@@ -186,6 +188,7 @@ impl HistoryAdapter {
         let subtrees = Subtrees::from_repo(repo.clone()).expect("Read subtree config");
         let subtree_modules = subtrees.all().unwrap();
         let subtree_thread = SubtreeThread::new(subtrees);
+        let bb_server_thread = BitbucketThread::new();
         let fork_point_thread = ForkPointThread::new(repo.clone());
         Ok(Self {
             history: vec![],
@@ -193,6 +196,7 @@ impl HistoryAdapter {
             paths,
             remotes,
             forge_url,
+            bb_server_thread,
             range: range.to_string(),
             repo,
             github_thread: GitHubThread::new(),
@@ -284,11 +288,19 @@ impl HistoryAdapter {
                 HistoryEntry::new(commit, 0, self.forge_url.clone(), fork_point, &self.remotes);
             if let Some(url) = entry.url() {
                 if let Subject::PullRequest { id, .. } = entry.special() {
-                    self.github_thread.send(GitHubRequest {
-                        oid: entry.id().clone(),
-                        url,
-                        pr_id: id.to_string(),
-                    });
+                    if GitHubThread::can_handle(&url) {
+                        self.github_thread.send(GitHubRequest {
+                            oid: entry.id().clone(),
+                            url,
+                            pr_id: id.to_string(),
+                        });
+                    } else if BitbucketThread::can_handle(&url) {
+                        self.bb_server_thread.send(BitbucketRequest {
+                            oid: entry.id().clone(),
+                            url,
+                            pr_id: id.to_string(),
+                        });
+                    }
                 }
             }
             tmp2.push(entry);
@@ -327,11 +339,19 @@ impl HistoryAdapter {
                     HistoryEntry::new(t, level, selected.url(), fork_point_calc, &self.remotes);
                 if let Some(url) = entry.url() {
                     if let Subject::PullRequest { id, .. } = entry.special() {
-                        self.github_thread.send(GitHubRequest {
-                            oid: entry.id().clone(),
-                            url,
-                            pr_id: id.to_string(),
-                        });
+                        if GitHubThread::can_handle(&url) {
+                            self.github_thread.send(GitHubRequest {
+                                oid: entry.id().clone(),
+                                url,
+                                pr_id: id.to_string(),
+                            });
+                        } else if BitbucketThread::can_handle(&url) {
+                            self.bb_server_thread.send(BitbucketRequest {
+                                oid: entry.id().clone(),
+                                url,
+                                pr_id: id.to_string(),
+                            });
+                        }
                     }
                 }
                 tmp.push(entry);
@@ -377,6 +397,15 @@ impl HistoryAdapter {
             }
         }
         while let Ok(v) = self.github_thread.try_recv() {
+            for e in &mut self.history {
+                if e.id() == &v.oid {
+                    e.set_subject(v.subject);
+                    break;
+                }
+            }
+        }
+
+        while let Ok(v) = self.bb_server_thread.try_recv() {
             for e in &mut self.history {
                 if e.id() == &v.oid {
                     e.set_subject(v.subject);
