@@ -52,7 +52,7 @@ impl GitHubThread {
         let (tx_1, rx_1): (Sender<GitHubResponse>, Receiver<GitHubResponse>) = mpsc::channel();
         let (tx_2, rx_2): (Sender<GitHubRequest>, Receiver<GitHubRequest>) = mpsc::channel();
         let child = thread::spawn(move || {
-            let mut rate_limit = false;
+            let mut rate_limit_remaining = 60;
             let mut rate_limit_reset = u64::MAX;
             while let Ok(v) = rx_2.recv() {
                 if !Self::can_handle(&v.url) {
@@ -61,17 +61,17 @@ impl GitHubThread {
                 }
 
                 let pr_id = v.pr_id;
-                if rate_limit {
+                if rate_limit_remaining == 0 {
                     let now = SystemTime::now()
                         .duration_since(UNIX_EPOCH)
                         .unwrap()
                         .as_secs();
                     if now < rate_limit_reset {
-                        let remainder = rate_limit_reset - now;
+                        let delta = rate_limit_reset - now;
                         log::info!(
                             "Skipping lookup #{} Rate limited for {} seconds",
                             pr_id,
-                            remainder
+                            delta
                         );
                         continue;
                     }
@@ -81,7 +81,13 @@ impl GitHubThread {
                 let owner = segments.next().unwrap();
                 let repo = segments.next().unwrap();
                 let oid = v.oid;
-                log::debug!("Looking up PR #{} for {}", pr_id, oid);
+                log::debug!(
+                    "Looking up PR #{} for {}/{}/{}",
+                    pr_id,
+                    owner,
+                    repo,
+                    &oid.0[0..7]
+                );
 
                 let url = format!(
                     "https://api.github.com/repos/{}/{}/pulls/{}",
@@ -122,9 +128,9 @@ impl GitHubThread {
                 {
                     // Check rate limiting headers
                     if let Some(value) = headers.get("X-RateLimit-Remaining") {
-                        if let Ok(remainder) = value.parse::<u32>() {
-                            log::debug!("RateLimit-Remaining: {}", remainder);
-                            rate_limit = remainder == 0;
+                        if let Ok(number) = value.parse::<u32>() {
+                            log::trace!("RateLimit-Remaining: {}", number);
+                            rate_limit_remaining = number;
                         }
                     }
 
@@ -134,7 +140,7 @@ impl GitHubThread {
                                 .duration_since(UNIX_EPOCH)
                                 .unwrap()
                                 .as_secs();
-                            log::debug!("RateLimit-Reset in {} seconds", since_epoch - now);
+                            log::trace!("RateLimit-Reset in {} seconds", since_epoch - now);
                             rate_limit_reset = since_epoch;
                         }
                     }
@@ -148,7 +154,12 @@ impl GitHubThread {
                         if let Ok(parsed) = body.parse::<JsonValue>() {
                             match &parsed["title"] {
                                 JsonValue::String(title) => {
-                                    log::debug!("PR #{} - {}", pr_id, title);
+                                    log::debug!(
+                                        "PR #{} (RL {})  ⇒ «{}»",
+                                        pr_id,
+                                        rate_limit_remaining,
+                                        title
+                                    );
                                     tx_1.send(GitHubResponse {
                                         oid,
                                         subject: format!("{} (#{})", title, pr_id),
@@ -170,7 +181,7 @@ impl GitHubThread {
                     403 => {
                         log::warn!("We are asked to rate limit our selfs");
                         log::debug!("{}", body);
-                        rate_limit = true;
+                        rate_limit_remaining = 0;
                     }
                     _ => {
                         log::warn!("Unexpected API Response {}", response_code);
