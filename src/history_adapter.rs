@@ -208,13 +208,11 @@ impl HistoryAdapter {
         let addresses = &sr.0;
         let mut result = 0;
         let last_level = addresses.len();
-        let mut seen_ids: Vec<String> = Vec::with_capacity(addresses.len());
         for (level, addr) in addresses.iter().enumerate() {
             result = self.addr_to_index(result, level, *addr);
             let entry = self.get_data(result);
             if last_level - 1 != (entry.level() as usize) {
                 assert_eq!(entry.level() as usize, level);
-                seen_ids.push(entry.id().to_string());
                 result += 1;
                 if entry.is_foldable() {
                     if entry.is_folded() {
