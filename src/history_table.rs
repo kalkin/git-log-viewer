@@ -105,7 +105,7 @@ impl Drawable for TableWidget {
         self.paging.page_height(page_height, self.adapter.len());
 
         if let Some(result) = self.search_input.selected().as_ref() {
-            let index = self.adapter.result_to_index(result);
+            let index = self.adapter.unfold_up_to(result);
             self.paging.set_total_length(self.adapter.len());
             self.paging.set_selected(index);
         }

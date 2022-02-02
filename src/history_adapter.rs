@@ -203,7 +203,7 @@ impl HistoryAdapter {
         })
     }
 
-    pub fn result_to_index(&mut self, sr: &SearchResult) -> usize {
+    pub fn unfold_up_to(&mut self, sr: &SearchResult) -> usize {
         assert!(!sr.0.is_empty(), "Unexpected empty SearchResult vector");
         let addresses = &sr.0;
         let mut result = 0;
