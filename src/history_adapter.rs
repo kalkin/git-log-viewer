@@ -214,21 +214,22 @@ impl HistoryAdapter {
             let entry = self.get_data(result);
             if last_level - 1 != (entry.level() as usize) {
                 assert_eq!(entry.level() as usize, level);
-                if !entry.is_foldable() {
-                    panic!(
-                        "\nError during {:?} #{}\n{:#?}\nExpected a merge, got {}\n{:#?}",
-                        sr,
-                        result,
-                        seen_ids,
-                        entry.id().clone(),
-                        self
-                    );
-                }
                 seen_ids.push(entry.id().to_string());
-                if entry.is_folded() {
-                    self.toggle_folding(result);
-                }
                 result += 1;
+                if entry.is_foldable() {
+                    if entry.is_folded() {
+                        self.toggle_folding(result);
+                    }
+                } else {
+                    log::warn!("Error during converting a SearchResult to HistoryAdapter index");
+                    log::warn!(
+                        "Unfoldable entry {} on level {} from {:?}",
+                        entry.short_id(),
+                        level,
+                        addresses
+                    );
+                    break;
+                }
             }
         }
 
