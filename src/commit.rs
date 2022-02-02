@@ -369,13 +369,22 @@ fn to_commit(repo: &Repository, oid: &Oid, is_commit_link: bool) -> Commit {
 }
 
 pub fn parse_remote_url(input: &str) -> Option<Url> {
+    // TODO handle upper case wording
+    #[allow(clippy::case_sensitive_file_extension_comparisons)]
+    let input = if input.ends_with(".git") {
+        input.strip_suffix(".git").unwrap()
+    } else {
+        input
+    };
     if let Ok(u) = Url::parse(input) {
         return Some(u);
     }
     if input.contains(':') {
         let tmp: Vec<&str> = input.splitn(2, ':').collect();
         if tmp.len() == 2 {
-            let candidate = format!("ssh://{}/{}", tmp[0], tmp[1]);
+            let domain = tmp[0];
+            let path = tmp[1];
+            let candidate = format!("ssh://{}/{}", domain, path);
             if let Ok(u) = Url::parse(&candidate) {
                 return Some(u);
             }
