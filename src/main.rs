@@ -41,6 +41,7 @@ use std::time;
 mod actors;
 #[macro_use]
 mod commit;
+mod cache;
 mod credentials;
 pub mod default_styles;
 mod detail;

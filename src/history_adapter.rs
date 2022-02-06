@@ -284,22 +284,32 @@ impl HistoryAdapter {
             let fork_point = self
                 .fork_point_thread
                 .request_calculation(&commit, above_commit);
-            let entry =
+            let mut entry =
                 HistoryEntry::new(commit, 0, self.forge_url.clone(), fork_point, &self.remotes);
             if let Some(url) = entry.url() {
                 if let Subject::PullRequest { id, .. } = entry.special() {
                     if GitHubThread::can_handle(&url) {
-                        self.github_thread.send(GitHubRequest {
-                            oid: entry.id().clone(),
-                            url,
-                            pr_id: id.to_string(),
-                        });
+                        if let Some(title) = GitHubThread::from_cache(&url, id) {
+                            log::debug!("PR #{} (CACHE) ⇒ «{}»", id, title);
+                            entry.set_subject(title);
+                        } else {
+                            self.github_thread.send(GitHubRequest {
+                                oid: entry.id().clone(),
+                                url,
+                                pr_id: id.to_string(),
+                            });
+                        }
                     } else if BitbucketThread::can_handle(&url) {
-                        self.bb_server_thread.send(BitbucketRequest {
-                            oid: entry.id().clone(),
-                            url,
-                            pr_id: id.to_string(),
-                        });
+                        if let Some(title) = BitbucketThread::from_cache(&url, id) {
+                            log::debug!("PR #{} (CACHE) ⇒ «{}»", id, title);
+                            entry.set_subject(title);
+                        } else {
+                            self.bb_server_thread.send(BitbucketRequest {
+                                oid: entry.id().clone(),
+                                url,
+                                pr_id: id.to_string(),
+                            });
+                        }
                     }
                 }
             }
@@ -335,16 +345,21 @@ impl HistoryAdapter {
                 }
                 let fork_point_calc = self.fork_point_thread.request_calculation(&t, above_commit);
                 let level = selected.level() + 1;
-                let entry: HistoryEntry =
+                let mut entry: HistoryEntry =
                     HistoryEntry::new(t, level, selected.url(), fork_point_calc, &self.remotes);
                 if let Some(url) = entry.url() {
                     if let Subject::PullRequest { id, .. } = entry.special() {
                         if GitHubThread::can_handle(&url) {
-                            self.github_thread.send(GitHubRequest {
-                                oid: entry.id().clone(),
-                                url,
-                                pr_id: id.to_string(),
-                            });
+                            if let Some(title) = GitHubThread::from_cache(&url, id) {
+                                log::debug!("PR #{} (CACHE) ⇒ «{}»", id, title);
+                                entry.set_subject(title);
+                            } else {
+                                self.github_thread.send(GitHubRequest {
+                                    oid: entry.id().clone(),
+                                    url,
+                                    pr_id: id.to_string(),
+                                });
+                            }
                         } else if BitbucketThread::can_handle(&url) {
                             self.bb_server_thread.send(BitbucketRequest {
                                 oid: entry.id().clone(),

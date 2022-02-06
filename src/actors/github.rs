@@ -22,6 +22,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use curl::easy::Easy;
 
+use crate::cache;
 use crate::commit::Oid;
 use std::thread;
 use tinyjson::JsonValue;
@@ -75,9 +76,11 @@ impl GitHubThread {
                     }
                 }
 
+                let domain = v.url.domain().expect("Url with a domain name");
                 let mut segments = v.url.path_segments().unwrap();
                 let owner = segments.next().unwrap();
                 let repo = segments.next().unwrap();
+
                 let oid = v.oid;
                 log::debug!(
                     "Looking up PR #{} for {}/{}/{}",
@@ -93,9 +96,7 @@ impl GitHubThread {
                 );
                 let mut easy = Easy::new();
                 easy.url(&url).unwrap();
-                if let Some((response_code, headers, body)) =
-                    crate::utils::transfer(easy, v.url.domain().unwrap())
-                {
+                if let Some((response_code, headers, body)) = crate::utils::transfer(easy, domain) {
                     {
                         // Check rate limiting headers
                         if let Some(value) = headers.get("X-RateLimit-Remaining") {
@@ -121,29 +122,26 @@ impl GitHubThread {
 
                     match response_code {
                         200 => {
-                            if let Ok(parsed) = body.parse::<JsonValue>() {
-                                match &parsed["title"] {
-                                    JsonValue::String(title) => {
-                                        log::debug!(
-                                            "PR #{} (RL {})  ⇒ «{}»",
-                                            pr_id,
-                                            rate_limit_remaining,
-                                            title
-                                        );
-                                        tx_1.send(GitHubResponse {
-                                            oid,
-                                            subject: format!("{} (#{})", title, pr_id),
-                                        })
-                                        .unwrap();
-                                    }
-                                    _ => {
-                                        log::warn!(
-                                            "PR #{}: Got unexpected {:?}",
-                                            pr_id,
-                                            parsed["title"]
-                                        );
-                                    }
+                            if let Some(title) = Self::title_from_json(&body) {
+                                log::debug!(
+                                    "PR #{} (RL {})  ⇒ «{}»",
+                                    pr_id,
+                                    rate_limit_remaining,
+                                    title
+                                );
+
+                                if let Err(err) = cache::store_api_response(
+                                    &v.url,
+                                    &format!("{}.json", pr_id),
+                                    &body,
+                                ) {
+                                    log::warn!("PR #{}, {}", pr_id, err);
                                 }
+                                tx_1.send(GitHubResponse {
+                                    oid,
+                                    subject: format!("{} (#{})", title, pr_id),
+                                })
+                                .unwrap();
                             } else {
                                 log::warn!("Got invalid JSON for #{}", pr_id);
                                 log::debug!("{}", body);
@@ -185,5 +183,24 @@ impl GitHubThread {
             return domain == "github.com";
         }
         false
+    }
+
+    pub fn from_cache(url: &Url, pr_id: &str) -> Option<String> {
+        let json_data = match cache::fetch_api_response(url, &format!("{}.json", pr_id)) {
+            Ok(v) => v,
+            Err(err) => {
+                log::warn!("PR #{}, {}", pr_id, err);
+                None
+            }
+        }?;
+        Self::title_from_json(&json_data)
+    }
+
+    fn title_from_json(body: &str) -> Option<String> {
+        let json = body.parse::<JsonValue>().ok()?;
+        if let JsonValue::String(title) = &json["title"] {
+            return Some(title.to_string());
+        }
+        None
     }
 }

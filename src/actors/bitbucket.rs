@@ -24,6 +24,7 @@ use curl::easy::Easy;
 use tinyjson::JsonValue;
 use url::Url;
 
+use crate::cache;
 use crate::commit::Oid;
 
 #[allow(clippy::module_name_repetitions)]
@@ -108,26 +109,22 @@ impl BitbucketThread {
                 {
                     match response_code {
                         200 => {
-                            if let Ok(parsed) = body.parse::<JsonValue>() {
-                                match &parsed["title"] {
-                                    JsonValue::String(title) => {
-                                        log::debug!("PR #{} ⇒ {}", pr_id, title);
-                                        tx_1.send(BitbucketResponse {
-                                            oid,
-                                            subject: format!("{} (#{})", title, pr_id),
-                                        })
-                                        .unwrap();
-                                    }
-                                    _ => {
-                                        log::error!(
-                                            "PR #{}: Got unexpected {:?}",
-                                            pr_id,
-                                            parsed["title"]
-                                        );
-                                    }
+                            if let Some(title) = Self::title_from_json(&body) {
+                                log::debug!("PR #{} ⇒ {}", pr_id, title);
+                                if let Err(err) = cache::store_api_response(
+                                    &v.url,
+                                    &format!("{}.json", pr_id),
+                                    &body,
+                                ) {
+                                    log::warn!("PR #{}, {}", pr_id, err);
                                 }
+                                tx_1.send(BitbucketResponse {
+                                    oid,
+                                    subject: format!("{} (#{})", title, pr_id),
+                                })
+                                .unwrap();
                             } else {
-                                log::error!("Got invalid JSON for #{}", pr_id);
+                                log::warn!("Got invalid JSON for #{}", pr_id);
                                 log::debug!("{}", body);
                             }
                         }
@@ -171,5 +168,24 @@ impl BitbucketThread {
             return domain.contains("bitbucket");
         }
         false
+    }
+
+    fn title_from_json(body: &str) -> Option<String> {
+        let json = body.parse::<JsonValue>().ok()?;
+        if let JsonValue::String(title) = &json["title"] {
+            return Some(title.to_string());
+        }
+        None
+    }
+
+    pub fn from_cache(url: &Url, pr_id: &str) -> Option<String> {
+        let json_data = match cache::fetch_api_response(url, &format!("{}.json", pr_id)) {
+            Ok(v) => v,
+            Err(err) => {
+                log::warn!("PR #{}, {}", pr_id, err);
+                None
+            }
+        }?;
+        Self::title_from_json(&json_data)
     }
 }
