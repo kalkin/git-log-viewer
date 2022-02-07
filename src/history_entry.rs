@@ -324,8 +324,9 @@ impl HistoryEntry {
 }
 // Public interface
 impl HistoryEntry {
-    pub fn set_subject(&mut self, subject: String) {
-        self.subject_text = subject;
+    pub fn set_subject(&mut self, subject: &str) {
+        self.subject_struct = Subject::from(subject);
+        self.subject_text = self.subject_struct.description().to_string();
     }
 
     pub fn set_fork_point(&mut self, t: bool) {

@@ -291,7 +291,7 @@ impl HistoryAdapter {
                     if GitHubThread::can_handle(&url) {
                         if let Some(title) = GitHubThread::from_cache(&url, id) {
                             log::debug!("PR #{} (CACHE) ⇒ «{}»", id, title);
-                            entry.set_subject(title);
+                            entry.set_subject(&title);
                         } else {
                             self.github_thread.send(GitHubRequest {
                                 oid: entry.id().clone(),
@@ -302,7 +302,7 @@ impl HistoryAdapter {
                     } else if BitbucketThread::can_handle(&url) {
                         if let Some(title) = BitbucketThread::from_cache(&url, id) {
                             log::debug!("PR #{} (CACHE) ⇒ «{}»", id, title);
-                            entry.set_subject(title);
+                            entry.set_subject(&title);
                         } else {
                             self.bb_server_thread.send(BitbucketRequest {
                                 oid: entry.id().clone(),
@@ -352,7 +352,7 @@ impl HistoryAdapter {
                         if GitHubThread::can_handle(&url) {
                             if let Some(title) = GitHubThread::from_cache(&url, id) {
                                 log::debug!("PR #{} (CACHE) ⇒ «{}»", id, title);
-                                entry.set_subject(title);
+                                entry.set_subject(&title);
                             } else {
                                 self.github_thread.send(GitHubRequest {
                                     oid: entry.id().clone(),
@@ -414,7 +414,7 @@ impl HistoryAdapter {
         while let Ok(v) = self.github_thread.try_recv() {
             for e in &mut self.history {
                 if e.id() == &v.oid {
-                    e.set_subject(v.subject);
+                    e.set_subject(&v.subject);
                     break;
                 }
             }
@@ -423,7 +423,7 @@ impl HistoryAdapter {
         while let Ok(v) = self.bb_server_thread.try_recv() {
             for e in &mut self.history {
                 if e.id() == &v.oid {
-                    e.set_subject(v.subject);
+                    e.set_subject(&v.subject);
                     break;
                 }
             }
