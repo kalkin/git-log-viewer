@@ -2,7 +2,7 @@
 name = "glv"
 version = "3.0.0-beta.5"
 authors = ["Bahtiar `kalkin-` Gadimov <bahtiar@gadimov.de>"]
-edition = "2018"
+edition = "2021"
 description = "Git log viewer supporting un/folding merges"
 license = "AGPL-3.0-or-later"
 repository = "https://github.com/kalkin/git-log-viewer"
