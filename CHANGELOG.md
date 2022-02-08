@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-beta.6] - 2022-02-08
+
+### Added
+
+- Cache resolved Bitbucket and GitHub PR titles
+- Add authentication for Bitbucket & GitHub
+- Add Bitbucket Server API support
+- Set log level via --debug argument
+
+### Changed
+
+- Reset icon after fetching commit subject from GitHub/BitBucket
+- Replace some panics with `log::warn!`
+- Obey GitHub API rate limiting rules
+
+### Fixed
+
+- Fix recognizing urls ending with .git
+- Fix identifying forge url from scp style remotes
+- Make GitHub integration work again
+- Filter by path when delta(1) is not installed
+- Display correctly commits without parents
+
 ## [3.0.0-beta.5] - 2022-01-17
 
 ### Added
