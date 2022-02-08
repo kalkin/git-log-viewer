@@ -10,7 +10,7 @@ repository = "https://github.com/kalkin/git-log-viewer"
 
 [dependencies]
 configparser = "3"
-crossterm = "^0.22.0"
+crossterm = "^0.23.0"
 curl = "0.4.*"
 dirs = "^4.0.0"
 getset = "0.1.*"
