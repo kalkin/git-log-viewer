@@ -394,6 +394,7 @@ pub fn parse_remote_url(input: &str) -> Option<Url> {
 }
 
 #[cfg(test)]
+#[cfg(not(tarpaulin_include))]
 mod test {
     use crate::commit::commits_for_range;
     use git_wrapper::Repository;

@@ -40,6 +40,7 @@ pub mod data;
 pub mod paging;
 pub mod search;
 #[cfg(test)]
+#[cfg(not(tarpaulin_include))]
 pub mod test_helpers;
 
 pub type Height = usize;

@@ -31,6 +31,7 @@ pub struct Paging {
 
 impl Paging {
     #[cfg(test)]
+    #[cfg(not(tarpaulin_include))]
     pub fn new(page_height: Height, total_length: usize) -> Self {
         let bottom = page_height - 1;
         Self {
@@ -195,6 +196,7 @@ impl Paging {
 }
 
 #[cfg(test)]
+#[cfg(not(tarpaulin_include))]
 mod test_paging {
     use crate::ui::base::paging::Paging;
     use crate::ui::base::HandleEvent;

@@ -119,6 +119,7 @@ impl<T> Drawable for ListWidget<T> {
 }
 
 #[cfg(test)]
+#[cfg(not(tarpaulin_include))]
 mod test_list_widget {
     use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 
@@ -179,6 +180,7 @@ mod test_list_widget {
     }
 }
 #[cfg(test)]
+#[cfg(not(tarpaulin_include))]
 fn example_content() -> ListWidget<String> {
     use crate::ui::base::test_helpers::lore_ipsum_lines;
     let adapter = crate::ui::base::VecAdapter::new(lore_ipsum_lines(30));

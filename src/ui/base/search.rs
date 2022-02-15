@@ -134,6 +134,7 @@ impl NeedleCapture {
 }
 
 #[cfg(test)]
+#[cfg(not(tarpaulin_include))]
 mod test_needle_capture {
     use crate::ui::base::search::{Direction, Event, Needle, NeedleCapture, State};
 

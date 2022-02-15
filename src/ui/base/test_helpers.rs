@@ -16,6 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #![cfg(test)]
+#[cfg(not(tarpaulin_include))]
 pub fn lore_ipsum_lines(n: usize) -> Vec<String> {
     let sentence = lipsum::lipsum_words(n);
     let words: Vec<&str> = sentence.split_ascii_whitespace().collect();

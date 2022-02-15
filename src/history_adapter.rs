@@ -554,6 +554,7 @@ impl HistoryAdapter {
 }
 
 #[cfg(test)]
+#[cfg(not(tarpaulin_include))]
 mod test {
     use crate::history_adapter::HistoryAdapter;
     use git_wrapper::Repository;
