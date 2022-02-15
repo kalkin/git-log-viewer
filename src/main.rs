@@ -128,8 +128,13 @@ fn glv() -> Result<(), PosixError> {
         Ok(())
     }
 }
-
 fn main() {
+    std::panic::set_hook(Box::new(|p| {
+        shutdown_screen().expect("Shutdown screen");
+        log::error!("Panic {}", p);
+        exit(1);
+    }));
+
     if let Err(e) = glv() {
         eprintln!(" error: {}", e.message());
         exit(e.code());
