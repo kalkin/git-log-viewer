@@ -18,7 +18,7 @@
 use std::sync::mpsc;
 use std::thread;
 
-use clap::{app_from_crate, App, Arg};
+use clap::Arg;
 use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyModifiers};
 
 use git_wrapper::Repository;
@@ -207,7 +207,7 @@ fn run_ui(
     Ok(())
 }
 
-fn arg_parser() -> App<'static> {
+fn arg_parser() -> clap::Command<'static> {
     let dir_arg = Arg::new("dir")
         .short('C')
         .takes_value(true)
@@ -233,7 +233,7 @@ fn arg_parser() -> App<'static> {
         .short('d')
         .max_occurrences(3)
         .help("Log level up to -ddd");
-    app_from_crate!()
+    clap::command!()
         .arg(dir_arg)
         .arg(w_arg)
         .arg(gd_arg)
