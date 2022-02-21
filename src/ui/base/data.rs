@@ -81,7 +81,6 @@ impl VecAdapter {
 }
 
 #[cfg(test)]
-#[cfg(not(tarpaulin_include))]
 mod test_vec_adapter {
     use crossterm::style::Attribute;
 

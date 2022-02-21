@@ -68,7 +68,6 @@ impl Default for InputLine {
 }
 
 #[cfg(test)]
-#[cfg(not(tarpaulin_include))]
 mod test_input_widget {
     use crate::ui::base::{Drawable, HandleEvent};
     use crate::ui::input::InputLine;

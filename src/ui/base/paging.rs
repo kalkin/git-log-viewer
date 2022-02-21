@@ -196,7 +196,6 @@ impl Paging {
 }
 
 #[cfg(test)]
-#[cfg(not(tarpaulin_include))]
 mod test_paging {
     use crate::ui::base::paging::Paging;
     use crate::ui::base::HandleEvent;

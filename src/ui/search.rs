@@ -280,7 +280,6 @@ impl SearchWidget {
     }
 }
 #[cfg(test)]
-#[cfg(not(tarpaulin_include))]
 mod test_result_manager {
     use crate::ui::base::data::SearchProgress;
     use crate::ui::base::search::SearchResult;
