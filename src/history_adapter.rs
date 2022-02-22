@@ -239,18 +239,18 @@ impl HistoryAdapter {
         result
     }
     fn addr_to_index(&mut self, start_index: usize, level: usize, addr: usize) -> usize {
-        let entry_level: usize = self
+        let self_level: usize = self
             .get_data(start_index)
             .level()
             .try_into()
             .expect("usize");
-        assert_eq!(entry_level, level);
+        assert_eq!(self_level, level);
         let mut result: usize = 0;
         let mut stop: usize = 0;
         for i in start_index..self.length {
             let entry = self.get_data(i);
-            let entry_level: usize = entry.level().try_into().expect("usize");
-            if entry_level == level {
+            let cur_level: usize = entry.level().try_into().expect("usize");
+            if cur_level == level {
                 result = i;
                 if stop == addr {
                     break;
@@ -393,8 +393,8 @@ impl HistoryAdapter {
         let unfolding = tmp.is_empty();
         self.history[i].folded(unfolding);
         if !unfolding {
-            for (i, entry) in tmp.into_iter().enumerate() {
-                self.history.insert(pos + i, entry);
+            for (j, entry) in tmp.into_iter().enumerate() {
+                self.history.insert(pos + j, entry);
                 self.length += 1;
             }
         }

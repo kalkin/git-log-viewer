@@ -239,8 +239,8 @@ impl HistoryEntry {
             Subject::ConventionalCommit {
                 scope, description, ..
             } => {
-                if let Some(scope) = scope {
-                    buf.push(Self::format_scope(scope));
+                if let Some(s) = scope {
+                    buf.push(Self::format_scope(s));
                     buf.push(separator);
                 }
                 buf.push(StyledContent::new(

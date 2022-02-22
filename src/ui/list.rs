@@ -85,8 +85,8 @@ impl<T> Drawable for ListWidget<T> {
             }
         }
         self.paging.page_height(page_height, self.adapter.len());
-        if let Some(result) = self.search_input.selected() {
-            self.paging.set_selected(*result.0.get(0).unwrap());
+        if let Some(selected) = self.search_input.selected() {
+            self.paging.set_selected(*selected.0.get(0).unwrap());
         }
 
         for i in self.paging.top()..=self.paging.bottom() {
