@@ -214,7 +214,7 @@ fn adjust_string(text: &str, expected: usize) -> String {
         Ordering::Equal => {}
         Ordering::Greater => {
             let words = text.unicode_words().collect::<Vec<&str>>();
-            result = "".to_string();
+            result = "".to_owned();
             for w in words {
                 let actual = UnicodeWidthStr::width(result.as_str()) + UnicodeWidthStr::width(w);
                 if actual > expected {

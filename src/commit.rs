@@ -25,7 +25,7 @@ use std::fmt::{Debug, Display, Formatter};
 
 macro_rules! next_string {
     ($split:expr) => {
-        $split.next().expect("Another split").to_string()
+        $split.next().expect("Another split").to_owned()
     };
 }
 
@@ -169,18 +169,18 @@ impl Commit {
             } else if s.starts_with("HEAD -> ") {
                 is_head = true;
                 let split_2: Vec<&str> = s.splitn(2, " -> ").collect();
-                let branch = split_2[1].to_string();
+                let branch = split_2[1].to_owned();
                 branches.push(GitRef(branch.clone()));
                 references.push(GitRef(branch));
             } else if s.starts_with("tag: ") {
                 let split_2: Vec<&str> = s.splitn(2, ": ").collect();
-                let tag = split_2[1].to_string();
+                let tag = split_2[1].to_owned();
                 tags.push(GitRef(tag.clone()));
                 references.push(GitRef(tag));
             } else if s.is_empty() {
                 // do nothing
             } else {
-                let branch = s.to_string();
+                let branch = s.to_owned();
                 branches.push(GitRef(branch.clone()));
                 references.push(GitRef(branch));
             }
@@ -191,12 +191,12 @@ impl Commit {
         let bellow = if parents_record.is_empty() {
             None
         } else {
-            Some(Oid(parents_record.remove(0).to_string()))
+            Some(Oid(parents_record.remove(0).to_owned()))
         };
 
         let mut children = Vec::new();
         for c in parents_record {
-            children.push(Oid(c.to_string()));
+            children.push(Oid(c.to_owned()));
         }
 
         Self {
@@ -245,7 +245,7 @@ pub fn history_length(
     let proc = git.output().expect("Failed to run rev-list");
 
     if proc.status.success() {
-        let text = String::from_utf8_lossy(&proc.stdout).trim_end().to_string();
+        let text = String::from_utf8_lossy(&proc.stdout).trim_end().to_owned();
         return Ok(text
             .parse::<usize>()
             .expect("Failed to parse commit length"));
@@ -253,7 +253,7 @@ pub fn history_length(
 
     let err = PosixError::from(proc);
     if err.code() == 128 {
-        let msg = "No revisions match the given arguments".to_string();
+        let msg = "No revisions match the given arguments".to_owned();
         return Err(PosixError::new(128, msg));
     }
     Err(err)

@@ -32,7 +32,7 @@ pub struct Needle {
 impl Default for Needle {
     fn default() -> Self {
         Self {
-            text: "".to_string(),
+            text: "".to_owned(),
             direction: Direction::Forward,
         }
     }
@@ -56,7 +56,7 @@ impl Needle {
 
 impl Display for Needle {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let mut text = "".to_string();
+        let mut text = "".to_owned();
         match self.direction {
             Direction::Forward => text.push('/'),
             Direction::Backward => text.push('?'),

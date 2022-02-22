@@ -102,10 +102,10 @@ impl SearchWidget {
         let mut line = Vec::with_capacity(3);
         match self.direction {
             Direction::Forward => {
-                line.push(style("/".to_string()));
+                line.push(style("/".to_owned()));
             }
             Direction::Backward => {
-                line.push(style("?".to_string()));
+                line.push(style("?".to_owned()));
             }
         }
         line.push(style(self.input.text().to_string()));

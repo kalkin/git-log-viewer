@@ -80,7 +80,7 @@ where
                     let right_row = result.get_mut(i).expect("row");
                     if line_length(right_row) < main_size.width() {
                         let max = main_size.width() - line_length(right_row);
-                        let spaces: Vec<String> = (0..max).map(|_| " ".to_string()).collect();
+                        let spaces: Vec<String> = (0..max).map(|_| " ".to_owned()).collect();
                         let content = spaces.join("");
                         right_row.push(StyledContent::new(ContentStyle::default(), content));
                     }

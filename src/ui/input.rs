@@ -52,7 +52,7 @@ impl Drawable for InputLine {
                 if cur > 0 {
                     let string = self.0.clone();
                     let (tmp, _) = string.unicode_truncate(cur - 1);
-                    self.0 = tmp.to_string();
+                    self.0 = tmp.to_owned();
                 }
                 HandleEvent::Handled
             }
@@ -63,7 +63,7 @@ impl Drawable for InputLine {
 
 impl Default for InputLine {
     fn default() -> Self {
-        Self("".to_string())
+        Self("".to_owned())
     }
 }
 

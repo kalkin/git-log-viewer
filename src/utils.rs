@@ -32,8 +32,8 @@ pub fn transfer(mut easy: Easy, domain: &str) -> Option<(u32, HashMap<String, St
                 let line = line.trim();
                 let tmp: Vec<_> = line.splitn(2, ": ").collect();
                 if tmp.len() == 2 {
-                    let key = tmp[0].to_string();
-                    let value = tmp[1].to_string();
+                    let key = tmp[0].to_owned();
+                    let value = tmp[1].to_owned();
                     headers.insert(key, value);
                 }
                 true

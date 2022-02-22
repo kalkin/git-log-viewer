@@ -68,7 +68,7 @@ struct CommitRange {
 }
 impl Debug for CommitRange {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let mut indent = "".to_string();
+        let mut indent = "".to_owned();
         for _ in 0..self.level {
             indent.push(' ');
         }
@@ -197,7 +197,7 @@ impl HistoryAdapter {
             remotes,
             forge_url,
             bb_server_thread,
-            range: range.to_string(),
+            range: range.to_owned(),
             repo,
             github_thread: GitHubThread::new(),
             fork_point_thread,

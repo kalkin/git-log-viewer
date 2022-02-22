@@ -185,7 +185,7 @@ pub fn shorten_line(line: StyledLine<String>, width: usize) -> StyledLine<String
                 let size = width - i;
                 let (text, _) = styled_content.content().unicode_truncate(size);
                 let style = *styled_content.style();
-                let content = StyledContent::new(style, text.to_string());
+                let content = StyledContent::new(style, text.to_owned());
                 result.push(content);
                 break;
             }

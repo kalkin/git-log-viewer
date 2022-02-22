@@ -99,7 +99,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
         }
         data.push(vec![]);
         data.push(vec![style(
-            "                                 ❦ ❦ ❦ ❦ ".to_string(),
+            "                                 ❦ ❦ ❦ ❦ ".to_owned(),
         )]);
         data.push(vec![]);
         for line in git_diff(&self.2, content.commit(), self.1.clone()) {
@@ -115,7 +115,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
 
 fn git_diff(repo: &Repository, commit: &Commit, paths: Vec<String>) -> Vec<StyledLine<String>> {
     let empty_tree = Oid {
-        0: "4b825dc642cb6eb9a060e54bf8d69288fbee4904".to_string(),
+        0: "4b825dc642cb6eb9a060e54bf8d69288fbee4904".to_owned(),
     };
     let bellow = commit.bellow().as_ref().unwrap_or(&empty_tree);
     let rev = format!("{}..{}", bellow.0, commit.id().0);

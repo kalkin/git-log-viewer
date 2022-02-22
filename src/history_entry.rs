@@ -57,7 +57,7 @@ impl HistoryEntry {
         remotes: &[Remote],
     ) -> Self {
         let subject_struct = Subject::from(commit.subject().as_str());
-        let subject_text = subject_struct.description().to_string();
+        let subject_text = subject_struct.description().to_owned();
 
         // let special_subject = are_we_special(&commit);
         let remotes = if commit.references().is_empty() {
@@ -106,11 +106,11 @@ impl HistoryEntry {
     }
 
     fn render_icon(&self) -> StyledContent<String> {
-        style(self.subject_struct.icon().to_string())
+        style(self.subject_struct.icon().to_owned())
     }
 
     fn render_graph(&self) -> StyledContent<String> {
-        let mut text = "".to_string();
+        let mut text = "".to_owned();
         for _ in 0..self.level {
             text.push_str("│ ");
         }
@@ -144,14 +144,14 @@ impl HistoryEntry {
         if self.subtrees.is_empty() {
             None
         } else {
-            let mut text = ":".to_string();
+            let mut text = ":".to_owned();
             let subtree_modules: Vec<String> =
                 self.subtrees.iter().map(|e| e.id().clone()).collect();
             text.push_str(&subtree_modules.join(" :"));
             if text.width() > max_len {
                 match subtree_modules.len() {
                     1 => {
-                        text = text.unicode_truncate(max_len - 1).0.to_string();
+                        text = text.unicode_truncate(max_len - 1).0.to_owned();
                         text.push('…');
                     }
                     x => text = format!("({} strees)", x),
@@ -210,7 +210,7 @@ impl HistoryEntry {
     }
 
     fn format_scope(scope: &str) -> StyledContent<String> {
-        let mut text = "(".to_string();
+        let mut text = "(".to_owned();
         text.push_str(scope);
         text.push(')');
         StyledContent::new(ContentStyle::default(), text)
@@ -219,7 +219,7 @@ impl HistoryEntry {
     fn render_references(&self) -> Vec<StyledContent<String>> {
         let mut result = vec![];
         for r in Self::shorten_references(&self.remotes, self.commit.references()) {
-            let separator = style(" ".to_string());
+            let separator = style(" ".to_owned());
             result.push(separator);
 
             let text = format!("«{}»", r);
@@ -230,7 +230,7 @@ impl HistoryEntry {
     }
     fn render_subject(&self) -> Vec<StyledContent<String>> {
         let mut buf = vec![];
-        let separator = style(" ".to_string());
+        let separator = style(" ".to_owned());
         if let Some(modules) = self.render_modules(32) {
             buf.push(modules);
             buf.push(separator.clone());
@@ -266,7 +266,7 @@ impl HistoryEntry {
                     SubtreeOperation::Split { git_ref, .. } => ("Split into commit ", git_ref),
                     SubtreeOperation::Update { git_ref, .. } => ("Update to ", git_ref),
                 };
-                buf.push(style(text.to_string()));
+                buf.push(style(text.to_owned()));
                 let sc = StyledContent::new(bold_style, git_ref.clone());
                 buf.push(sc);
             }
@@ -276,7 +276,7 @@ impl HistoryEntry {
     }
 
     pub fn render(&mut self, selected: bool) -> StyledLine<String> {
-        let separator = style(" ".to_string());
+        let separator = style(" ".to_owned());
         let mut result: StyledLine<String> = vec![
             self.render_id(),
             separator.clone(),
@@ -326,7 +326,7 @@ impl HistoryEntry {
 impl HistoryEntry {
     pub fn set_subject(&mut self, subject: &str) {
         self.subject_struct = Subject::from(subject);
-        self.subject_text = self.subject_struct.description().to_string();
+        self.subject_text = self.subject_struct.description().to_owned();
     }
 
     pub fn set_fork_point(&mut self, t: bool) {
