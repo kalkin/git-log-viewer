@@ -6,6 +6,8 @@ edition = "2021"
 description = "Git log viewer supporting un/folding merges"
 license = "AGPL-3.0-or-later"
 repository = "https://github.com/kalkin/git-log-viewer"
+keywords = ["git", "tui"]
+categories = ["command-line-utilities", "development-tools"]
 
 
 [dependencies]
