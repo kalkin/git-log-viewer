@@ -37,7 +37,7 @@ pub trait DataAdapter<T> {
 
 impl DataAdapter<String> for VecAdapter {
     fn get_line(&mut self, i: usize, selected: bool) -> StyledLine<String> {
-        let text = self.content.get(i).unwrap();
+        let text = &self.content[i];
         let mut content = style(text.clone());
         if selected {
             content.style_mut().attributes.set(Attribute::Reverse);
@@ -46,7 +46,7 @@ impl DataAdapter<String> for VecAdapter {
     }
 
     fn get_data(&mut self, i: usize) -> &String {
-        self.content.get(i).unwrap()
+        &self.content[i]
     }
 
     fn is_empty(&self) -> bool {
@@ -111,7 +111,7 @@ pub struct StyledAreaAdapter {
 
 impl DataAdapter<String> for StyledAreaAdapter {
     fn get_line(&mut self, i: usize, selected: bool) -> StyledLine<String> {
-        let mut content: StyledLine<String> = self.content.get(i).unwrap().clone();
+        let mut content: StyledLine<String> = self.content[i].clone();
         if selected {
             for c in &mut content {
                 c.style_mut().attributes.set(Attribute::Reverse);
@@ -143,7 +143,7 @@ impl DataAdapter<String> for StyledAreaAdapter {
                 range = range.into_iter().rev().collect::<Vec<_>>();
             }
             for i in range {
-                let line = cloned.get(i).expect("styled line");
+                let line = &cloned[i];
                 for m in search_line(line, &needle) {
                     let mut f = m.0.clone();
                     f.insert(0, i);

@@ -225,7 +225,7 @@ fn adjust_string(text: &str, expected: usize) -> String {
 
             if result.is_empty() {
                 let words = text.unicode_words().collect::<Vec<&str>>();
-                result.push_str(words.get(0).unwrap());
+                result.push_str(words[0]);
             }
 
             let actual = UnicodeWidthStr::width(result.as_str());

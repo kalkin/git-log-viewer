@@ -455,8 +455,7 @@ impl DataAdapter<HistoryEntry> for HistoryAdapter {
         if self.is_fill_up_needed(i) {
             assert!(self.fill_up(i + 50));
         }
-        let entry = self.history.get_mut(i).unwrap();
-        entry.render(selected)
+        self.history[i].render(selected)
     }
 
     fn get_data(&mut self, i: usize) -> &HistoryEntry {
@@ -464,7 +463,7 @@ impl DataAdapter<HistoryEntry> for HistoryAdapter {
         if self.is_fill_up_needed(i) {
             assert!(self.fill_up(self.history.len() - i + 50));
         }
-        self.history.get(i).unwrap()
+        &self.history[i]
     }
 
     fn is_empty(&self) -> bool {

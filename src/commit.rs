@@ -362,7 +362,7 @@ fn to_commit(repo: &Repository, oid: &Oid, is_commit_link: bool) -> Commit {
         let lines: Vec<&str> = tmp.lines().collect();
         // XXX FIXME lines? really?
         assert!(lines.len() >= 2, "Did not got enough data for {}", oid);
-        Commit::new(lines.get(1).unwrap(), is_commit_link)
+        Commit::new(lines[1], is_commit_link)
     } else {
         panic!("Failed to get data for commit {}", oid);
     }
