@@ -25,7 +25,7 @@ use unicode_width::UnicodeWidthStr;
 pub struct InputLine(String);
 
 impl InputLine {
-    pub fn text(&self) -> &String {
+    pub const fn text(&self) -> &String {
         &self.0
     }
 }

@@ -302,7 +302,7 @@ impl HistoryEntry {
         };
         result
     }
-    fn is_subtree_import(&self) -> bool {
+    const fn is_subtree_import(&self) -> bool {
         matches!(
             &self.subject_struct,
             Subject::SubtreeCommit {
@@ -312,7 +312,7 @@ impl HistoryEntry {
         )
     }
 
-    fn is_subtree_update(&self) -> bool {
+    const fn is_subtree_update(&self) -> bool {
         matches!(
             &self.subject_struct,
             Subject::SubtreeCommit {
@@ -334,7 +334,7 @@ impl HistoryEntry {
     }
 
     #[must_use]
-    pub fn special(&self) -> &Subject {
+    pub const fn special(&self) -> &Subject {
         &self.subject_struct
     }
 
@@ -383,7 +383,7 @@ impl HistoryEntry {
     }
 
     #[must_use]
-    pub fn is_fork_point(&self) -> bool {
+    pub const fn is_fork_point(&self) -> bool {
         match self.fork_point {
             ForkPointCalculation::Done(t) => t,
             ForkPointCalculation::InProgress => false,
@@ -395,7 +395,7 @@ impl HistoryEntry {
     }
 
     #[must_use]
-    pub fn is_folded(&self) -> bool {
+    pub const fn is_folded(&self) -> bool {
         self.folded
     }
 

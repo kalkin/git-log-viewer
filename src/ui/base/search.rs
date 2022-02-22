@@ -45,11 +45,11 @@ impl Needle {
             direction: dir,
         }
     }
-    pub fn text(&self) -> &String {
+    pub const fn text(&self) -> &String {
         &self.text
     }
 
-    pub fn direction(&self) -> &Direction {
+    pub const fn direction(&self) -> &Direction {
         &self.direction
     }
 }
@@ -100,7 +100,7 @@ impl Default for NeedleCapture {
 }
 
 impl NeedleCapture {
-    pub fn state(&self) -> &State {
+    pub const fn state(&self) -> &State {
         &self.0
     }
 

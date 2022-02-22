@@ -36,16 +36,16 @@ impl Debug for Area {
 
 impl Area {
     #[must_use]
-    pub fn new(width: usize, height: usize) -> Self {
+    pub const fn new(width: usize, height: usize) -> Self {
         Self { width, height }
     }
     #[must_use]
-    pub fn width(&self) -> usize {
+    pub const fn width(&self) -> usize {
         self.width
     }
 
     #[must_use]
-    pub fn height(&self) -> usize {
+    pub const fn height(&self) -> usize {
         self.height
     }
 }

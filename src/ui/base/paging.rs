@@ -43,12 +43,12 @@ impl Paging {
         }
     }
     /// The top most visible data entry
-    pub fn top(&self) -> usize {
+    pub const fn top(&self) -> usize {
         self.top
     }
 
     /// The bottom most visible data entry
-    pub fn bottom(&self) -> usize {
+    pub const fn bottom(&self) -> usize {
         self.bottom
     }
 
@@ -98,7 +98,7 @@ impl Paging {
     }
 
     /// Return the selected data entry index
-    pub fn selected(&self) -> usize {
+    pub const fn selected(&self) -> usize {
         self.selected
     }
 
