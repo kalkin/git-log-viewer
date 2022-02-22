@@ -187,7 +187,7 @@ impl HistoryEntry {
                             result.push(remote_branches[0].to_string());
                         } else {
                             let prefix_len = remote.name.len() + 1;
-                            let mut text = remote.name.to_string();
+                            let mut text = remote.name.clone();
                             text.push('/');
                             text.push('{');
                             text.push_str(
