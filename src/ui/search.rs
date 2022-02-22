@@ -77,10 +77,10 @@ impl ResultManager {
 #[allow(clippy::module_name_repetitions)]
 pub struct SearchWidget {
     input: InputLine,
-    needle: Option<search::Needle>,
+    needle: Option<Needle>,
     goto: Option<SearchResult>,
     capture: search::NeedleCapture,
-    direction: search::Direction,
+    direction: Direction,
     results: ResultManager,
 }
 
@@ -91,7 +91,7 @@ impl Default for SearchWidget {
             needle: None,
             goto: None,
             capture: search::NeedleCapture::default(),
-            direction: search::Direction::Forward,
+            direction: Direction::Forward,
             results: ResultManager::default(),
         }
     }
@@ -118,8 +118,8 @@ impl SearchWidget {
     }
 
     #[must_use]
-    pub fn needle(&self) -> search::Needle {
-        search::Needle::new(self.input.text(), self.direction)
+    pub fn needle(&self) -> Needle {
+        Needle::new(self.input.text(), self.direction)
     }
 
     pub fn search_value(&mut self) -> Option<Needle> {
@@ -149,7 +149,7 @@ impl SearchWidget {
                 HandleEvent::Handled => {
                     let text = self.input.text().clone();
                     if !text.is_empty() {
-                        self.needle = Some(search::Needle::new(&text, *dir));
+                        self.needle = Some(Needle::new(&text, *dir));
                     }
                     self.results = ResultManager::default();
                     HandleEvent::Handled
@@ -160,7 +160,7 @@ impl SearchWidget {
                         modifiers: KeyModifiers::NONE,
                     }) => {
                         let text = self.input.text().clone();
-                        self.needle = Some(search::Needle::new(&text, *dir));
+                        self.needle = Some(Needle::new(&text, *dir));
                         self.results = ResultManager::default();
                         self.capture.on_event(search::Event::Text(text));
                         HandleEvent::Handled
@@ -237,7 +237,7 @@ impl SearchWidget {
                 modifiers: KeyModifiers::NONE,
             }) => {
                 self.capture
-                    .on_event(search::Event::Activate(search::Direction::Forward));
+                    .on_event(search::Event::Activate(Direction::Forward));
                 self.direction = Direction::Forward;
                 HandleEvent::Handled
             }
@@ -247,7 +247,7 @@ impl SearchWidget {
             }) => {
                 self.direction = Direction::Backward;
                 self.capture
-                    .on_event(search::Event::Activate(search::Direction::Backward));
+                    .on_event(search::Event::Activate(Direction::Backward));
                 HandleEvent::Handled
             }
             _ => HandleEvent::Ignored,

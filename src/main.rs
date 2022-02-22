@@ -145,7 +145,7 @@ fn run_ui(
     history_adapter: HistoryAdapter,
     repo: Repository,
     paths: Vec<String>,
-) -> Result<(), crossterm::ErrorKind> {
+) -> Result<(), ErrorKind> {
     let mut area = new_area();
     let (tx, rx) = mpsc::channel::<Event>();
     {

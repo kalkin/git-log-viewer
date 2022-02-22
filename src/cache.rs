@@ -14,7 +14,7 @@ pub enum Error {
     Io(#[from] std::io::Error),
 }
 
-fn store(path: std::path::PathBuf, body: &str) -> Result<(), Error> {
+fn store(path: PathBuf, body: &str) -> Result<(), Error> {
     if !path.is_relative() {
         return Err(Error::AbsolutePath(path));
     }
@@ -28,7 +28,7 @@ fn store(path: std::path::PathBuf, body: &str) -> Result<(), Error> {
     }
 }
 
-fn fetch(path: std::path::PathBuf) -> Result<Option<String>, Error> {
+fn fetch(path: PathBuf) -> Result<Option<String>, Error> {
     if !path.is_relative() {
         return Err(Error::AbsolutePath(path));
     }
@@ -50,19 +50,19 @@ fn path_from_url(url: &Url) -> Result<PathBuf, Error> {
 
 #[test]
 fn test_path_from_url() {
-    let url = url::Url::parse("https://github.com/kalkin/bar").unwrap();
+    let url = Url::parse("https://github.com/kalkin/bar").unwrap();
     let result = path_from_url(&url).unwrap();
     let actual = result.to_str().unwrap();
     let expected = "github.com/kalkin/bar";
     assert_eq!(expected, actual);
 }
 
-pub fn store_api_response(url: &url::Url, id: &str, body: &str) -> Result<(), Error> {
+pub fn store_api_response(url: &Url, id: &str, body: &str) -> Result<(), Error> {
     let path = path_from_url(url)?.join(id);
     store(path, body)
 }
 
-pub fn fetch_api_response(url: &url::Url, id: &str) -> Result<Option<String>, Error> {
+pub fn fetch_api_response(url: &Url, id: &str) -> Result<Option<String>, Error> {
     let path = path_from_url(url)?.join(id);
     fetch(path)
 }
