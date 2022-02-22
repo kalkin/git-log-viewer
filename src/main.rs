@@ -110,11 +110,9 @@ fn glv() -> Result<(), PosixError> {
 
     let revision = matches.value_of("REVISION").unwrap();
 
-    let paths = if let Some(p) = matches.values_of("path") {
-        p.map(ToString::to_string).collect()
-    } else {
-        vec![]
-    };
+    let paths = matches
+        .values_of("path")
+        .map_or(vec![], |p| p.map(ToString::to_string).collect());
 
     log::debug!(
         "Initialising HistoryAdapter with revision {} & paths {:?})",
