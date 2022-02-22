@@ -53,8 +53,8 @@ impl Area {
 impl From<(u16, u16)> for Area {
     fn from(size: (u16, u16)) -> Self {
         Self {
-            width: size.0 as usize,
-            height: size.1 as usize,
+            width: size.0.try_into().expect("u16 to usize"),
+            height: size.1.try_into().expect("u16 to usize"),
         }
     }
 }

@@ -110,7 +110,7 @@ impl From<&HistoryAdapter> for AdapterState {
                 let range = CommitRange {
                     start: start.clone(),
                     end,
-                    level: level as usize,
+                    level: level.try_into().expect("usize"),
                 };
                 result.push(range);
                 start = RangePart {
@@ -127,7 +127,7 @@ impl From<&HistoryAdapter> for AdapterState {
         let range = CommitRange {
             start,
             end,
-            level: level as usize,
+            level: level.try_into().expect("usize"),
         };
         result.push(range);
         Self(result)
@@ -215,8 +215,9 @@ impl HistoryAdapter {
         for (level, addr) in addresses.iter().enumerate() {
             result = self.addr_to_index(result, level, *addr);
             let entry = self.get_data(result);
-            if last_level - 1 != (entry.level() as usize) {
-                assert_eq!(entry.level() as usize, level);
+            let entry_level: usize = entry.level().try_into().expect("usize");
+            if last_level - 1 != (entry_level) {
+                assert_eq!(entry_level, level);
                 result += 1;
                 if entry.is_foldable() {
                     if entry.is_folded() {
@@ -238,12 +239,18 @@ impl HistoryAdapter {
         result
     }
     fn addr_to_index(&mut self, start_index: usize, level: usize, addr: usize) -> usize {
-        assert_eq!(self.get_data(start_index).level() as usize, level);
+        let entry_level: usize = self
+            .get_data(start_index)
+            .level()
+            .try_into()
+            .expect("usize");
+        assert_eq!(entry_level, level);
         let mut result: usize = 0;
         let mut stop: usize = 0;
         for i in start_index..self.length {
             let entry = self.get_data(i);
-            if entry.level() as usize == level {
+            let entry_level: usize = entry.level().try_into().expect("usize");
+            if entry_level == level {
                 result = i;
                 if stop == addr {
                     break;

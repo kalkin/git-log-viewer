@@ -169,7 +169,10 @@ fn run_ui(
                 if let HandleEvent::Ignored = drawable.on_event(event) {
                     match event {
                         Event::Resize(cols, rows) => {
-                            area = Area::new(cols as usize, rows as usize);
+                            area = Area::new(
+                                cols.try_into().expect("u16 to usize"),
+                                rows.try_into().expect("u16 to usize"),
+                            );
                         }
                         Event::Key(KeyEvent {
                             code: KeyCode::Char('q'),

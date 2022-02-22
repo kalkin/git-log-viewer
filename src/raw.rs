@@ -54,7 +54,7 @@ impl vte::Perform for Counter {
             self.lines.push(self.cur_line.clone());
             self.cur_line = vec![];
         } else {
-            self.buf.push(byte as char);
+            self.buf.push(byte.try_into().expect("u8 to char"));
         }
     }
 
@@ -100,16 +100,16 @@ impl vte::Perform for Counter {
                     match kind {
                         5 => {
                             #[allow(clippy::cast_possible_truncation)]
-                            let color = iter.next().unwrap()[0] as u8;
+                            let color = iter.next().unwrap()[0].try_into().expect("usize to u8");
                             self.style.foreground_color = Some(Color::AnsiValue(color));
                         }
                         2 => {
                             #[allow(clippy::cast_possible_truncation)]
-                            let r = iter.next().unwrap()[0] as u8;
+                            let r = iter.next().unwrap()[0].try_into().expect("usize to u8");
                             #[allow(clippy::cast_possible_truncation)]
-                            let g = iter.next().unwrap()[0] as u8;
+                            let g = iter.next().unwrap()[0].try_into().expect("usize to u8");
                             #[allow(clippy::cast_possible_truncation)]
-                            let b = iter.next().unwrap()[0] as u8;
+                            let b = iter.next().unwrap()[0].try_into().expect("usize to u8");
                             self.style.foreground_color = Some(Color::from((r, g, b)));
                         }
                         x => panic!("Unexpected value {:?}", x),
@@ -130,16 +130,16 @@ impl vte::Perform for Counter {
                     match kind {
                         5 => {
                             #[allow(clippy::cast_possible_truncation)]
-                            let color = iter.next().unwrap()[0] as u8;
+                            let color = iter.next().unwrap()[0].try_into().expect("usize to u8");
                             self.style.background_color = Some(Color::AnsiValue(color));
                         }
                         2 => {
                             #[allow(clippy::cast_possible_truncation)]
-                            let r = iter.next().unwrap()[0] as u8;
+                            let r = iter.next().unwrap()[0].try_into().expect("usize to u8");
                             #[allow(clippy::cast_possible_truncation)]
-                            let g = iter.next().unwrap()[0] as u8;
+                            let g = iter.next().unwrap()[0].try_into().expect("usize to u8");
                             #[allow(clippy::cast_possible_truncation)]
-                            let b = iter.next().unwrap()[0] as u8;
+                            let b = iter.next().unwrap()[0].try_into().expect("usize to u8");
                             self.style.background_color = Some(Color::from((r, g, b)));
                         }
                         x => panic!("Unexpected value {:?}", x),
