@@ -26,6 +26,7 @@ pub fn transfer(mut easy: Easy, domain: &str) -> Option<(u32, HashMap<String, St
         // Fetch data
         easy.useragent("kalkin/glv").unwrap();
         let mut transfer = easy.transfer();
+        #[allow(clippy::shadow_reuse)]
         transfer
             .header_function(|line| {
                 let line = String::from_utf8_lossy(line);

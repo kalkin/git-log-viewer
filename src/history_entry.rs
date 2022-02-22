@@ -54,7 +54,7 @@ impl HistoryEntry {
         level: u8,
         forge_url: Option<Url>,
         fork_point: ForkPointCalculation,
-        remotes: &[Remote],
+        repo_remotes: &[Remote],
     ) -> Self {
         let subject_struct = Subject::from(commit.subject().as_str());
         let subject_text = subject_struct.description().to_owned();
@@ -64,7 +64,7 @@ impl HistoryEntry {
             vec![]
         } else {
             let mut result = vec![];
-            for remote in remotes {
+            for remote in repo_remotes {
                 for git_ref in commit.references() {
                     if git_ref.to_string().starts_with(&remote.name) {
                         result.push(remote.clone());
