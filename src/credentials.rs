@@ -1,10 +1,11 @@
+use directories::BaseDirs;
 use netrc::{Host, Netrc};
 use std::fs::File;
 use std::io::BufReader;
 
 pub fn token(domain_name: &str) -> Option<(String, Option<String>)> {
-    let mut path = dirs::home_dir()?;
-    path.push(".netrc");
+    let base_dirs = BaseDirs::new()?;
+    let path = base_dirs.home_dir().join(".netrc");
     let f = File::open(path).ok()?;
     let buf = BufReader::new(f);
     let netrc = Netrc::parse(buf).unwrap();

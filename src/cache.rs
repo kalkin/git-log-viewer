@@ -1,5 +1,3 @@
-use crate::utils;
-
 use std::path::{Path, PathBuf};
 
 use url::Url;
@@ -10,8 +8,8 @@ pub enum Error {
     AbsolutePath(PathBuf),
     #[error("Url has no domain")]
     NoDomain(Url),
-    #[error(transparent)]
-    Xdg(#[from] utils::XdgError),
+    #[error("Failed to find application cache_path")]
+    CacheFailure,
     #[error(transparent)]
     Io(#[from] std::io::Error),
 }
@@ -21,10 +19,13 @@ fn store(path: std::path::PathBuf, body: &str) -> Result<(), Error> {
         return Err(Error::AbsolutePath(path));
     }
 
-    let xdg = utils::base_dirs()?;
-    let cache_path = xdg.place_cache_file(path)?;
-
-    Ok(std::fs::write(cache_path, body)?)
+    if let Some(proj_dirs) = directories::ProjectDirs::from("", "", "glv") {
+        let cache_path = proj_dirs.cache_dir().join(path);
+        std::fs::create_dir_all(cache_path.parent().expect("Parent directory"))?;
+        Ok(std::fs::write(cache_path, body)?)
+    } else {
+        Err(Error::CacheFailure)
+    }
 }
 
 fn fetch(path: std::path::PathBuf) -> Result<Option<String>, Error> {
@@ -32,8 +33,9 @@ fn fetch(path: std::path::PathBuf) -> Result<Option<String>, Error> {
         return Err(Error::AbsolutePath(path));
     }
 
-    let xdg = utils::base_dirs()?;
-    if let Some(cache_path) = xdg.find_cache_file(path) {
+    let proj_dirs = directories::ProjectDirs::from("", "", "glv").expect("");
+    let cache_path = proj_dirs.cache_dir().join(path);
+    if cache_path.exists() {
         Ok(Some(std::fs::read_to_string(cache_path)?))
     } else {
         Ok(None)

@@ -14,7 +14,7 @@ categories = ["command-line-utilities", "development-tools"]
 configparser = "3"
 crossterm = "^0.23.0"
 curl = "0.4.*"
-dirs = "^4.0.0"
+directories = "^4.0.0"
 getset = "0.1.*"
 git-wrapper = "0.5.*"
 git-stree = "0.2.*"
@@ -30,7 +30,6 @@ unicode-width = "0.1.7"
 unicode-truncate = "0.2.0"
 url = "2"
 which = "4"
-xdg = "^2.1"
 clap = { version="^3.0.0", default-features=false, features=["std", "cargo"] }
 log = "^0.4"
 simple_logger = { version="^2.1.0", default-features=false, features=["stderr", "colors"] }

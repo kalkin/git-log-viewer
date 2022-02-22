@@ -56,11 +56,3 @@ pub fn transfer(mut easy: Easy, domain: &str) -> Option<(u32, HashMap<String, St
     let response_code = easy.response_code().unwrap();
     Some((response_code, headers, body))
 }
-
-#[derive(thiserror::Error, Debug)]
-#[error(transparent)]
-pub struct XdgError(#[from] xdg::BaseDirectoriesError);
-
-pub fn base_dirs() -> Result<xdg::BaseDirectories, XdgError> {
-    Ok(xdg::BaseDirectories::with_prefix(env!("CARGO_BIN_NAME"))?)
-}
