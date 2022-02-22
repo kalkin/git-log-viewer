@@ -58,7 +58,8 @@ impl DataAdapter<String> for VecAdapter {
     }
 
     fn search(&mut self, _needle: Needle, _start: usize) -> Receiver<SearchProgress> {
-        todo!()
+        let (_, tx) = mpsc::channel::<SearchProgress>();
+        tx
     }
 }
 
@@ -120,6 +121,7 @@ impl DataAdapter<String> for StyledAreaAdapter {
         content
     }
 
+    #[allow(clippy::todo)]
     fn get_data(&mut self, _i: usize) -> &String {
         todo!()
     }
