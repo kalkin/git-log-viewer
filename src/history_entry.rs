@@ -26,9 +26,15 @@ use crate::commit::{parse_remote_url, Commit, GitRef, Oid};
 use crate::default_styles::{DATE_STYLE, ID_STYLE, MOD_STYLE, NAME_STYLE, REF_STYLE};
 use crate::ui::base::StyledLine;
 use git_wrapper::Remote;
+use lazy_static::lazy_static;
 use subject_classifier::{Subject, SubtreeOperation};
 use unicode_truncate::UnicodeTruncateStr;
 use unicode_width::UnicodeWidthStr;
+
+lazy_static! {
+    static ref TIME_SPLIT_REGEX: regex::Regex =
+        regex::Regex::new(r#".+{8,} \d\d:\d\d$"#).expect("Valid RegEx");
+}
 
 #[derive(CopyGetters, Getters, Setters)]
 pub struct HistoryEntry {
@@ -97,7 +103,11 @@ impl HistoryEntry {
 
     fn render_date(&self) -> StyledContent<String> {
         let date = self.author_rel_date();
-        StyledContent::new(*DATE_STYLE, date.clone())
+        if TIME_SPLIT_REGEX.is_match(date) {
+            StyledContent::new(*DATE_STYLE, date[0..date.len() - 5].to_owned())
+        } else {
+            StyledContent::new(*DATE_STYLE, date.clone())
+        }
     }
 
     fn render_name(&self) -> StyledContent<String> {
