@@ -26,6 +26,7 @@ use std::thread;
 
 use git_wrapper::Repository;
 
+#[derive(Debug)]
 pub enum ForkPointCalculation {
     Done(bool),
     InProgress,

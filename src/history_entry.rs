@@ -36,7 +36,7 @@ lazy_static! {
         regex::Regex::new(r#".+{8,} \d\d:\d\d$"#).expect("Valid RegEx");
 }
 
-#[derive(CopyGetters, Getters, Setters)]
+#[derive(Debug, CopyGetters, Getters, Setters)]
 pub struct HistoryEntry {
     #[getset(get = "pub")]
     commit: Commit,

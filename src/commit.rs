@@ -46,7 +46,7 @@ impl Debug for Oid {
     }
 }
 
-#[derive(Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct GitRef(pub String);
 
 impl Display for GitRef {
@@ -55,7 +55,7 @@ impl Display for GitRef {
     }
 }
 
-#[derive(Getters, Clone)]
+#[derive(Clone, Debug, Getters)]
 pub struct Commit {
     #[getset(get = "pub")]
     id: Oid,
