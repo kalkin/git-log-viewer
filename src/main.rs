@@ -231,3 +231,33 @@ fn build_drawable(
 
     SplitLayout::new(history_list, diff)
 }
+
+#[cfg(test)]
+mod parse_args {
+    use crate::Args;
+    use clap::Parser;
+
+    #[test]
+    fn no_arguments() {
+        let _args: Args = Parser::try_parse_from(&["glv"]).expect("No arguments");
+    }
+
+    #[test]
+    fn with_ref() {
+        let _args: Args = Parser::try_parse_from(&["glv", "master"]).expect("Ref specified");
+    }
+
+    #[test]
+    fn with_ref_and_path() {
+        let _args: Args = Parser::try_parse_from(&["glv", "master", "--", "foo/bar"])
+            .expect("Ref and path specified");
+        let _args: Args = Parser::try_parse_from(&["glv", "master", "--", "foo/bar", "README.md"])
+            .expect("Ref and multiple paths specified");
+    }
+
+    #[test]
+    fn no_delim_between_ref_and_path() {
+        let args: Result<Args, _> = Parser::try_parse_from(&["glv", "master", "foo/bar"]);
+        assert!(args.is_err(), "Should fail without delimiter '--'");
+    }
+}
