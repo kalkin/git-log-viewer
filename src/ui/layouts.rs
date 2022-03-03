@@ -75,7 +75,7 @@ where
                 main_size = Area::new(area.width() - area.width() / 2, area.height());
                 let mut result = self.main.render(&main_size);
                 let mut aside_result = self.aside.render(&aside_size);
-                assert_eq!(result.len(), aside_result.len());
+                debug_assert_eq!(result.len(), aside_result.len());
                 for (i, row) in aside_result.iter_mut().enumerate() {
                     let right_row = result.get_mut(i).expect("row");
                     if line_length(right_row) < main_size.width() {

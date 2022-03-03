@@ -201,7 +201,7 @@ impl Selectable<HistoryEntry> for TableWidget {
 
 // I'm not proud of this code. Ohh Omnissiah be merciful on my soul‼
 fn adjust_string(text: &str, expected: usize) -> String {
-    assert!(expected > 0, "Minimal length should be 1");
+    debug_assert!(expected > 0, "Minimal length should be 1");
     let length = unicode_width::UnicodeWidthStr::width(text);
     let mut result = String::from(text);
     match length.cmp(&expected) {

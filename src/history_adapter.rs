@@ -208,7 +208,7 @@ impl HistoryAdapter {
     }
 
     pub fn unfold_up_to(&mut self, sr: &SearchResult) -> usize {
-        assert!(!sr.0.is_empty(), "Unexpected empty SearchResult vector");
+        debug_assert!(!sr.0.is_empty(), "Unexpected empty SearchResult vector");
         let addresses = &sr.0;
         let mut result = 0;
         let last_level = addresses.len();
@@ -459,7 +459,7 @@ impl DataAdapter<HistoryEntry> for HistoryAdapter {
     }
 
     fn get_data(&mut self, i: usize) -> &HistoryEntry {
-        assert!(i < self.length);
+        debug_assert!(i < self.length);
         if self.is_fill_up_needed(i) {
             assert!(self.fill_up(self.history.len() - i + 50));
         }

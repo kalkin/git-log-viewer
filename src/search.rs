@@ -54,7 +54,7 @@ fn highlight_search(
     };
     style.attributes.set(Attribute::Bold);
     for s in indices {
-        assert!(s.start >= cur);
+        debug_assert!(s.start >= cur, "Expected {} >= {}", s.start, cur);
         if cur < s.start {
             tmp.push(StyledContent::new(
                 *sc.style(),
