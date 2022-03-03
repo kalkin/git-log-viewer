@@ -304,7 +304,7 @@ pub fn commits_for_range<T: AsRef<str>>(
         }
         return result;
     }
-    eprintln!(
+    log::error!(
         "Failed to find commits for range({}), with skip({:?}) / max({:?}) & path({})",
         rev_range,
         skip,

@@ -75,7 +75,7 @@ impl Debug for ForkPointResponse {
 impl ForkPointThread {
     pub fn send(&self, req: ForkPointRequest) {
         if let Err(e) = self.sender.send(req) {
-            eprintln!("Error {:?}", e);
+            log::error!("Error {:?}", e);
         }
     }
 
