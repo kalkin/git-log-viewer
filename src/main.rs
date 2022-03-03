@@ -22,7 +22,8 @@
 use std::sync::mpsc;
 use std::thread;
 
-use clap::Arg;
+use clap::Parser;
+use clap_git_options::GitOptions;
 use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyModifiers};
 
 use git_wrapper::Repository;
@@ -85,11 +86,9 @@ impl From<ErrorKind> for UiError {
 }
 
 fn glv() -> Result<(), PosixError> {
-    let app = arg_parser();
+    let args = Args::parse();
 
-    let matches = app.get_matches();
-
-    let log_level = match matches.occurrences_of("debug") {
+    let log_level = match args.debug {
         0 => log::Level::Warn,
         1 => log::Level::Info,
         2 => log::Level::Debug,
@@ -99,31 +98,16 @@ fn glv() -> Result<(), PosixError> {
 
     log::info!("Log Level is set to {}", log::max_level());
 
-    let repo_tmp = Repository::from_args(
-        matches.value_of("dir"),
-        matches.value_of("git-dir"),
-        matches.value_of("working-tree"),
-    );
+    let repo = Repository::try_from(&args.git).map_err(PosixError::from)?;
 
-    if let Err(err) = repo_tmp {
-        let msg = format!("{}", err);
-        return Err(PosixError::new(128, msg));
-    }
-
-    let repo = repo_tmp.unwrap();
-
-    let revision = matches.value_of("REVISION").unwrap();
-
-    let paths = matches
-        .values_of("path")
-        .map_or(vec![], |p| p.map(ToString::to_string).collect());
+    let paths = args.paths;
 
     log::debug!(
         "Initialising HistoryAdapter with revision {} & paths {:?})",
-        revision,
+        args.revision,
         paths
     );
-    let history_adapter = HistoryAdapter::new(repo.clone(), revision, paths.clone())?;
+    let history_adapter = HistoryAdapter::new(repo.clone(), &args.revision, paths.clone())?;
     if let Err(err) = run_ui(history_adapter, repo, paths) {
         Err(UiError::from(err).0)
     } else {
@@ -138,7 +122,7 @@ fn main() {
     }));
 
     if let Err(e) = glv() {
-        eprintln!(" error: {}", e.message());
+        log::error!("{}", e);
         exit(e.code());
     }
 }
@@ -212,39 +196,29 @@ fn run_ui(
     Ok(())
 }
 
-fn arg_parser() -> clap::Command<'static> {
-    let dir_arg = Arg::new("dir")
-        .short('C')
-        .takes_value(true)
-        .help("Change to <dir> before start");
-    let w_arg = Arg::new("working-tree")
-        .long("work-tree")
-        .takes_value(true)
-        .help("Directory where the GIT_WORK_TREE is.");
-    let gd_arg = Arg::new("git-dir")
-        .long("git-dir")
-        .takes_value(true)
-        .help("Directory where the GIT_DIR is.");
-    let rev_arg = Arg::new("REVISION")
-        .help("Branch, tag or commit id")
-        .default_value("HEAD")
-        .required(false);
-    let paths_arg = Arg::new("path")
-        .help("Show only commits touching the paths")
-        .multiple_values(true)
-        .last(true);
-    let debug_arg = Arg::new("debug")
-        .long("debug")
-        .short('d')
-        .max_occurrences(3)
-        .help("Log level up to -ddd");
-    clap::command!()
-        .arg(dir_arg)
-        .arg(w_arg)
-        .arg(gd_arg)
-        .arg(debug_arg)
-        .arg(rev_arg)
-        .arg(paths_arg)
+#[derive(Parser)]
+#[clap(
+    author,
+    version,
+    about = "Git log viewer supporting un/folding merges",
+    help_expected = true,
+    dont_collapse_args_in_usage = true
+)]
+struct Args {
+    #[clap(flatten)]
+    git: GitOptions,
+
+    /// Branch, tag or commit id
+    #[clap(default_value = "HEAD")]
+    revision: String,
+
+    /// Show only commits touching the paths
+    #[clap(last = true)]
+    paths: Vec<String>,
+
+    /// Log level up to -ddd
+    #[clap(short, long, parse(from_occurrences))]
+    debug: i8,
 }
 
 fn build_drawable(
@@ -256,9 +230,4 @@ fn build_drawable(
     let diff = DiffView::new(repo, paths);
 
     SplitLayout::new(history_list, diff)
-}
-
-#[test]
-fn verify_app() {
-    arg_parser().debug_assert();
 }
