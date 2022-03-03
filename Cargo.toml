@@ -1,38 +1,45 @@
 [package]
-name = "glv"
-version = "3.0.0-beta.6"
-authors = ["Bahtiar `kalkin-` Gadimov <bahtiar@gadimov.de>"]
-edition = "2021"
-description = "Git log viewer supporting un/folding merges"
-license = "AGPL-3.0-or-later"
-repository = "https://github.com/kalkin/git-log-viewer"
-keywords = ["git", "tui"]
-categories = ["command-line-utilities", "development-tools"]
-
+name = 'glv'
+authors = ['Bahtiar `kalkin-` Gadimov <bahtiar@gadimov.de>']
+categories = ['command-line-utilities', 'development-tools']
+description = 'Git log viewer supporting un/folding merges'
+edition = '2021'
+keywords = ['git', 'tui']
+license = 'AGPL-3.0-or-later'
+repository = 'https://github.com/kalkin/git-log-viewer'
+version = '3.0.0-beta.6'
 
 [dependencies]
-crossterm = "^0.23.0"
-curl = "0.4.*"
-directories = "^4.0.0"
-getset = "0.1.*"
-git-wrapper = "0.5.*"
-git-stree = "0.2.*"
-lazy_static = "1.4"
-vte = "0.10.1"
-posix-errors = "^1.2.0"
-regex = "1"
-subject-classifier = "0.2.*"
-thiserror = "1"
-tinyjson = "2"
-netrc = "^0.4.1"
-unicode-segmentation = "1.7.1"
-unicode-width = "0.1.7"
-unicode-truncate = "0.2.0"
-url = "2"
-which = "4"
-clap = { version="^3.0.0", default-features=false, features=["std", "cargo"] }
-log = "^0.4"
-simple_logger = { version="^2.1.0", default-features=false, features=["stderr", "colors"] }
+crossterm = '^0.23.0'
+curl = '0.4.*'
+directories = '^4.0.0'
+getset = '0.1.*'
+git-stree = '0.2.*'
+git-wrapper = '0.5.*'
+lazy_static = '1.4'
+log = '^0.4'
+netrc = '^0.4.1'
+posix-errors = '^1.2.0'
+regex = '1'
+subject-classifier = '0.2.*'
+thiserror = '1'
+tinyjson = '2'
+unicode-segmentation = '1.7.1'
+unicode-truncate = '0.2.0'
+unicode-width = '0.1.7'
+url = '2'
+vte = '0.10.1'
+which = '4'
+
+[dependencies.clap]
+version = '^3.0.0'
+default-features = false
+features = ['cargo', 'std']
+
+[dependencies.simple_logger]
+version = '^2.1.0'
+default-features = false
+features = ['colors', 'stderr']
 
 [dev-dependencies]
-lipsum = "^0.8.0"
+lipsum = '^0.8.0'
