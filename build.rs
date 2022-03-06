@@ -9,16 +9,38 @@ fn main() {
         .args(&["diff-index", "--quiet", "HEAD", "--"])
         .status()
     {
-        let id_out = Command::new("git")
-            .args(&["rev-parse", "--short", "HEAD"])
-            .output()
-            .unwrap();
-        let id = String::from_utf8_lossy(&id_out.stdout).to_string();
+        let changed_since_release = {
+            let id = {
+                let out = Command::new("git")
+                    .args(&["rev-list", "-1", "--", "CHANGELOG.md"])
+                    .output()
+                    .expect("A comitted CHANGELOG.md");
+                String::from_utf8_lossy(&out.stdout).to_string()
+            };
+            let range = format!("{}..HEAD", id.trim());
+            let out = Command::new("git")
+                .args(&["rev-list", "--count", &range, "--", "."])
+                .output()
+                .expect("git rev-list successful");
+            String::from_utf8_lossy(&out.stdout).to_string().trim() != "0"
+        };
+
         let cargo_version = env!("CARGO_PKG_VERSION");
-        let version = if status.code().unwrap() == 0 {
-            format!("{}+{}", cargo_version, id.trim())
-        } else {
-            format!("{}+{}.dirty", cargo_version, id.trim())
+        let version = match (changed_since_release, status.code().unwrap() != 0) {
+            (false, false) => cargo_version.to_owned(),
+            (false, true) => format!("{}+dirty", cargo_version),
+            (true, dirty) => {
+                let id_out = Command::new("git")
+                    .args(&["rev-parse", "--short", "HEAD"])
+                    .output()
+                    .unwrap();
+                let id = String::from_utf8_lossy(&id_out.stdout).to_string();
+                if dirty {
+                    format!("{}+{}.dirty", cargo_version, id.trim())
+                } else {
+                    format!("{}+{}.", cargo_version, id.trim())
+                }
+            }
         };
         println!("cargo:rustc-env=CARGO_PKG_VERSION={}", version);
     }
