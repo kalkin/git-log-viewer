@@ -115,7 +115,7 @@ impl ForkPointThread {
                     oid: v.first.clone(),
                     value,
                 })
-                .unwrap();
+                .expect("Send ForkPointResponse");
             }
         });
         Self {

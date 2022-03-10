@@ -6,16 +6,16 @@ pub fn transfer(mut easy: Easy, domain: &str) -> Option<(u32, HashMap<String, St
     if let Some((username, maybe_pw)) = credentials::token(domain) {
         if let Some(password) = maybe_pw {
             log::trace!("Authentication via username {} for {}", username, domain);
-            easy.username(&username).unwrap();
-            easy.password(&password).unwrap();
+            easy.username(&username).ok()?;
+            easy.password(&password).ok()?;
         } else {
             log::trace!("Authentication via token for {}", domain);
             let mut headers = curl::easy::List::new();
             let token = username;
             headers
                 .append(&format!("Authorization: Bearer {}", token))
-                .unwrap();
-            easy.http_headers(headers).unwrap();
+                .ok()?;
+            easy.http_headers(headers).ok()?;
         }
     } else {
         log::trace!("No authentication for {}", domain);
@@ -24,7 +24,7 @@ pub fn transfer(mut easy: Easy, domain: &str) -> Option<(u32, HashMap<String, St
     let mut body: String = String::new();
     let transfer_result = {
         // Fetch data
-        easy.useragent("kalkin/glv").unwrap();
+        easy.useragent("kalkin/glv").ok()?;
         let mut transfer = easy.transfer();
         #[allow(clippy::shadow_reuse)]
         transfer
@@ -39,14 +39,13 @@ pub fn transfer(mut easy: Easy, domain: &str) -> Option<(u32, HashMap<String, St
                 }
                 true
             })
-            .unwrap();
+            .ok()?;
         transfer
             .write_function(|data| {
-                // body = String::from_utf8(Vec::from(data)).unwrap();
-                body.push_str(String::from_utf8(Vec::from(data)).unwrap().as_str());
+                body.push_str(&String::from_utf8_lossy(&Vec::from(data)));
                 Ok(data.len())
             })
-            .unwrap();
+            .ok()?;
 
         transfer.perform()
     };
@@ -54,6 +53,6 @@ pub fn transfer(mut easy: Easy, domain: &str) -> Option<(u32, HashMap<String, St
         log::error!("{:?}", e);
         return None;
     }
-    let response_code = easy.response_code().unwrap();
+    let response_code = easy.response_code().ok()?;
     Some((response_code, headers, body))
 }

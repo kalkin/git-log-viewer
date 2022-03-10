@@ -8,7 +8,7 @@ pub fn token(domain_name: &str) -> Option<(String, Option<String>)> {
     let path = base_dirs.home_dir().join(".netrc");
     let f = File::open(path).ok()?;
     let buf = BufReader::new(f);
-    let netrc = Netrc::parse(buf).unwrap();
+    let netrc = Netrc::parse(buf).ok()?;
     let results: Vec<&Host> = netrc.hosts.iter().filter(|h| h.0 == domain_name).collect();
     if !results.is_empty() {
         let username = results[0].1.login.clone();

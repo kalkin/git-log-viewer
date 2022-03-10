@@ -180,13 +180,11 @@ impl HistoryAdapter {
             forge_url = None;
             remotes = vec![];
         }
-        if forge_url.is_some() {
-            log::debug!("Found forge url {}", forge_url.clone().unwrap());
-        }
+        log::debug!("Forge url {:?}", forge_url);
 
         let length = history_length(&repo, range, &paths)?;
         let subtrees = Subtrees::from_repo(repo.clone()).expect("Read subtree config");
-        let subtree_modules = subtrees.all().unwrap();
+        let subtree_modules = subtrees.all()?;
         let subtree_thread = SubtreeThread::new(subtrees);
         let bb_server_thread = BitbucketThread::new();
         let fork_point_thread = ForkPointThread::new(repo.clone());

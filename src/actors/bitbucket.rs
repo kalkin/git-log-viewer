@@ -52,7 +52,8 @@ fn api_url(v: &BitbucketRequest) -> Option<Url> {
         .url
         .domain()
         .expect("At this point we should have a domain");
-    let tmp: Vec<&str> = v.url.path_segments().unwrap().collect();
+    let split = v.url.path_segments();
+    let tmp: Vec<&str> = split.map(Iterator::collect).unwrap_or_default();
     if tmp.len() >= 2 {
         let [workspace, repo_slug] = [tmp[0], tmp[1]];
         let text = format!(
@@ -129,11 +130,11 @@ impl BitbucketThread {
                             }
                         }
                         404 => {
-                            log::info!("PR #{} not found on {}", pr_id, url.domain().unwrap());
+                            log::info!("PR #{} not found on {:?}", pr_id, url.domain());
                             log::trace!("Url API tried: {}", url);
                         }
                         401 => {
-                            log::error!("Authentication to {} failed", url.domain().unwrap());
+                            log::error!("Authentication to {:?} failed", url.domain());
                             stopped = true;
                         }
                         _ => {

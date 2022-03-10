@@ -79,8 +79,8 @@ impl<T> Drawable for ListWidget<T> {
             let tx = self.adapter.search(needle, self.paging.selected());
             self.search_progress_tx = Some(tx);
         }
-        if self.search_progress_tx.is_some() {
-            for progress in self.search_progress_tx.as_ref().unwrap().try_iter() {
+        if let Some(responses) = &self.search_progress_tx {
+            for progress in responses.try_iter() {
                 self.search_input.consume(progress);
             }
         }

@@ -94,7 +94,8 @@ fn glv() -> Result<(), PosixError> {
         2 => log::Level::Debug,
         _ => log::Level::Trace,
     };
-    simple_logger::init_with_level(log_level).unwrap();
+    simple_logger::init_with_level(log_level)
+        .map_err(|e| PosixError::new(128, format!("{}", e)))?;
 
     log::info!("Log Level is set to {}", log::max_level());
 

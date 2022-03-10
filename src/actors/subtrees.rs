@@ -57,7 +57,7 @@ impl SubtreeThread {
                         oid: v.oid,
                         subtrees: result,
                     })
-                    .unwrap();
+                    .expect("Send SubtreeChangesResponse");
                 }
             }
         });
