@@ -134,9 +134,7 @@ impl Commit {
     pub fn new(data: &str, is_commit_link: bool) -> Self {
         let mut split = data.split('\x1f');
         split.next(); // skip commit: XXXX line
-        let id = Oid {
-            0: next_string!(split),
-        };
+        let id = Oid(next_string!(split));
 
         let short_id = next_string!(split);
         let mut parents_record: Vec<&str> =

@@ -114,9 +114,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
 }
 
 fn git_diff(repo: &Repository, commit: &Commit, paths: Vec<String>) -> Vec<StyledLine<String>> {
-    let empty_tree = Oid {
-        0: "4b825dc642cb6eb9a060e54bf8d69288fbee4904".to_owned(),
-    };
+    let empty_tree = Oid("4b825dc642cb6eb9a060e54bf8d69288fbee4904".to_owned());
     let bellow = commit.bellow().as_ref().unwrap_or(&empty_tree);
     let rev = format!("{}..{}", bellow.0, commit.id().0);
     let mut cmd = repo.git();
