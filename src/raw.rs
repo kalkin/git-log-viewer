@@ -107,7 +107,7 @@ impl vte::Perform for Counter {
                             let b = iter.next().unwrap()[0].try_into().expect("usize to u8");
                             self.style.foreground_color = Some(Color::from((r, g, b)));
                         }
-                        x => panic!("Unexpected value {:?}", x),
+                        x => log::warn!("Unexpected CSI value 38;{:?}", x),
                     }
                 }
 
@@ -137,7 +137,7 @@ impl vte::Perform for Counter {
                             let b = iter.next().unwrap()[0].try_into().expect("usize to u8");
                             self.style.background_color = Some(Color::from((r, g, b)));
                         }
-                        x => panic!("Unexpected value {:?}", x),
+                        x => log::warn!("Unexpected CS value 48;{:?}", x),
                     }
                 }
 
@@ -159,7 +159,7 @@ impl vte::Perform for Counter {
                 106 => self.style.background_color = Some(Color::Cyan),
                 107 => self.style.background_color = Some(Color::White),
 
-                x => panic!("NIY handling for “{}”", x),
+                x => log::warn!("Unexpected CSI value {:?}", x),
             }
         }
     }

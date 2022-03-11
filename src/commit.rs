@@ -331,39 +331,40 @@ pub fn child_history(repo: &Repository, commit: &Commit, paths: &[String]) -> Ve
         revision = first_child.0.clone();
     }
     let mut result = commits_for_range(repo, revision.as_str(), paths, None, None);
+    if result.is_empty() {
+        return result;
+    }
 
-    let end_commit = result
-        .last()
-        .unwrap_or_else(|| panic!("No child commits for range {}", revision));
+    let end_commit = result.last().expect("Non empty child history");
+
     if end.is_some()
         && end_commit.bellow.is_some()
         && end_commit.bellow.as_ref().expect("Expected merge commit") != bellow
     {
-        let link = to_commit(
-            repo,
-            end_commit.bellow.as_ref().expect("Expected merge commit"),
-            true,
-        );
-
-        result.push(link);
+        let oid = &end_commit.bellow.as_ref().expect("Expected merge commit");
+        #[allow(clippy::option_if_let_else)]
+        if let Some(link) = to_commit(repo, oid, true) {
+            result.push(link);
+        } else {
+            log::error!("Failed to find commit {}", oid);
+        }
     }
 
     result
 }
 
-fn to_commit(repo: &Repository, oid: &Oid, is_commit_link: bool) -> Commit {
+fn to_commit(repo: &Repository, oid: &Oid, is_commit_link: bool) -> Option<Commit> {
     let mut cmd = repo.git();
     cmd.args(["rev-list", "--date=human", REV_FORMAT, "-1", &oid.0]);
     let proc = cmd.output().expect("Failed to run git-rev-list(1)");
-    if proc.status.success() {
+    proc.status.success().then(|| {
         let tmp = String::from_utf8_lossy(&proc.stdout);
         let lines: Vec<&str> = tmp.lines().collect();
-        // XXX FIXME lines? really?
-        assert!(lines.len() >= 2, "Did not got enough data for {}", oid);
-        Commit::new(lines[1], is_commit_link)
-    } else {
-        panic!("Failed to get data for commit {}", oid);
-    }
+        Commit::new(
+            lines.get(1).expect("No second data line for commit"),
+            is_commit_link,
+        )
+    })
 }
 
 pub fn parse_remote_url(input: &str) -> Option<Url> {

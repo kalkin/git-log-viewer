@@ -16,7 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender, TryRecvError};
+use std::sync::mpsc::{Receiver, SendError, Sender, TryRecvError};
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -153,10 +153,8 @@ impl BitbucketThread {
         }
     }
 
-    pub(crate) fn send(&self, req: BitbucketRequest) {
-        if let Err(e) = self.sender.send(req) {
-            panic!("Error {:?}", e);
-        }
+    pub(crate) fn send(&self, req: BitbucketRequest) -> Result<(), SendError<BitbucketRequest>> {
+        self.sender.send(req)
     }
 
     pub(crate) fn try_recv(&self) -> Result<BitbucketResponse, TryRecvError> {

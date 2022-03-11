@@ -16,7 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender, TryRecvError};
+use std::sync::mpsc::{Receiver, SendError, Sender, TryRecvError};
 use std::thread::JoinHandle;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -168,10 +168,8 @@ impl GitHubThread {
         }
     }
 
-    pub(crate) fn send(&self, req: GitHubRequest) {
-        if let Err(e) = self.sender.send(req) {
-            panic!("Error {:?}", e);
-        }
+    pub(crate) fn send(&self, req: GitHubRequest) -> Result<(), SendError<GitHubRequest>> {
+        self.sender.send(req)
     }
 
     pub(crate) fn try_recv(&self) -> Result<GitHubResponse, TryRecvError> {

@@ -298,22 +298,29 @@ impl HistoryAdapter {
                             log::debug!("PR #{} (CACHE) ⇒ «{}»", id, title);
                             entry.set_subject(&title);
                         } else {
-                            self.github_thread.send(GitHubRequest {
+                            let req = GitHubRequest {
                                 oid: entry.id().clone(),
                                 url,
                                 pr_id: id.to_string(),
-                            });
+                            };
+                            if let Err(err) = self.github_thread.send(req) {
+                                log::error!("{}", err);
+                            }
                         }
                     } else if BitbucketThread::can_handle(&url) {
                         if let Some(title) = BitbucketThread::from_cache(&url, id) {
                             log::debug!("PR #{} (CACHE) ⇒ «{}»", id, title);
                             entry.set_subject(&title);
                         } else {
-                            self.bb_server_thread.send(BitbucketRequest {
+                            let req = BitbucketRequest {
                                 oid: entry.id().clone(),
                                 url,
                                 pr_id: id.to_string(),
-                            });
+                            };
+
+                            if let Err(err) = self.bb_server_thread.send(req) {
+                                log::error!("{}", err);
+                            }
                         }
                     }
                 }
@@ -359,18 +366,25 @@ impl HistoryAdapter {
                                 log::debug!("PR #{} (CACHE) ⇒ «{}»", id, title);
                                 entry.set_subject(&title);
                             } else {
-                                self.github_thread.send(GitHubRequest {
+                                let req = GitHubRequest {
                                     oid: entry.id().clone(),
                                     url,
                                     pr_id: id.to_string(),
-                                });
+                                };
+
+                                if let Err(err) = self.github_thread.send(req) {
+                                    log::error!("{}", err);
+                                }
                             }
                         } else if BitbucketThread::can_handle(&url) {
-                            self.bb_server_thread.send(BitbucketRequest {
+                            let req = BitbucketRequest {
                                 oid: entry.id().clone(),
                                 url,
                                 pr_id: id.to_string(),
-                            });
+                            };
+                            if let Err(err) = self.bb_server_thread.send(req) {
+                                log::error!("{}", err);
+                            }
                         }
                     }
                 }
