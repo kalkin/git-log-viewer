@@ -71,14 +71,9 @@ impl vte::Perform for Counter {
     ) {
         self.save_cur_span();
         let mut iter = params.iter();
-        loop {
-            let cur;
-            match iter.next() {
-                Some(byte) => cur = byte[0],
-                None => break,
-            }
+        while let Some(byte) = iter.next() {
             // TODO not sure if all colors match
-            match cur {
+            match byte[0] {
                 0 => self.style = ContentStyle::new(),
                 1 => self.style.attributes.set(Attribute::Bold),
                 2 => self.style.attributes.set(Attribute::Italic),
@@ -164,7 +159,7 @@ impl vte::Perform for Counter {
                 106 => self.style.background_color = Some(Color::Cyan),
                 107 => self.style.background_color = Some(Color::White),
 
-                _ => panic!("NIY handling for “{}”", cur),
+                x => panic!("NIY handling for “{}”", x),
             }
         }
     }
