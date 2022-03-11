@@ -133,6 +133,7 @@ impl HistoryEntry {
             text.push('●');
         }
 
+        #[allow(clippy::else_if_without_else)]
         if self.has_children() {
             if self.is_subtree_import() || self.is_subtree_update() {
                 if self.is_fork_point() {

@@ -52,7 +52,9 @@ impl ResultManager {
             } else {
                 self.selected = Some(0);
             }
-        } else if !self.results.is_empty() {
+        } else if self.results.is_empty() {
+            log::info!("No search results");
+        } else {
             self.selected = Some(0);
         }
     }
@@ -63,8 +65,12 @@ impl ResultManager {
                 self.selected = Some(i - 1);
             } else if !self.results.is_empty() {
                 self.selected = Some(self.results.len() - 1);
+            } else {
+                log::info!("No search results");
             }
-        } else if !self.results.is_empty() {
+        } else if self.results.is_empty() {
+            log::info!("No previous search results");
+        } else {
             self.selected = Some(self.results.len());
         }
     }

@@ -112,9 +112,7 @@ impl Paging {
             );
             return;
         }
-        if self.top <= i && i <= self.bottom {
-            self.selected = i;
-        } else if i < self.top {
+        if i < self.top {
             while i < self.top {
                 self.prev_page();
             }
@@ -123,8 +121,10 @@ impl Paging {
             while i > self.bottom {
                 self.next_page();
             }
-            self.selected = i;
+        } else {
+            log::trace!("No paging needed");
         }
+        self.selected = i;
     }
 
     #[allow(dead_code)]

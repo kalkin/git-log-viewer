@@ -322,6 +322,8 @@ impl HistoryAdapter {
                                 log::error!("{}", err);
                             }
                         }
+                    } else {
+                        log::info!("Unrecognized url {}", url);
                     }
                 }
             }
@@ -385,6 +387,8 @@ impl HistoryAdapter {
                             if let Err(err) = self.bb_server_thread.send(req) {
                                 log::error!("{}", err);
                             }
+                        } else {
+                            log::info!("Unrecognized url {}", url);
                         }
                     }
                 }
