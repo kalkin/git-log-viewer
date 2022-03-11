@@ -19,6 +19,7 @@
 //! expandable via plugins. The application can resolve the default merge titles
 //! done by using GitHub or Bitbucket to the actual pull request names.
 
+use std::io;
 use std::sync::mpsc;
 use std::thread;
 
@@ -78,13 +79,6 @@ fn same(a: &StyledArea<String>, b: &StyledArea<String>) -> bool {
     true
 }
 
-struct UiError(PosixError);
-impl From<ErrorKind> for UiError {
-    fn from(err: ErrorKind) -> Self {
-        Self(PosixError::from(err))
-    }
-}
-
 fn glv() -> Result<(), PosixError> {
     let args = Args::parse();
 
@@ -109,11 +103,7 @@ fn glv() -> Result<(), PosixError> {
         paths
     );
     let history_adapter = HistoryAdapter::new(repo.clone(), &args.revision, paths.clone())?;
-    if let Err(err) = run_ui(history_adapter, repo, paths) {
-        Err(UiError::from(err).0)
-    } else {
-        Ok(())
-    }
+    run_ui(history_adapter, repo, paths).map_err(Into::into)
 }
 fn main() {
     std::panic::set_hook(Box::new(|p| {
@@ -139,7 +129,7 @@ fn run_ui(
         thread::spawn(move || {
             while let Ok(event) = read() {
                 if let Err(err) = tx.send(event) {
-                    panic!("Error: {:?}", err);
+                    log::error!("Error setting up UI event stream:\n{:?}", err);
                 }
             }
         });
@@ -187,7 +177,10 @@ fn run_ui(
                     thread::sleep(hundred_millis);
                 }
                 TryRecvError::Disconnected => {
-                    panic!("Something gone wrong: {:?}", err);
+                    return Err(io::Error::new(
+                        io::ErrorKind::ConnectionAborted,
+                        format!("Event loop disconnected:\n{:?}", err),
+                    ))
                 }
             },
         }

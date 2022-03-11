@@ -16,6 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::cmp::Ordering;
+use std::io;
 use std::io::Write;
 
 use crossterm::cursor::{Hide, MoveDown, MoveTo, MoveToColumn, Show};
@@ -80,11 +81,14 @@ pub fn render(lines: &StyledArea<String>, area: &Area) -> Result<()> {
 
     // Validate data {
     if area.height() < lines.len() {
-        panic!(
-            "Height does not match expected: {} got: {}",
-            area.height(),
-            lines.len()
-        );
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!(
+                "Height does not match area.\nExpected: {} got: {}",
+                area.height(),
+                lines.len()
+            ),
+        ));
     }
 
     for rows in lines {
@@ -93,11 +97,14 @@ pub fn render(lines: &StyledArea<String>, area: &Area) -> Result<()> {
             .map(|x| UnicodeWidthStr::width(x.content().as_str()))
             .sum::<usize>();
         if area.width() < width {
-            panic!(
-                "Width does not match expected: {} got: {}",
-                area.width(),
-                width
-            );
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "Width does not match expected: {} got: {}",
+                    area.width(),
+                    width
+                ),
+            ));
         }
     }
     // End validate data }
