@@ -22,9 +22,9 @@ fn main() {
         let changed_since_release = {
             let id = {
                 let out = Command::new("git")
-                    .args(&["rev-list", "-1", "--", "CHANGELOG.md"])
+                    .args(&["rev-list", "-1", "HEAD", "--", "CHANGELOG.md"])
                     .output()
-                    .expect("A comitted CHANGELOG.md");
+                    .expect("A committed CHANGELOG.md");
                 String::from_utf8_lossy(&out.stdout).to_string()
             };
             let range = format!("{}..HEAD", id.trim());
