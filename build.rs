@@ -36,19 +36,19 @@ fn main() {
         };
 
         let cargo_version = env!("CARGO_PKG_VERSION");
-        let version = match (changed_since_release, status.code().unwrap_or(1) != 0) {
+        let version = match (changed_since_release, status.success()) {
             (false, false) => cargo_version.to_owned(),
             (false, true) => format!("{}+dirty", cargo_version),
-            (true, dirty) => {
+            (true, clean) => {
                 let id_out = Command::new("git")
                     .args(&["rev-parse", "--short", "HEAD"])
                     .output()
                     .expect("Executed git-rev-parse(1)");
                 let id = String::from_utf8_lossy(&id_out.stdout).to_string();
-                if dirty {
-                    format!("{}+{}.dirty", cargo_version, id.trim())
+                if clean {
+                    format!("{}+{}", cargo_version, id.trim())
                 } else {
-                    format!("{}+{}.", cargo_version, id.trim())
+                    format!("{}+{}.dirty", cargo_version, id.trim())
                 }
             }
         };
