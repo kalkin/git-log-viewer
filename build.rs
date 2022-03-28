@@ -10,6 +10,25 @@ fn head_path() -> String {
     return format!("{}/HEAD", git_dir);
 }
 
+fn commits_since_release() -> String {
+    let id = {
+        let out = Command::new("git")
+            .args(&["rev-list", "-1", "HEAD", "--", "CHANGELOG.md"])
+            .output()
+            .expect("A committed CHANGELOG.md");
+        String::from_utf8_lossy(&out.stdout).to_string()
+    };
+    let range = format!("{}..HEAD", id.trim());
+    let out = Command::new("git")
+        .args(&["rev-list", "--count", &range, "--", "."])
+        .output()
+        .expect("git rev-list successful");
+    String::from_utf8_lossy(&out.stdout)
+        .clone()
+        .trim()
+        .to_owned()
+}
+
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=Cargo.toml");
@@ -19,21 +38,8 @@ fn main() {
         .args(&["diff-index", "--quiet", "HEAD", "--"])
         .status()
     {
-        let changed_since_release = {
-            let id = {
-                let out = Command::new("git")
-                    .args(&["rev-list", "-1", "HEAD", "--", "CHANGELOG.md"])
-                    .output()
-                    .expect("A committed CHANGELOG.md");
-                String::from_utf8_lossy(&out.stdout).to_string()
-            };
-            let range = format!("{}..HEAD", id.trim());
-            let out = Command::new("git")
-                .args(&["rev-list", "--count", &range, "--", "."])
-                .output()
-                .expect("git rev-list successful");
-            String::from_utf8_lossy(&out.stdout).to_string().trim() != "0"
-        };
+        let commits_since_release = commits_since_release();
+        let changed_since_release = commits_since_release != "0";
 
         let cargo_version = env!("CARGO_PKG_VERSION");
         let version = match (changed_since_release, status.success()) {
@@ -46,9 +52,14 @@ fn main() {
                     .expect("Executed git-rev-parse(1)");
                 let id = String::from_utf8_lossy(&id_out.stdout).to_string();
                 if clean {
-                    format!("{}+{}", cargo_version, id.trim())
+                    format!("{}+{}.{}", cargo_version, id.trim(), commits_since_release)
                 } else {
-                    format!("{}+{}.dirty", cargo_version, id.trim())
+                    format!(
+                        "{}+{}.{}.dirty",
+                        cargo_version,
+                        id.trim(),
+                        commits_since_release
+                    )
                 }
             }
         };
