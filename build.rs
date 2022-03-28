@@ -1,9 +1,19 @@
 //! Add commit id & dirty flag to `CARGO_PKG_VERSION`
 use std::process::Command;
 
+fn head_path() -> String {
+    let output = Command::new("git")
+        .args(&["rev-parse", "--git-dir"])
+        .output()
+        .expect("Got $GIT_DIR");
+    let git_dir = String::from_utf8_lossy(&output.stdout);
+    return format!("{}/HEAD", git_dir);
+}
+
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=Cargo.toml");
+    println!("cargo:rerun-if-changed={}", head_path());
 
     if let Ok(status) = Command::new("git")
         .args(&["diff-index", "--quiet", "HEAD", "--"])
