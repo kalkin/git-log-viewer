@@ -28,7 +28,9 @@ use crate::history_entry::HistoryEntry;
 use crate::search::highlight_search_line;
 use crate::ui::base::data::{DataAdapter, SearchProgress};
 use crate::ui::base::paging::Paging;
-use crate::ui::base::{shorten_line, Area, Drawable, HandleEvent, Selectable, StyledArea};
+use crate::ui::base::{
+    shorten_line, Area, Drawable, HandleEvent, Selectable, StyledArea, StyledLine,
+};
 use crate::ui::search::SearchWidget;
 use std::sync::mpsc::Receiver;
 
@@ -118,14 +120,14 @@ impl Drawable for TableWidget {
 
         if tmp.len() < page_height {
             for _ in tmp.len()..page_height {
-                tmp.push(vec![]);
+                tmp.push(StyledLine::empty());
             }
         }
 
         let mut max_column_widths = HashMap::new();
         {
             for (_, row) in tmp.iter().enumerate() {
-                for (col_number, cell) in row.iter().enumerate() {
+                for (col_number, cell) in row.content.iter().enumerate() {
                     let text_len = UnicodeWidthStr::width(cell.content().as_str());
                     if let Some(max) = max_column_widths.get(&col_number) {
                         if text_len > *max {
@@ -140,8 +142,10 @@ impl Drawable for TableWidget {
 
         let mut result = Vec::with_capacity(tmp.len());
         for row in tmp {
-            let mut new_row = Vec::with_capacity(row.len());
-            for (col_number, cell) in row.iter().enumerate() {
+            let mut new_row = StyledLine {
+                content: Vec::with_capacity(row.content.len()),
+            };
+            for (col_number, cell) in row.content.iter().enumerate() {
                 match self.style.get(col_number) {
                     ColumnStyle::MaxWidth(style_max) => {
                         let mut max = *max_column_widths.get(&col_number).expect("max expected");
@@ -149,10 +153,12 @@ impl Drawable for TableWidget {
                             max = style_max;
                         }
                         let adjusted_content = adjust_string(cell.content(), max);
-                        new_row.push(StyledContent::new(*cell.style(), adjusted_content));
+                        new_row
+                            .content
+                            .push(StyledContent::new(*cell.style(), adjusted_content));
                     }
                     ColumnStyle::None => {
-                        new_row.push(cell.clone());
+                        new_row.content.push(cell.clone());
                     }
                 }
             }

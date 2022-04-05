@@ -104,19 +104,21 @@ impl DetailsWidget<HistoryEntry> for DiffView {
             ));
         }
 
-        data.push(vec![]);
+        data.push(StyledLine::empty());
         for subject_line in content.original_subject().trim().lines() {
             data.push(color_text(" ", subject_line, *DEFAULT_STYLE));
         }
-        data.push(vec![]);
+        data.push(StyledLine::empty());
         for body_line in content.body().trim().lines() {
             data.push(color_text(" ", body_line, *DEFAULT_STYLE));
         }
-        data.push(vec![]);
-        data.push(vec![style(
-            "                                 ❦ ❦ ❦ ❦ ".to_owned(),
-        )]);
-        data.push(vec![]);
+        data.push(StyledLine::empty());
+        data.push(StyledLine {
+            content: vec![style(
+                "                                 ❦ ❦ ❦ ❦ ".to_owned(),
+            )],
+        });
+        data.push(StyledLine::empty());
         for line in git_diff(&self.2, content.commit(), self.1.clone()) {
             data.push(line);
         }
@@ -167,5 +169,7 @@ fn git_diff(repo: &Repository, commit: &Commit, paths: Vec<String>) -> Vec<Style
 
 fn color_text(key: &str, value: &str, style: ContentStyle) -> StyledLine<String> {
     let content = format!("{}{}", key, value);
-    vec![StyledContent::new(style, content)]
+    StyledLine {
+        content: vec![StyledContent::new(style, content)],
+    }
 }

@@ -52,8 +52,17 @@ pub enum HandleEvent {
     Handled,
     Ignored,
 }
+/**/
+#[derive(Clone, Eq, Debug, PartialEq)]
+pub struct StyledLine<D: std::fmt::Display> {
+    pub content: Vec<StyledContent<D>>,
+}
 
-pub type StyledLine<D> = Vec<StyledContent<D>>;
+impl<D: std::fmt::Display> StyledLine<D> {
+    pub fn empty() -> Self {
+        Self { content: vec![] }
+    }
+}
 pub type StyledArea<D> = Vec<StyledLine<D>>;
 
 pub trait Drawable {
@@ -93,6 +102,7 @@ pub fn render(lines: &StyledArea<String>, area: &Area) -> Result<()> {
 
     for rows in lines {
         let width = rows
+            .content
             .iter()
             .map(|x| UnicodeWidthStr::width(x.content().as_str()))
             .sum::<usize>();
@@ -112,7 +122,7 @@ pub fn render(lines: &StyledArea<String>, area: &Area) -> Result<()> {
     queue!(stdout, MoveTo(0, 0), Clear(FromCursorDown))?;
 
     for line in lines {
-        for x in line.iter().cloned().map(PrintStyledContent) {
+        for x in line.content.iter().cloned().map(PrintStyledContent) {
             queue!(stdout, x)?;
         }
         queue!(stdout, MoveDown(1), MoveToColumn(1))?;
@@ -164,7 +174,7 @@ pub fn new_area() -> Area {
 #[must_use]
 #[allow(clippy::ptr_arg)]
 pub fn line_length(line: &StyledLine<String>) -> usize {
-    line.iter().map(content_length).sum()
+    line.content.iter().map(content_length).sum()
 }
 
 #[must_use]
@@ -174,17 +184,17 @@ pub fn content_length(styled_content: &StyledContent<String>) -> usize {
 
 #[must_use]
 pub fn shorten_line(line: StyledLine<String>, width: usize) -> StyledLine<String> {
-    let mut result: StyledLine<String> = vec![];
+    let mut result: StyledLine<String> = StyledLine { content: vec![] };
     let mut i = 0;
-    for styled_content in line {
+    for styled_content in line.content {
         let length = i + content_length(&styled_content);
         match length.cmp(&width) {
             Ordering::Less => {
-                result.push(styled_content.clone());
+                result.content.push(styled_content.clone());
                 i = length;
             }
             Ordering::Equal => {
-                result.push(styled_content);
+                result.content.push(styled_content);
                 break;
             }
             Ordering::Greater => {
@@ -193,7 +203,7 @@ pub fn shorten_line(line: StyledLine<String>, width: usize) -> StyledLine<String
                 let (text, _) = styled_content.content().unicode_truncate(size);
                 let style = *styled_content.style();
                 let content = StyledContent::new(style, text.to_owned());
-                result.push(content);
+                result.content.push(content);
                 break;
             }
         }

@@ -34,10 +34,10 @@ pub fn highlight_search_line(
     search_state: &Needle,
 ) -> StyledLine<String> {
     let mut result = vec![];
-    for sc in line {
+    for sc in &line.content {
         result.append(&mut highlight_search(sc, search_state));
     }
-    result
+    StyledLine { content: result }
 }
 
 fn highlight_search(
@@ -96,6 +96,7 @@ fn search_styled_content(sc: &StyledContent<String>, state: &Needle) -> Vec<Text
 #[allow(clippy::ptr_arg)]
 pub fn search_line(line: &StyledLine<String>, state: &Needle) -> Vec<SearchResult> {
     let parts = line
+        .content
         .iter()
         .map(|sc| sc.content().clone())
         .collect::<Vec<_>>();

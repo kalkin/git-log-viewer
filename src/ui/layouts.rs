@@ -82,9 +82,11 @@ where
                         let max = main_size.width() - line_length(right_row);
                         let spaces: Vec<String> = (0..max).map(|_| " ".to_owned()).collect();
                         let content = spaces.join("");
-                        right_row.push(StyledContent::new(ContentStyle::default(), content));
+                        right_row
+                            .content
+                            .push(StyledContent::new(ContentStyle::default(), content));
                     }
-                    right_row.append(row);
+                    right_row.content.append(&mut row.content);
                 }
                 result
             }

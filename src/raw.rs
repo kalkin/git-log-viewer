@@ -31,13 +31,14 @@ impl Counter {
             style: ContentStyle::default(),
             buf: String::new(),
             lines: vec![],
-            cur_line: vec![],
+            cur_line: StyledLine::empty(),
         }
     }
 
     fn save_cur_span(&mut self) {
         if !self.buf.is_empty() {
             self.cur_line
+                .content
                 .push(StyledContent::new(self.style, self.buf.clone()));
             self.buf = String::new();
         }
@@ -52,7 +53,7 @@ impl vte::Perform for Counter {
         if byte == 10 {
             self.save_cur_span();
             self.lines.push(self.cur_line.clone());
-            self.cur_line = vec![];
+            self.cur_line = StyledLine::empty();
         } else {
             self.buf.push(byte.try_into().expect("u8 to char"));
         }

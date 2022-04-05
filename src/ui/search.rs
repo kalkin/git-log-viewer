@@ -105,17 +105,19 @@ impl Default for SearchWidget {
 
 impl SearchWidget {
     pub fn render(&mut self, width: usize) -> StyledLine<String> {
-        let mut line = Vec::with_capacity(3);
+        let mut line = StyledLine {
+            content: Vec::with_capacity(3),
+        };
         match self.direction {
             Direction::Forward => {
-                line.push(style("/".to_owned()));
+                line.content.push(style("/".to_owned()));
             }
             Direction::Backward => {
-                line.push(style("?".to_owned()));
+                line.content.push(style("?".to_owned()));
             }
         }
-        line.push(style(self.input.text().to_string()));
-        line.push(style(format!(
+        line.content.push(style(self.input.text().to_string()));
+        line.content.push(style(format!(
             "\tFound({}) / Seen({})",
             self.results.results.len(),
             self.results.seen

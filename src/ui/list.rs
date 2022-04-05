@@ -24,6 +24,8 @@ use crate::ui::base::{shorten_line, Area, Drawable, HandleEvent, Selectable, Sty
 use crate::ui::search::SearchWidget;
 use std::sync::mpsc::Receiver;
 
+use super::base::StyledLine;
+
 #[derive(Eq, PartialEq)]
 #[allow(dead_code)]
 pub enum SpecialSubject {
@@ -96,7 +98,7 @@ impl<T> Drawable for ListWidget<T> {
 
         if result.len() < page_height {
             for _ in result.len()..page_height {
-                result.push(vec![]);
+                result.push(StyledLine::empty());
             }
         }
 
@@ -146,6 +148,7 @@ mod test_list_widget {
             let prefix = rendered
                 .last()
                 .expect("last line")
+                .content
                 .first()
                 .expect("first styled content");
             assert_ne!(prefix.content(), "/");
@@ -157,6 +160,7 @@ mod test_list_widget {
             let prefix = rendered
                 .last()
                 .expect("last line")
+                .content
                 .first()
                 .expect("first styled content");
             assert_eq!(prefix.content(), "/");
@@ -169,6 +173,7 @@ mod test_list_widget {
             let prefix = rendered
                 .last()
                 .expect("last line")
+                .content
                 .first()
                 .expect("first styled content");
             assert_eq!(prefix.content(), "?");

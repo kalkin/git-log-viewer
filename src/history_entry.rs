@@ -345,26 +345,28 @@ impl HistoryEntry {
 
     pub fn render(&mut self, selected: bool) -> StyledLine<String> {
         let separator = style(" ".to_owned());
-        let mut result: StyledLine<String> = vec![
-            self.render_id(),
-            separator.clone(),
-            self.render_date(),
-            separator.clone(),
-            self.render_name(),
-            separator.clone(),
-            self.render_icon(),
-            separator.clone(),
-            self.render_graph(),
-        ];
+        let mut result: StyledLine<String> = StyledLine {
+            content: vec![
+                self.render_id(),
+                separator.clone(),
+                self.render_date(),
+                separator.clone(),
+                self.render_name(),
+                separator.clone(),
+                self.render_icon(),
+                separator.clone(),
+                self.render_graph(),
+            ],
+        };
         let references = self.render_references();
         if !references.is_empty() {
-            result.extend(references);
+            result.content.extend(references);
         }
-        result.push(separator);
-        result.extend(self.render_subject());
+        result.content.push(separator);
+        result.content.extend(self.render_subject());
 
         if selected {
-            for part in &mut result {
+            for part in &mut result.content {
                 part.style_mut().attributes.set(Attribute::Reverse);
             }
         };

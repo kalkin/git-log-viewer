@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::ui::base::{Area, Drawable, HandleEvent, StyledArea};
+use crate::ui::base::{Area, Drawable, HandleEvent, StyledArea, StyledLine};
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::style::style;
 use unicode_truncate::UnicodeTruncateStr;
@@ -32,7 +32,9 @@ impl InputLine {
 
 impl Drawable for InputLine {
     fn render(&mut self, _area: &Area) -> StyledArea<String> {
-        vec![vec![style(self.0.clone())]]
+        vec![StyledLine {
+            content: vec![style(self.0.clone())],
+        }]
     }
 
     fn on_event(&mut self, event: Event) -> HandleEvent {

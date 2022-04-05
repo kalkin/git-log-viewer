@@ -42,7 +42,9 @@ impl DataAdapter<String> for VecAdapter {
         if selected {
             content.style_mut().attributes.set(Attribute::Reverse);
         }
-        vec![content]
+        StyledLine {
+            content: vec![content],
+        }
     }
 
     fn get_data(&mut self, i: usize) -> &String {
@@ -95,11 +97,11 @@ mod test_vec_adapter {
         assert_eq!(adapter.len(), 30);
         assert!(!adapter.is_empty());
         let line = adapter.get_line(0, false);
-        for sc in line {
+        for sc in line.content {
             assert!(!sc.style().attributes.has(Attribute::Reverse));
         }
         let selected_line = adapter.get_line(0, true);
-        for sc in selected_line {
+        for sc in selected_line.content {
             assert!(sc.style().attributes.has(Attribute::Reverse));
         }
     }
@@ -112,13 +114,13 @@ pub struct StyledAreaAdapter {
 
 impl DataAdapter<String> for StyledAreaAdapter {
     fn get_line(&mut self, i: usize, selected: bool) -> StyledLine<String> {
-        let mut content: StyledLine<String> = self.content[i].clone();
+        let mut line: StyledLine<String> = self.content[i].clone();
         if selected {
-            for c in &mut content {
+            for c in &mut line.content {
                 c.style_mut().attributes.set(Attribute::Reverse);
             }
         }
-        content
+        line
     }
 
     #[allow(clippy::todo)]

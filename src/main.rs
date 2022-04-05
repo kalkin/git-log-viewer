@@ -66,14 +66,8 @@ fn same(a: &StyledArea<String>, b: &StyledArea<String>) -> bool {
     }
     for (i, a_line) in a.iter().enumerate() {
         let b_line = &b[i];
-        if a_line.len() != b_line.len() {
+        if a_line != b_line {
             return false;
-        }
-        for (j, a_sc) in a_line.iter().enumerate() {
-            let b_sc = &b_line[j];
-            if a_sc.content() != b_sc.content() || a_sc.style() != b_sc.style() {
-                return false;
-            }
         }
     }
     true
