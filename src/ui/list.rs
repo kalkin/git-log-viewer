@@ -134,7 +134,7 @@ mod test_list_widget {
         assert_eq!(
             actual, expected,
             "Extend rendered content to fill the screen"
-        )
+        );
     }
 
     #[test]
