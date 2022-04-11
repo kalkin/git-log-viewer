@@ -105,6 +105,8 @@ fn glv() -> Result<(), PosixError> {
     let history_adapter = HistoryAdapter::new(repo.clone(), &args.revision, paths.clone())?;
     run_ui(history_adapter, repo, paths).map_err(Into::into)
 }
+
+#[allow(clippy::exit)]
 fn main() {
     std::panic::set_hook(Box::new(|p| {
         shutdown_screen().expect("Shutdown screen");
