@@ -147,7 +147,7 @@ mod test_needle_capture {
             State::Hidden,
             "Ignores Cancel Event in hidden state"
         );
-        capture.on_event(Event::Text("asd".to_string()));
+        capture.on_event(Event::Text("asd".to_owned()));
         assert_eq!(
             *capture.state(),
             State::Hidden,
@@ -187,11 +187,11 @@ mod test_needle_capture {
             State::CaptureNeedle(Direction::Backward),
             "Back in CaptureNeedle state"
         );
-        capture.on_event(Event::Text("foo".to_string()));
+        capture.on_event(Event::Text("foo".to_owned()));
         assert_eq!(
             *capture.state(),
             State::Search(Needle {
-                text: "foo".to_string(),
+                text: "foo".to_owned(),
                 direction: Direction::Backward
             }),
             "Reached Search state"
@@ -201,11 +201,11 @@ mod test_needle_capture {
     fn search_state() {
         let mut capture = NeedleCapture::default();
         capture.on_event(Event::Activate(Direction::Forward));
-        capture.on_event(Event::Text("foo".to_string()));
+        capture.on_event(Event::Text("foo".to_owned()));
         assert_eq!(
             *capture.state(),
             State::Search(Needle {
-                text: "foo".to_string(),
+                text: "foo".to_owned(),
                 direction: Direction::Forward
             }),
             "Reached Search state"
@@ -216,20 +216,20 @@ mod test_needle_capture {
             State::CaptureNeedle(Direction::Backward),
             "Reached CaptureNeedle state"
         );
-        capture.on_event(Event::Text("bar".to_string()));
+        capture.on_event(Event::Text("bar".to_owned()));
         assert_eq!(
             *capture.state(),
             State::Search(Needle {
-                text: "bar".to_string(),
+                text: "bar".to_owned(),
                 direction: Direction::Backward
             }),
             "Change back to search text"
         );
-        capture.on_event(Event::Text("foo".to_string()));
+        capture.on_event(Event::Text("foo".to_owned()));
         assert_eq!(
             *capture.state(),
             State::Search(Needle {
-                text: "foo".to_string(),
+                text: "foo".to_owned(),
                 direction: Direction::Backward
             }),
             "Change text on Text event"
