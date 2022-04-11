@@ -32,7 +32,7 @@ pub struct Paging {
 impl Paging {
     #[cfg(test)]
     #[cfg(not(tarpaulin_include))]
-    pub fn new(page_height: Height, total_length: usize) -> Self {
+    pub const fn new(page_height: Height, total_length: usize) -> Self {
         let bottom = page_height - 1;
         Self {
             top: 0,
