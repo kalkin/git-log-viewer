@@ -243,9 +243,9 @@ mod parse_args {
 
     #[test]
     fn with_ref_and_path() {
-        let _args: Args = Parser::try_parse_from(&["glv", "master", "--", "foo/bar"])
+        let _args1: Args = Parser::try_parse_from(&["glv", "master", "--", "foo/bar"])
             .expect("Ref and path specified");
-        let _args: Args = Parser::try_parse_from(&["glv", "master", "--", "foo/bar", "README.md"])
+        let _args2: Args = Parser::try_parse_from(&["glv", "master", "--", "foo/bar", "README.md"])
             .expect("Ref and multiple paths specified");
     }
 

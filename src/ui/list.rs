@@ -141,32 +141,38 @@ mod test_list_widget {
     fn search_visibility() {
         let list = &mut example_content();
         let area = Area::new(80, 25);
-        let rendered = list.render(&area);
-        let prefix = rendered
-            .last()
-            .expect("last line")
-            .first()
-            .expect("first styled content");
-        assert_ne!(prefix.content(), "/");
+        {
+            let rendered = list.render(&area);
+            let prefix = rendered
+                .last()
+                .expect("last line")
+                .first()
+                .expect("first styled content");
+            assert_ne!(prefix.content(), "/");
+        }
 
         handle_event(list, KeyCode::Char('/'));
-        let rendered = list.render(&area);
-        let prefix = rendered
-            .last()
-            .expect("last line")
-            .first()
-            .expect("first styled content");
-        assert_eq!(prefix.content(), "/");
+        {
+            let rendered = list.render(&area);
+            let prefix = rendered
+                .last()
+                .expect("last line")
+                .first()
+                .expect("first styled content");
+            assert_eq!(prefix.content(), "/");
+        }
 
         handle_event(list, KeyCode::Esc);
         handle_event(list, KeyCode::Char('?'));
-        let rendered = list.render(&area);
-        let prefix = rendered
-            .last()
-            .expect("last line")
-            .first()
-            .expect("first styled content");
-        assert_eq!(prefix.content(), "?");
+        {
+            let rendered = list.render(&area);
+            let prefix = rendered
+                .last()
+                .expect("last line")
+                .first()
+                .expect("first styled content");
+            assert_eq!(prefix.content(), "?");
+        }
     }
 
     fn handle_event(pager: &mut ListWidget<String>, code: KeyCode) {
