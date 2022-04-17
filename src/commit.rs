@@ -55,7 +55,7 @@ impl Display for GitRef {
     }
 }
 
-#[derive(Clone, Debug, Getters)]
+#[derive(Getters)]
 pub struct Commit {
     #[getset(get = "pub")]
     id: Oid,
