@@ -224,7 +224,15 @@ impl HistoryEntry {
         let mut text = "(".to_owned();
         text.push_str(scope);
         text.push(')');
-        StyledContent::new(ContentStyle::default(), text)
+        let style = if is_hex(scope) {
+            let mut style = ContentStyle::default();
+            style.attributes.set(Attribute::Underlined);
+            style
+        } else {
+            *DATE_STYLE
+        };
+
+        StyledContent::new(style, text)
     }
 
     fn render_references(&self) -> Vec<StyledContent<String>> {
