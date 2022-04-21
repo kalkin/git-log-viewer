@@ -248,16 +248,39 @@ impl HistoryEntry {
         }
         match &self.subject_struct {
             Subject::ConventionalCommit {
-                scope, description, ..
+                scope,
+                description,
+                category,
+                ..
             } => {
                 if let Some(s) = scope {
                     buf.push(Self::format_scope(s));
                     buf.push(separator);
                 }
-                buf.push(StyledContent::new(
-                    ContentStyle::default(),
-                    description.clone(),
-                ));
+                if *category == subject_classifier::Type::Deps {
+                    if let Some(word) = description.split_whitespace().last() {
+                        if word.starts_with('v')
+                            || word.starts_with('V')
+                            || word.chars().next().unwrap().is_numeric()
+                        {
+                            let l = description.len() - word.len();
+                            buf.push(style(description[..l].to_owned()));
+                            let mut bold_style = ContentStyle::default();
+                            bold_style.attributes.set(Attribute::Bold);
+                            let sc = StyledContent::new(bold_style, word.to_owned());
+                            buf.push(sc);
+                        } else {
+                            buf.push(style(word.to_owned()));
+                        }
+                    } else {
+                        buf.push(style(description.clone()));
+                    }
+                } else {
+                    buf.push(StyledContent::new(
+                        ContentStyle::default(),
+                        description.clone(),
+                    ));
+                }
             }
             Subject::Release { description, .. }
             | Subject::Fixup(description)
@@ -333,6 +356,18 @@ impl HistoryEntry {
         )
     }
 }
+
+fn is_hex(s: &str) -> bool {
+    for c in s.chars() {
+        if !c.is_ascii_digit()
+            && !&['a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F'].contains(&c)
+        {
+            return false;
+        }
+    }
+    true
+}
+
 // Public interface
 impl HistoryEntry {
     pub fn set_subject(&mut self, subject: &str) {
