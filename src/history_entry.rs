@@ -103,11 +103,16 @@ impl HistoryEntry {
 
     fn render_date(&self) -> StyledContent<String> {
         let date = self.author_rel_date();
-        if TIME_SPLIT_REGEX.is_match(date) {
-            StyledContent::new(*DATE_STYLE, date[0..date.len() - 5].to_owned())
-        } else {
-            StyledContent::new(*DATE_STYLE, date.clone())
+        let mut end = date.len();
+        // Find and remove the timezone
+        if end - 6 > 0 && (&date[end - 6..end - 4] == " +" || &date[end - 6..end - 4] == " -") {
+            end -= 6;
         }
+
+        if TIME_SPLIT_REGEX.is_match(date) {
+            end -= 5;
+        }
+        StyledContent::new(*DATE_STYLE, date[0..end].to_owned())
     }
 
     fn render_name(&self) -> StyledContent<String> {
