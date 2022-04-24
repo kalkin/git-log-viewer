@@ -64,7 +64,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
         if content.author_name() != content.committer_name() {
             data.push(color_text(
                 "Committer:       ",
-                content.author_name(),
+                content.committer_name(),
                 *NAME_STYLE,
             ));
         }
