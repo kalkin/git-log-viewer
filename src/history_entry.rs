@@ -283,7 +283,7 @@ impl HistoryEntry {
                             let sc = StyledContent::new(bold_style, word.to_owned());
                             buf.push(sc);
                         } else {
-                            buf.push(style(word.to_owned()));
+                            buf.push(style(description.clone()));
                         }
                     } else {
                         buf.push(style(description.clone()));
