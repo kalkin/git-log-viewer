@@ -52,13 +52,13 @@ fn main() {
                     .expect("Executed git-rev-parse(1)");
                 let id = String::from_utf8_lossy(&id_out.stdout).to_string();
                 if clean {
-                    format!("{}+{}.{}", cargo_version, id.trim(), commits_since_release)
+                    format!("{}+{}.{}", cargo_version, commits_since_release, id.trim())
                 } else {
                     format!(
                         "{}+{}.{}.dirty",
                         cargo_version,
-                        id.trim(),
-                        commits_since_release
+                        commits_since_release,
+                        id.trim()
                     )
                 }
             }
