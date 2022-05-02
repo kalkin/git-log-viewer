@@ -31,6 +31,8 @@ use subject_classifier::{Subject, SubtreeOperation};
 use unicode_truncate::UnicodeTruncateStr;
 use unicode_width::UnicodeWidthStr;
 
+struct IgnoredRefWildcard(String);
+
 lazy_static! {
     static ref TIME_SPLIT_REGEX: regex::Regex =
         regex::Regex::new(r#".+{8,} \d\d:\d\d$"#).expect("Valid RegEx");
@@ -177,7 +179,7 @@ impl HistoryEntry {
         }
     }
 
-    fn shorten_references(remotes: &[Remote], references: &[GitRef]) -> Vec<String> {
+    fn shorten_references(remotes: &[Remote], references: &[&GitRef]) -> Vec<String> {
         let mut result = vec![];
         if !references.is_empty() {
             if remotes.is_empty() {
@@ -242,7 +244,8 @@ impl HistoryEntry {
 
     fn render_references(&self) -> Vec<StyledContent<String>> {
         let mut result = vec![];
-        for r in Self::shorten_references(&self.remotes, self.commit.references()) {
+        let references = self.filtered_references(&ignored_refs());
+        for r in Self::shorten_references(&self.remotes, &references) {
             let separator = style(" ".to_owned());
             result.push(separator);
 
@@ -252,6 +255,23 @@ impl HistoryEntry {
         }
         result
     }
+
+    fn filtered_references(&self, ignored: &'_ [IgnoredRefWildcard]) -> Vec<&GitRef> {
+        let references = self.commit.references();
+        references
+            .iter()
+            .filter(|r| {
+                for prefix in ignored.iter() {
+                    if r.0.starts_with(&prefix.0) {
+                        log::info!("Branch {} hidden", r.0);
+                        return false;
+                    }
+                }
+                true
+            })
+            .collect()
+    }
+
     fn render_subject(&self) -> Vec<StyledContent<String>> {
         let mut buf = vec![];
         let separator = style(" ".to_owned());
@@ -523,4 +543,9 @@ impl HistoryEntry {
         }
         self.forge_url.clone()
     }
+}
+
+fn ignored_refs() -> Vec<IgnoredRefWildcard> {
+    // TODO extend this to read ignored refs from ini file
+    vec![IgnoredRefWildcard("refs/prefetch/".to_owned())]
 }
