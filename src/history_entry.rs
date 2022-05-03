@@ -244,7 +244,7 @@ impl HistoryEntry {
 
     fn render_references(&self) -> Vec<StyledContent<String>> {
         let mut result = vec![];
-        let references = self.filtered_references(&ignored_refs());
+        let references = self.filtered_references();
         for r in Self::shorten_references(&self.remotes, &references) {
             let separator = style(" ".to_owned());
             result.push(separator);
@@ -256,12 +256,13 @@ impl HistoryEntry {
         result
     }
 
-    fn filtered_references(&self, ignored: &'_ [IgnoredRefWildcard]) -> Vec<&GitRef> {
+    /// Return references without the ignored ones
+    pub fn filtered_references(&self) -> Vec<&GitRef> {
         let references = self.commit.references();
         references
             .iter()
             .filter(|r| {
-                for prefix in ignored.iter() {
+                for prefix in &ignored_refs() {
                     if r.0.starts_with(&prefix.0) {
                         log::info!("Branch {} hidden", r.0);
                         return false;
