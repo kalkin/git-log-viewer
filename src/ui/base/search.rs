@@ -17,15 +17,19 @@
 
 use std::fmt::{Debug, Display, Formatter};
 
+use getset::Getters;
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Direction {
     Forward,
     Backward,
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Getters, PartialEq)]
 pub struct Needle {
+    #[getset(get = "pub")]
     text: String,
+    #[getset(get = "pub")]
     direction: Direction,
 }
 
@@ -44,13 +48,6 @@ impl Needle {
             text: text.to_owned(),
             direction: dir,
         }
-    }
-    pub const fn text(&self) -> &String {
-        &self.text
-    }
-
-    pub const fn direction(&self) -> &Direction {
-        &self.direction
     }
 }
 
