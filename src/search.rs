@@ -110,3 +110,43 @@ pub fn search_line(line: &StyledLine<String>, state: &Needle) -> Vec<SearchResul
     }
     result
 }
+
+#[cfg(test)]
+mod search_styled_content {
+    use crossterm::style::{ContentStyle, StyledContent};
+
+    use crate::{
+        search::search_styled_content,
+        ui::base::search::{Direction, Needle},
+    };
+
+    #[test]
+    fn ignore_case() {
+        let sc: StyledContent<String> =
+            StyledContent::new(ContentStyle::new(), "Foo bar buz".to_owned());
+        let needle = Needle::smart_case("foo", Direction::Forward);
+        assert!(needle.ignore_case(), "Case *in*sensitive");
+        let indices = search_styled_content(&sc, &needle);
+        assert_eq!(indices.len(), 1, "Found matches ignoring case");
+    }
+
+    #[test]
+    fn upper_case() {
+        let sc: StyledContent<String> =
+            StyledContent::new(ContentStyle::new(), "Foo bar buz".to_owned());
+        let needle = Needle::smart_case("Foo", Direction::Forward);
+        assert!(!needle.ignore_case(), "Case sensitive");
+        let indices = search_styled_content(&sc, &needle);
+        assert_eq!(indices.len(), 1, "Found matches ignoring case");
+    }
+
+    #[test]
+    fn lower_case() {
+        let sc: StyledContent<String> =
+            StyledContent::new(ContentStyle::new(), "Foo bar buz".to_owned());
+        let needle = Needle::smart_case("bar", Direction::Forward);
+        assert!(needle.ignore_case(), "Case *in*sensitive");
+        let indices = search_styled_content(&sc, &needle);
+        assert_eq!(indices.len(), 1, "Found matches ignoring case");
+    }
+}
