@@ -7,7 +7,7 @@ edition = '2021'
 keywords = ['git', 'tui']
 license = 'AGPL-3.0-or-later'
 repository = 'https://github.com/kalkin/git-log-viewer'
-version = '3.0.0-beta.8'
+version = '3.0.0-beta.9'
 
 [dependencies]
 clap-git-options = { version = "0.1.0", features = [ "git-wrapper" ] }
