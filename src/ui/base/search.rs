@@ -31,6 +31,8 @@ pub struct Needle {
     text: String,
     #[getset(get = "pub")]
     direction: Direction,
+    #[getset(get = "pub")]
+    ignore_case: bool,
 }
 
 impl Default for Needle {
@@ -59,6 +61,10 @@ impl Display for Needle {
             Direction::Backward => text.push('?'),
         }
         text.push_str(&self.text);
+
+        if *self.ignore_case() {
+            text.push_str(", i");
+        }
 
         f.write_str(&text)
     }
