@@ -89,7 +89,7 @@ fn glv() -> Result<(), PosixError> {
     log::info!("Log Level is set to {}", log::max_level());
 
     {
-        let informer = update_informer::new(registry::GitHub, "kalkin/glv", "0.5.0");
+        let informer = update_informer::new(registry::GitHub, "kalkin/glv", env!("CARGO_PKG_VERSION"));
         if let Ok(Some(version)) = informer.check_version() {
             log::error!("New version is available: {}", version);
         }
