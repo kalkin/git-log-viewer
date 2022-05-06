@@ -40,15 +40,17 @@ impl Default for Needle {
         Self {
             text: "".to_owned(),
             direction: Direction::Forward,
+            ignore_case: false,
         }
     }
 }
 
 impl Needle {
-    pub fn new(text: &str, dir: Direction) -> Self {
+    pub fn smart_case(text: &str, dir: Direction) -> Self {
         Self {
             text: text.to_owned(),
             direction: dir,
+            ignore_case: text.chars().all(char::is_lowercase),
         }
     }
 }
@@ -121,7 +123,7 @@ impl NeedleCapture {
                     }
                 }
                 Event::Cancel => self.0 = State::Hidden,
-                Event::Text(text) => self.0 = State::Search(Needle::new(&text, *dir)),
+                Event::Text(text) => self.0 = State::Search(Needle::smart_case(&text, *dir)),
             },
             State::Search(needle) => match event {
                 Event::Activate(dir) => {
@@ -129,7 +131,7 @@ impl NeedleCapture {
                 }
                 Event::Cancel => self.0 = State::Hidden,
                 Event::Text(text) => {
-                    self.0 = State::Search(Needle::new(&text, *needle.direction()));
+                    self.0 = State::Search(Needle::smart_case(&text, *needle.direction()));
                 }
             },
         }
@@ -195,7 +197,8 @@ mod test_needle_capture {
             *capture.state(),
             State::Search(Needle {
                 text: "foo".to_owned(),
-                direction: Direction::Backward
+                direction: Direction::Backward,
+                ignore_case: true,
             }),
             "Reached Search state"
         );
@@ -207,10 +210,7 @@ mod test_needle_capture {
         capture.on_event(Event::Text("foo".to_owned()));
         assert_eq!(
             *capture.state(),
-            State::Search(Needle {
-                text: "foo".to_owned(),
-                direction: Direction::Forward
-            }),
+            State::Search(Needle::smart_case("foo", Direction::Forward)),
             "Reached Search state"
         );
         capture.on_event(Event::Activate(Direction::Backward));
@@ -222,19 +222,13 @@ mod test_needle_capture {
         capture.on_event(Event::Text("bar".to_owned()));
         assert_eq!(
             *capture.state(),
-            State::Search(Needle {
-                text: "bar".to_owned(),
-                direction: Direction::Backward
-            }),
+            State::Search(Needle::smart_case("bar", Direction::Backward)),
             "Change back to search text"
         );
         capture.on_event(Event::Text("foo".to_owned()));
         assert_eq!(
             *capture.state(),
-            State::Search(Needle {
-                text: "foo".to_owned(),
-                direction: Direction::Backward
-            }),
+            State::Search(Needle::smart_case("foo", Direction::Backward)),
             "Change text on Text event"
         );
         capture.on_event(Event::Cancel);

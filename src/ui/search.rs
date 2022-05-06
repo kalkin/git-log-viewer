@@ -127,7 +127,7 @@ impl SearchWidget {
 
     #[must_use]
     pub fn needle(&self) -> Needle {
-        Needle::new(self.input.text(), self.direction)
+        Needle::smart_case(self.input.text(), self.direction)
     }
 
     pub fn search_value(&mut self) -> Option<Needle> {
@@ -157,7 +157,7 @@ impl SearchWidget {
                 HandleEvent::Handled => {
                     let text = self.input.text().clone();
                     if !text.is_empty() {
-                        self.needle = Some(Needle::new(&text, *dir));
+                        self.needle = Some(Needle::smart_case(&text, *dir));
                     }
                     self.results = ResultManager::default();
                     HandleEvent::Handled
@@ -168,7 +168,7 @@ impl SearchWidget {
                         modifiers: KeyModifiers::NONE,
                     }) => {
                         let text = self.input.text().clone();
-                        self.needle = Some(Needle::new(&text, *dir));
+                        self.needle = Some(Needle::smart_case(&text, *dir));
                         self.results = ResultManager::default();
                         self.capture.on_event(search::Event::Text(text));
                         HandleEvent::Handled
