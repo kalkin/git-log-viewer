@@ -28,6 +28,7 @@ tinyjson = '2'
 unicode-segmentation = '1.7.1'
 unicode-truncate = '0.2.0'
 unicode-width = '0.1.7'
+update-informer = { version = '^0.5.0', default_features = false, features = ["github"]}
 url = '2'
 vte = '0.10.1'
 which = '4'
