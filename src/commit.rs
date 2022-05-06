@@ -121,12 +121,15 @@ impl Commit {
         ];
         candidates.append(branches);
         candidates.append(tags);
-        for text in candidates {
-            if text.contains(needle.text()) {
-                return true;
-            }
+        if *needle.ignore_case() {
+            let needle_lowercase = needle.text();
+            candidates
+                .iter()
+                .map(|x| x.to_lowercase())
+                .any(|x| x.contains(needle_lowercase))
+        } else {
+            candidates.iter().any(|x| x.contains(needle.text()))
         }
-        false
     }
 }
 

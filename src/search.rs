@@ -79,10 +79,13 @@ fn highlight_search(
 }
 
 fn search_styled_content(sc: &StyledContent<String>, state: &Needle) -> Vec<TextMatch> {
-    let haystack = sc.content();
-    let needle = state.text();
+    let (haystack, needle) = if *state.ignore_case() {
+        (sc.content().to_lowercase(), state.text().to_lowercase())
+    } else {
+        (sc.content().to_string(), state.text().clone())
+    };
     let mut result = Vec::new();
-    let indices = haystack.match_indices(needle);
+    let indices = haystack.match_indices(&needle);
     for (i, s) in indices {
         result.push(TextMatch {
             start: i,
