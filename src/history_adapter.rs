@@ -215,11 +215,15 @@ impl HistoryAdapter {
             let entry = self.get_data(result);
             let entry_level: usize = entry.level().try_into().expect("usize");
             if last_level - 1 != (entry_level) {
+                if entry_level != level {
+                    log::error!("Failed unfold_up_to");
+                    return 0;
+                }
                 assert_eq!(entry_level, level);
                 result += 1;
                 if entry.is_foldable() {
                     if entry.is_folded() {
-                        self.toggle_folding(result);
+                        self.toggle_folding(result - 1);
                     }
                 } else {
                     log::warn!("Error during converting a SearchResult to HistoryAdapter index");
