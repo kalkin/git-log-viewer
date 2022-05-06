@@ -107,7 +107,9 @@ impl Commit {
     }
 
     pub fn matches(&self, needle: &Needle) -> bool {
-        let candidates = vec![
+        let branches = &mut self.branches.iter().map(|v| &v.0).collect::<Vec<_>>();
+        let tags = &mut self.tags.iter().map(|v| &v.0).collect::<Vec<_>>();
+        let mut candidates = vec![
             self.author_name(),
             self.short_id(),
             &self.id().0,
@@ -117,6 +119,8 @@ impl Commit {
             self.committer_email(),
             &self.subject,
         ];
+        candidates.append(branches);
+        candidates.append(tags);
         for text in candidates {
             if text.contains(needle.text()) {
                 return true;
