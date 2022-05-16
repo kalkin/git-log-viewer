@@ -30,7 +30,7 @@ unicode-truncate = '0.2.0'
 unicode-width = '0.1.7'
 update-informer = { version = '^0.5.0', default_features = false, features = ["github"]}
 url = '2'
-vte = '0.10.1'
+vte = { version = '0.10.1', default_features = false }
 which = '4'
 
 [dependencies.clap]
