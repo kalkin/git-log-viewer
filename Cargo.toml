@@ -44,4 +44,4 @@ default-features = false
 features = ['colors', 'stderr']
 
 [dev-dependencies]
-lipsum = '^0.8.0'
+lipsum = '^0.8.2'
