@@ -112,10 +112,7 @@ impl<T> Drawable for ListWidget<T> {
     fn on_event(&mut self, event: Event) -> HandleEvent {
         match self.search_input.on_event(event) {
             HandleEvent::Handled => HandleEvent::Handled,
-            HandleEvent::Ignored => match self.paging.on_event(event) {
-                HandleEvent::Handled => HandleEvent::Handled,
-                HandleEvent::Ignored => HandleEvent::Ignored,
-            },
+            HandleEvent::Ignored => self.paging.on_event(event),
         }
     }
 }
