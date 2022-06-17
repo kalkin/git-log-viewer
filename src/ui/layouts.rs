@@ -41,7 +41,7 @@ where
     Main: Drawable + Selectable<T>,
     Aside: DetailsWidget<T>,
 {
-    pub fn new(main: Main, aside: Aside) -> Self {
+    pub const fn new(main: Main, aside: Aside) -> Self {
         Self {
             main,
             aside,

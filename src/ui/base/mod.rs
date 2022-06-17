@@ -59,7 +59,7 @@ pub struct StyledLine<D: std::fmt::Display> {
 }
 
 impl<D: std::fmt::Display> StyledLine<D> {
-    pub fn empty() -> Self {
+    pub const fn empty() -> Self {
         Self { content: vec![] }
     }
 }
