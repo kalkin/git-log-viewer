@@ -39,7 +39,7 @@ default-features = false
 features = ['cargo', 'derive', 'std']
 
 [dependencies.simple_logger]
-version = '^2.1.0'
+version = '^2.2.0'
 default-features = false
 features = ['colors', 'stderr']
 
