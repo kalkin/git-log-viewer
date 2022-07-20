@@ -31,7 +31,6 @@ use git_wrapper::Repository;
 
 use history_adapter::HistoryAdapter;
 use history_entry::HistoryEntry;
-use update_informer::{registry, Check};
 
 use crate::detail::DiffView;
 use crate::history_table::TableWidget;
@@ -88,7 +87,9 @@ fn glv() -> Result<(), PosixError> {
 
     log::info!("Log Level is set to {}", log::max_level());
 
+    #[cfg(feature = "update-informer")]
     {
+        use update_informer::{registry, Check};
         let informer =
             update_informer::new(registry::GitHub, "kalkin/glv", env!("CARGO_PKG_VERSION"));
         if let Ok(Some(version)) = informer.check_version() {
