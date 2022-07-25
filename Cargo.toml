@@ -33,7 +33,7 @@ vte = { version = '0.11.0', default_features = false }
 which = '4'
 
 [dependencies.clap]
-version = '^3.2.14'
+version = '^3.2.15'
 default-features = false
 features = ['cargo', 'derive', 'std']
 
