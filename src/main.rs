@@ -175,7 +175,7 @@ fn run_ui(
     loop {
         match rx.try_recv() {
             Ok(event) => {
-                if drawable.on_event(event) == HandleEvent::Ignored {
+                if drawable.on_event(&event) == HandleEvent::Ignored {
                     match event {
                         Event::Resize(cols, rows) => {
                             area = Area::new(

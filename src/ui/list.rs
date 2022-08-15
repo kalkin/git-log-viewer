@@ -109,7 +109,7 @@ impl<T> Drawable for ListWidget<T> {
         result
     }
 
-    fn on_event(&mut self, event: Event) -> HandleEvent {
+    fn on_event(&mut self, event: &Event) -> HandleEvent {
         match self.search_input.on_event(event) {
             HandleEvent::Handled => HandleEvent::Handled,
             HandleEvent::Ignored => self.paging.on_event(event),
@@ -185,7 +185,7 @@ mod test_list_widget {
             state: KeyEventState::NONE,
         });
 
-        assert_eq!(pager.on_event(event), HandleEvent::Handled);
+        assert_eq!(pager.on_event(&event), HandleEvent::Handled);
     }
 }
 #[cfg(test)]

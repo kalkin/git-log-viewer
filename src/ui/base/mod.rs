@@ -67,7 +67,7 @@ pub type StyledArea<D> = Vec<StyledLine<D>>;
 
 pub trait Drawable {
     fn render(&mut self, area: &Area) -> StyledArea<String>;
-    fn on_event(&mut self, event: Event) -> HandleEvent;
+    fn on_event(&mut self, event: &Event) -> HandleEvent;
 }
 
 pub trait Selectable<T> {

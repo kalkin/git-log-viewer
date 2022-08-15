@@ -161,7 +161,7 @@ impl Paging {
         }
     }
 
-    pub fn on_event(&mut self, event: Event) -> HandleEvent {
+    pub fn on_event(&mut self, event: &Event) -> HandleEvent {
         match event {
             Event::Key(KeyEvent {
                 code: KeyCode::Up,
@@ -328,6 +328,6 @@ mod test_paging {
             state: KeyEventState::NONE,
         });
 
-        assert_eq!(pager.on_event(event), HandleEvent::Handled);
+        assert_eq!(pager.on_event(&event), HandleEvent::Handled);
     }
 }

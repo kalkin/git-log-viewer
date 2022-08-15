@@ -95,7 +95,7 @@ where
         }
     }
 
-    fn on_event(&mut self, event: Event) -> HandleEvent {
+    fn on_event(&mut self, event: &Event) -> HandleEvent {
         if self.aside_visible {
             match self.aside.on_event(event) {
                 HandleEvent::Handled => HandleEvent::Handled,

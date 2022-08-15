@@ -150,7 +150,7 @@ impl SearchWidget {
         }
     }
 
-    pub fn on_event(&mut self, event: Event) -> HandleEvent {
+    pub fn on_event(&mut self, event: &Event) -> HandleEvent {
         match self.capture.state() {
             State::Hidden => self.hiden_state_on_event(event),
             State::CaptureNeedle(dir) => match self.input.on_event(event) {
@@ -190,7 +190,7 @@ impl SearchWidget {
         }
     }
 
-    fn search_on_event(&mut self, event: Event) -> HandleEvent {
+    fn search_on_event(&mut self, event: &Event) -> HandleEvent {
         match event {
             Event::Key(KeyEvent {
                 code: KeyCode::Esc,
@@ -245,7 +245,7 @@ impl SearchWidget {
         }
     }
 
-    fn hiden_state_on_event(&mut self, event: Event) -> HandleEvent {
+    fn hiden_state_on_event(&mut self, event: &Event) -> HandleEvent {
         match event {
             Event::Key(KeyEvent {
                 code: KeyCode::Char('/'),

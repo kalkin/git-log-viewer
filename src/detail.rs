@@ -51,7 +51,7 @@ impl Drawable for DiffView {
         self.0.render(area)
     }
 
-    fn on_event(&mut self, event: Event) -> HandleEvent {
+    fn on_event(&mut self, event: &Event) -> HandleEvent {
         self.0.on_event(event)
     }
 }

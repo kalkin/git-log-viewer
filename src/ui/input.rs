@@ -37,14 +37,14 @@ impl Drawable for InputLine {
         }]
     }
 
-    fn on_event(&mut self, event: Event) -> HandleEvent {
+    fn on_event(&mut self, event: &Event) -> HandleEvent {
         match event {
             Event::Key(KeyEvent {
                 code: KeyCode::Char(c),
                 modifiers: KeyModifiers::NONE | KeyModifiers::SHIFT,
                 ..
             }) => {
-                self.0.push(c);
+                self.0.push(*c);
                 HandleEvent::Handled
             }
             Event::Key(KeyEvent {
@@ -96,7 +96,7 @@ mod test_input_widget {
         let input = &mut InputLine::default();
         handle_event(
             input,
-            Event::Key(KeyEvent {
+            &Event::Key(KeyEvent {
                 code: KeyCode::Char('C'),
                 modifiers: KeyModifiers::SHIFT,
                 kind: KeyEventKind::Press,
@@ -110,43 +110,47 @@ mod test_input_widget {
         let input = &mut InputLine::default();
         handle_event(
             input,
-            Event::Key(KeyEvent {
+            &Event::Key(KeyEvent {
                 code: KeyCode::Backspace,
                 modifiers: KeyModifiers::NONE,
-                ..
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
             }),
         );
         assert_eq!(input.text(), "");
         handle_event(
             input,
-            Event::Key(KeyEvent {
+            &Event::Key(KeyEvent {
                 code: KeyCode::Char('c'),
                 modifiers: KeyModifiers::NONE,
-                ..
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
             }),
         );
         assert_eq!(input.text(), "c");
         handle_event(
             input,
-            Event::Key(KeyEvent {
+            &Event::Key(KeyEvent {
                 code: KeyCode::Char('y'),
                 modifiers: KeyModifiers::NONE,
-                ..
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
             }),
         );
         assert_eq!(input.text(), "cy");
         handle_event(
             input,
-            Event::Key(KeyEvent {
+            &Event::Key(KeyEvent {
                 code: KeyCode::Backspace,
                 modifiers: KeyModifiers::NONE,
-                ..
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
             }),
         );
         assert_eq!(input.text(), "c");
     }
 
-    fn handle_event(input: &mut InputLine, event: Event) {
+    fn handle_event(input: &mut InputLine, event: &Event) {
         assert_eq!(input.on_event(event), HandleEvent::Handled);
     }
 }
