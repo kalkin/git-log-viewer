@@ -19,10 +19,10 @@
 //! expandable via plugins. The application can resolve the default merge titles
 //! done by using GitHub or Bitbucket to the actual pull request names.
 
-use std::io;
 use std::path::PathBuf;
 use std::sync::mpsc;
 use std::thread;
+use std::{env, io};
 
 use clap::Parser;
 use clap_git_options::GitOptions;
@@ -100,8 +100,7 @@ fn glv() -> Result<(), PosixError> {
 
     let repo = Repository::try_from(&args.git).map_err(PosixError::from)?;
 
-    let paths = args.paths;
-
+    let paths = normalize_paths(&repo, &args);
     log::debug!(
         "Initialising HistoryAdapter with revision {} & paths {:?})",
         args.revision,
@@ -109,6 +108,32 @@ fn glv() -> Result<(), PosixError> {
     );
     let history_adapter = HistoryAdapter::new(repo.clone(), &args.revision, paths.clone())?;
     run_ui(history_adapter, repo, paths).map_err(Into::into)
+}
+
+fn normalize_paths(repo: &Repository, args: &Args) -> Vec<PathBuf> {
+    match (repo.work_tree(), env::current_dir()) {
+        (Some(work_tree), Ok(cwd)) => {
+            if let Ok(prefix) = cwd.strip_prefix(work_tree) {
+                // glv was executed inside the work_tree
+                args.paths
+                    .iter()
+                    .map(|p| {
+                        if let Ok(f) = p.strip_prefix("/") {
+                            f.to_path_buf()
+                        } else {
+                            let mut f = prefix.to_path_buf();
+                            f.push(p);
+                            f
+                        }
+                    })
+                    .collect()
+            } else {
+                // glv is executed outside the work tree
+                args.paths.clone()
+            }
+        }
+        (_, _) => args.paths.clone(),
+    }
 }
 
 #[allow(clippy::exit)]
