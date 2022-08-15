@@ -166,6 +166,7 @@ impl SearchWidget {
                     Event::Key(KeyEvent {
                         code: KeyCode::Enter,
                         modifiers: KeyModifiers::NONE,
+                        ..
                     }) => {
                         let text = self.input.text().clone();
                         self.needle = Some(Needle::smart_case(&text, *dir));
@@ -176,6 +177,7 @@ impl SearchWidget {
                     Event::Key(KeyEvent {
                         code: KeyCode::Esc,
                         modifiers: KeyModifiers::NONE,
+                        ..
                     }) => {
                         self.capture.on_event(search::Event::Cancel);
                         self.reset();
@@ -193,6 +195,7 @@ impl SearchWidget {
             Event::Key(KeyEvent {
                 code: KeyCode::Esc,
                 modifiers: KeyModifiers::NONE,
+                ..
             }) => {
                 self.capture.on_event(search::Event::Cancel);
                 self.reset();
@@ -201,6 +204,7 @@ impl SearchWidget {
             Event::Key(KeyEvent {
                 code: KeyCode::Char('n'),
                 modifiers: KeyModifiers::NONE,
+                ..
             }) => {
                 self.results.next();
                 self.goto = self.results.selected();
@@ -209,6 +213,7 @@ impl SearchWidget {
             Event::Key(KeyEvent {
                 code: KeyCode::Char('N'),
                 modifiers: KeyModifiers::SHIFT,
+                ..
             }) => {
                 self.results.prev();
                 self.goto = self.results.selected();
@@ -217,6 +222,7 @@ impl SearchWidget {
             Event::Key(KeyEvent {
                 code: KeyCode::Char('/'),
                 modifiers: KeyModifiers::NONE,
+                ..
             }) => {
                 self.direction = Direction::Forward;
                 self.capture
@@ -227,6 +233,7 @@ impl SearchWidget {
             Event::Key(KeyEvent {
                 code: KeyCode::Char('?'),
                 modifiers: KeyModifiers::NONE,
+                ..
             }) => {
                 self.direction = Direction::Backward;
                 self.capture
@@ -243,6 +250,7 @@ impl SearchWidget {
             Event::Key(KeyEvent {
                 code: KeyCode::Char('/'),
                 modifiers: KeyModifiers::NONE,
+                ..
             }) => {
                 self.capture
                     .on_event(search::Event::Activate(Direction::Forward));
@@ -252,6 +260,7 @@ impl SearchWidget {
             Event::Key(KeyEvent {
                 code: KeyCode::Char('?'),
                 modifiers: KeyModifiers::NONE,
+                ..
             }) => {
                 self.direction = Direction::Backward;
                 self.capture

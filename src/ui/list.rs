@@ -119,7 +119,7 @@ impl<T> Drawable for ListWidget<T> {
 
 #[cfg(test)]
 mod test_list_widget {
-    use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+    use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 
     use crate::ui::base::{Area, Drawable, HandleEvent, ListWidget};
     use crate::ui::list::example_content;
@@ -181,6 +181,8 @@ mod test_list_widget {
         let event = Event::Key(KeyEvent {
             code,
             modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: KeyEventState::NONE,
         });
 
         assert_eq!(pager.on_event(event), HandleEvent::Handled);

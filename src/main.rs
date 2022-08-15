@@ -186,6 +186,7 @@ fn run_ui(
                         Event::Key(KeyEvent {
                             code: KeyCode::Char('q'),
                             modifiers: KeyModifiers::NONE,
+                            ..
                         }) => {
                             break;
                         }

@@ -187,6 +187,7 @@ impl Drawable for TableWidget {
                     Event::Key(KeyEvent {
                         code: KeyCode::Char(' '),
                         modifiers: KeyModifiers::NONE,
+                        ..
                     }) => {
                         self.default_action();
                         HandleEvent::Handled

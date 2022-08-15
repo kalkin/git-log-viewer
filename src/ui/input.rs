@@ -42,6 +42,7 @@ impl Drawable for InputLine {
             Event::Key(KeyEvent {
                 code: KeyCode::Char(c),
                 modifiers: KeyModifiers::NONE | KeyModifiers::SHIFT,
+                ..
             }) => {
                 self.0.push(c);
                 HandleEvent::Handled
@@ -49,6 +50,7 @@ impl Drawable for InputLine {
             Event::Key(KeyEvent {
                 code: KeyCode::Backspace,
                 modifiers: KeyModifiers::NONE,
+                ..
             }) => {
                 let cur = UnicodeWidthStr::width(self.0.as_str());
                 if cur > 0 {
@@ -73,16 +75,18 @@ impl Default for InputLine {
 mod test_input_widget {
     use crate::ui::base::{Drawable, HandleEvent};
     use crate::ui::input::InputLine;
-    use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+    use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 
     #[test]
     fn small_characters() {
         let input = &mut InputLine::default();
         handle_event(
             input,
-            Event::Key(KeyEvent {
+            &Event::Key(KeyEvent {
                 code: KeyCode::Char('c'),
                 modifiers: KeyModifiers::NONE,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
             }),
         );
         assert_eq!(input.text(), "c");
@@ -95,6 +99,8 @@ mod test_input_widget {
             Event::Key(KeyEvent {
                 code: KeyCode::Char('C'),
                 modifiers: KeyModifiers::SHIFT,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
             }),
         );
         assert_eq!(input.text(), "C");
@@ -107,6 +113,7 @@ mod test_input_widget {
             Event::Key(KeyEvent {
                 code: KeyCode::Backspace,
                 modifiers: KeyModifiers::NONE,
+                ..
             }),
         );
         assert_eq!(input.text(), "");
@@ -115,6 +122,7 @@ mod test_input_widget {
             Event::Key(KeyEvent {
                 code: KeyCode::Char('c'),
                 modifiers: KeyModifiers::NONE,
+                ..
             }),
         );
         assert_eq!(input.text(), "c");
@@ -123,6 +131,7 @@ mod test_input_widget {
             Event::Key(KeyEvent {
                 code: KeyCode::Char('y'),
                 modifiers: KeyModifiers::NONE,
+                ..
             }),
         );
         assert_eq!(input.text(), "cy");
@@ -131,6 +140,7 @@ mod test_input_widget {
             Event::Key(KeyEvent {
                 code: KeyCode::Backspace,
                 modifiers: KeyModifiers::NONE,
+                ..
             }),
         );
         assert_eq!(input.text(), "c");

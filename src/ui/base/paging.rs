@@ -166,6 +166,7 @@ impl Paging {
             Event::Key(KeyEvent {
                 code: KeyCode::Up,
                 modifiers: KeyModifiers::NONE,
+                ..
             }) => {
                 self.select_prev();
                 HandleEvent::Handled
@@ -173,6 +174,7 @@ impl Paging {
             Event::Key(KeyEvent {
                 code: KeyCode::Down,
                 modifiers: KeyModifiers::NONE,
+                ..
             }) => {
                 self.select_next();
                 HandleEvent::Handled
@@ -181,6 +183,7 @@ impl Paging {
             Event::Key(KeyEvent {
                 code: KeyCode::PageDown,
                 modifiers: KeyModifiers::NONE,
+                ..
             }) => {
                 self.next_page();
                 HandleEvent::Handled
@@ -188,6 +191,7 @@ impl Paging {
             Event::Key(KeyEvent {
                 code: KeyCode::PageUp,
                 modifiers: KeyModifiers::NONE,
+                ..
             }) => {
                 self.prev_page();
                 HandleEvent::Handled
@@ -201,7 +205,7 @@ impl Paging {
 mod test_paging {
     use crate::ui::base::paging::Paging;
     use crate::ui::base::HandleEvent;
-    use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+    use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 
     #[test]
     fn next_page() {
@@ -320,6 +324,8 @@ mod test_paging {
         let event = Event::Key(KeyEvent {
             code,
             modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: KeyEventState::NONE,
         });
 
         assert_eq!(pager.on_event(event), HandleEvent::Handled);

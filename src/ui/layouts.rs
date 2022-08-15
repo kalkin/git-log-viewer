@@ -103,6 +103,7 @@ where
                     Event::Key(KeyEvent {
                         code: KeyCode::Char('q'),
                         modifiers: KeyModifiers::NONE,
+                        ..
                     }) => {
                         self.aside_visible = false;
                         HandleEvent::Handled
@@ -117,6 +118,7 @@ where
                     Event::Key(KeyEvent {
                         code: KeyCode::Enter,
                         modifiers: KeyModifiers::NONE,
+                        ..
                     }) => {
                         self.aside_visible = true;
                         self.aside.set_content(self.main.selected_item());
