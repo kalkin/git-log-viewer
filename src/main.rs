@@ -24,7 +24,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::{env, io};
 
-use clap::Parser;
+use clap::{Parser, ValueHint};
 use clap_git_options::GitOptions;
 use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyModifiers};
 
@@ -239,7 +239,7 @@ struct Args {
     revision: String,
 
     /// Show only commits touching the paths
-    #[clap(last = true)]
+    #[clap(last = true, value_hint=ValueHint::AnyPath)]
     paths: Vec<PathBuf>,
 
     /// Log level up to -ddd
