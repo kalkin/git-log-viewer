@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 use crossterm::event::Event;
@@ -33,10 +34,10 @@ use crate::ui::base::data::StyledAreaAdapter;
 use crate::ui::base::{Area, Drawable, HandleEvent, ListWidget, StyledArea, StyledLine};
 use crate::ui::layouts::DetailsWidget;
 
-pub struct DiffView(ListWidget<String>, Vec<String>, Repository);
+pub struct DiffView(ListWidget<String>, Vec<PathBuf>, Repository);
 
 impl DiffView {
-    pub fn new(repo: Repository, paths: Vec<String>) -> Self {
+    pub fn new(repo: Repository, paths: Vec<PathBuf>) -> Self {
         let adapter = StyledAreaAdapter {
             content: vec![],
             thread: None,
@@ -119,7 +120,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
             )],
         });
         data.push(StyledLine::empty());
-        for line in git_diff(&self.2, content.commit(), self.1.clone()) {
+        for line in git_diff(&self.2, content.commit(), self.1.as_ref()) {
             data.push(line);
         }
         let adapter = StyledAreaAdapter {
@@ -130,7 +131,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
     }
 }
 
-fn git_diff(repo: &Repository, commit: &Commit, paths: Vec<String>) -> Vec<StyledLine<String>> {
+fn git_diff(repo: &Repository, commit: &Commit, paths: &[PathBuf]) -> Vec<StyledLine<String>> {
     let empty_tree = Oid("4b825dc642cb6eb9a060e54bf8d69288fbee4904".to_owned());
     let bellow = commit.bellow().as_ref().unwrap_or(&empty_tree);
     let rev = format!("{}..{}", bellow.0, commit.id().0);
@@ -146,7 +147,7 @@ fn git_diff(repo: &Repository, commit: &Commit, paths: Vec<String>) -> Vec<Style
     ]);
     if !paths.is_empty() {
         cmd.arg("--");
-        cmd.args(&paths);
+        cmd.args(paths);
     }
 
     if which::which("delta").is_ok() {

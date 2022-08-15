@@ -21,7 +21,9 @@ use url::Url;
 use getset::Getters;
 use git_wrapper::Repository;
 use posix_errors::PosixError;
+use std::ffi::OsStr;
 use std::fmt::{Debug, Display, Formatter};
+use std::path::PathBuf;
 
 macro_rules! next_string {
     ($split:expr) => {
@@ -237,7 +239,7 @@ impl Commit {
 pub fn history_length(
     repo: &Repository,
     rev_range: &str,
-    paths: &[String],
+    paths: &[PathBuf],
 ) -> Result<usize, PosixError> {
     let mut git = repo.git();
     git.args(vec!["rev-list", "--first-parent", "--count", rev_range]);
@@ -264,10 +266,10 @@ pub fn history_length(
     Err(err)
 }
 
-pub fn commits_for_range<T: AsRef<str>>(
+pub fn commits_for_range(
     repo: &Repository,
     rev_range: &str,
-    paths: &[T],
+    paths: &[PathBuf],
     skip: Option<usize>,
     max: Option<usize>,
 ) -> Vec<Commit> {
@@ -292,7 +294,7 @@ pub fn commits_for_range<T: AsRef<str>>(
     if !paths.is_empty() {
         cmd.arg("--");
         for p in paths {
-            cmd.arg(p.as_ref());
+            cmd.arg(<PathBuf as AsRef<OsStr>>::as_ref(p));
         }
     }
 
@@ -320,7 +322,7 @@ pub fn commits_for_range<T: AsRef<str>>(
 }
 
 #[must_use]
-pub fn child_history(repo: &Repository, commit: &Commit, paths: &[String]) -> Vec<Commit> {
+pub fn child_history(repo: &Repository, commit: &Commit, paths: &[PathBuf]) -> Vec<Commit> {
     let bellow = commit.bellow.as_ref().expect("Expected merge commit");
     let first_child = commit.children.get(0).expect("Expected merge commit");
     let end = repo
@@ -403,13 +405,15 @@ pub fn parse_remote_url(input: &str) -> Option<Url> {
 
 #[cfg(test)]
 mod test {
+    use std::path::PathBuf;
+
     use crate::commit::commits_for_range;
     use git_wrapper::Repository;
 
     #[test]
     fn initial_commit() {
         let repo = Repository::default().unwrap();
-        let paths: &[&str] = &[];
+        let paths: &[PathBuf] = &[];
         let result = commits_for_range(&repo, "a17989470af", paths, None, None);
         assert_eq!(result.len(), 1);
         let commit = &result[0];

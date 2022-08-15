@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender};
 
 use git_stree::{SubtreeConfig, Subtrees};
@@ -42,7 +43,7 @@ use std::thread::JoinHandle;
 pub struct HistoryAdapter {
     history: Vec<HistoryEntry>,
     length: usize,
-    paths: Vec<String>,
+    paths: Vec<PathBuf>,
     remotes: Vec<Remote>,
     range: String,
     repo: Repository,
@@ -167,7 +168,7 @@ impl HistoryAdapter {
     /// # Errors
     ///
     /// Will return an error if git `working_dir` does not exist or git executable is missing
-    pub fn new(repo: Repository, range: &str, paths: Vec<String>) -> Result<Self, PosixError> {
+    pub fn new(repo: Repository, range: &str, paths: Vec<PathBuf>) -> Result<Self, PosixError> {
         let remotes: Vec<Remote>;
         let forge_url: Option<Url>;
         if let Some(hash_map) = repo.remotes() {
@@ -353,7 +354,8 @@ impl HistoryAdapter {
         let mut tmp: Vec<HistoryEntry> = vec![];
         let selected = &self.history[i];
         if selected.is_folded() {
-            let children: Vec<Commit> = child_history(&self.repo, selected.commit(), &self.paths);
+            let children: Vec<Commit> =
+                child_history(&self.repo, selected.commit(), self.paths.as_ref());
             let mut above_commit = Some(selected.commit());
             for t in children {
                 if !self.subtree_modules.is_empty() {
@@ -531,7 +533,7 @@ impl HistoryAdapter {
         commits: &[Commit],
         search_path: &[usize],
         repo: &Repository,
-        paths: &[String],
+        paths: &[PathBuf],
     ) -> KeepGoing {
         let mut seen = 0;
         let range = {

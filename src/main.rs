@@ -20,6 +20,7 @@
 //! done by using GitHub or Bitbucket to the actual pull request names.
 
 use std::io;
+use std::path::PathBuf;
 use std::sync::mpsc;
 use std::thread;
 
@@ -127,7 +128,7 @@ fn main() {
 fn run_ui(
     history_adapter: HistoryAdapter,
     repo: Repository,
-    paths: Vec<String>,
+    paths: Vec<PathBuf>,
 ) -> Result<(), ErrorKind> {
     let mut area = new_area();
     let (tx, rx) = mpsc::channel::<Event>();
@@ -214,7 +215,7 @@ struct Args {
 
     /// Show only commits touching the paths
     #[clap(last = true)]
-    paths: Vec<String>,
+    paths: Vec<PathBuf>,
 
     /// Log level up to -ddd
     #[clap(short, long, parse(from_occurrences))]
@@ -224,7 +225,7 @@ struct Args {
 fn build_drawable(
     repo: Repository,
     history_adapter: HistoryAdapter,
-    paths: Vec<String>,
+    paths: Vec<PathBuf>,
 ) -> SplitLayout<TableWidget, DiffView, HistoryEntry> {
     let history_list = { TableWidget::new(history_adapter) };
     let diff = DiffView::new(repo, paths);
