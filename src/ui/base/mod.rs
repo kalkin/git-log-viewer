@@ -125,7 +125,7 @@ pub fn render(lines: &StyledArea<String>, area: &Area) -> Result<()> {
         for x in line.content.iter().cloned().map(PrintStyledContent) {
             queue!(stdout, x)?;
         }
-        queue!(stdout, MoveDown(1), MoveToColumn(1))?;
+        queue!(stdout, MoveDown(1), MoveToColumn(0))?;
     }
 
     stdout.flush()?;
