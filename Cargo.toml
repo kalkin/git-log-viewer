@@ -10,7 +10,6 @@ repository = 'https://github.com/kalkin/git-log-viewer'
 version = '3.0.3'
 
 [dependencies]
-clap-git-options = { version = "0.1.0", features = [ "git-wrapper" ] }
 crossterm = '^0.25.0'
 curl = '0.4.*'
 directories = '^4.0.0'

@@ -26,7 +26,6 @@ use std::thread;
 use std::{env, io};
 
 use clap::{Parser, ValueHint};
-use clap_git_options::GitOptions;
 use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyModifiers};
 
 use git_wrapper::Repository;
@@ -103,7 +102,8 @@ fn glv() -> Result<(), PosixError> {
         }
     }
 
-    let repo = Repository::try_from(&args.git).map_err(PosixError::from)?;
+    let repo =
+        Repository::from_args(args.change_dir.as_deref(), None, None).map_err(PosixError::from)?;
 
     let (revisions, paths): (Vec<OsString>, Vec<PathBuf>) =
         parse_rev_paths(&repo, args.revision, &args.paths)?;
@@ -293,8 +293,9 @@ fn run_ui(
     dont_collapse_args_in_usage = true
 )]
 struct Args {
-    #[clap(flatten)]
-    git: GitOptions,
+    /// Run as if was started in <path>
+    #[clap(short = 'C', takes_value = true, value_hint=ValueHint::DirPath)]
+    pub change_dir: Option<String>,
 
     /// Branch, tag or commit id
     #[clap(default_value = "HEAD")]
