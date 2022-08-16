@@ -354,7 +354,6 @@ impl HistoryEntry {
                 self.render_name(),
                 separator.clone(),
                 self.render_icon(),
-                separator.clone(),
                 self.render_graph(),
             ],
         };
