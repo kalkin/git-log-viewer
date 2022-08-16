@@ -199,11 +199,14 @@ pub fn shorten_line(line: StyledLine<String>, width: usize) -> StyledLine<String
             }
             Ordering::Greater => {
                 use unicode_truncate::UnicodeTruncateStr;
-                let size = width - i;
+                let size = width - i - 1;
                 let (text, _) = styled_content.content().unicode_truncate(size);
                 let style = *styled_content.style();
                 let content = StyledContent::new(style, text.to_owned());
                 result.content.push(content);
+                result
+                    .content
+                    .push(StyledContent::new(style, "…".to_owned()));
                 break;
             }
         }
