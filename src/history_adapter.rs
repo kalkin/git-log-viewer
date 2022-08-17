@@ -184,6 +184,9 @@ impl HistoryAdapter {
         log::debug!("Forge url {:?}", forge_url);
 
         let length = history_length(&repo, range, &paths)?;
+        if length == 0 {
+            return Err(PosixError::new(1, "No commits found".to_owned()));
+        }
         let subtrees = Subtrees::from_repo(repo.clone()).expect("Read subtree config");
         let subtree_modules = subtrees.all()?;
         let subtree_thread = SubtreeThread::new(subtrees);
