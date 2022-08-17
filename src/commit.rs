@@ -387,6 +387,8 @@ mod test {
     use crate::commit::commits_for_range;
     use git_wrapper::Repository;
 
+    use super::history_length;
+
     #[test]
     fn initial_commit() {
         let repo = Repository::default().unwrap();
@@ -396,5 +398,62 @@ mod test {
         let commit = &result[0];
         assert_eq!(commit.parents.len(), 0);
         assert!(!commit.is_merge);
+    }
+
+    #[test]
+    fn history_length_calc() {
+        let repo = Repository::default().unwrap();
+        let paths: &[PathBuf] = &[];
+        // Kind::IncludeReachable
+        {
+            let spec = &vec!["33f91157b4"];
+            let actual = history_length(&repo, spec, paths).unwrap();
+            assert_eq!(actual, 4488, "Length of {:?}", spec);
+        }
+
+        // Kind::ExcludeReachable
+        {
+            let spec = &vec!["^33f91157b4"];
+            let actual = history_length(&repo, spec, paths).unwrap();
+            assert_eq!(actual, 0, "Length of {:?}", spec);
+        }
+
+        // Kind::Range
+        {
+            let spec = &vec!["HEAD~20..HEAD"];
+            let actual = history_length(&repo, spec, paths).unwrap();
+            assert_eq!(actual, 20, "Length of {:?}", spec);
+        }
+
+        // Kind::Merge
+        {
+            let spec = &vec!["HEAD~20...HEAD"];
+            let actual = history_length(&repo, spec, paths).unwrap();
+            assert_eq!(actual, 20, "Length of {:?}", spec);
+        }
+        // Kind::IncludeOnlyParents
+        {
+            let spec = &vec!["33f91157b4^@"];
+            let actual = history_length(&repo, spec, paths).unwrap();
+            assert_eq!(actual, 4487, "Length of {:?}", spec);
+        }
+        // Kind::ExcludeParents
+        {
+            let spec = &vec!["33f91157b4^!"];
+            let actual = history_length(&repo, spec, paths).unwrap();
+            assert_eq!(actual, 1, "Length of {:?}", spec);
+        }
+    }
+
+    #[test]
+    fn history_length_calc_path() {
+        let repo = Repository::default().unwrap();
+        let paths: &[PathBuf] = &[PathBuf::from("file-expert/CHANGELOG.md")];
+        // Kind::IncludeReachable
+        {
+            let spec = &vec!["33f91157b4"];
+            let actual = history_length(&repo, spec, paths).unwrap();
+            assert_eq!(actual, 13, "Length of {:?}", spec);
+        }
     }
 }
