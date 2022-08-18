@@ -245,14 +245,10 @@ where
     S: AsRef<OsStr>,
 {
     let mut git = repo.git();
-    git.args(vec!["rev-list", "--first-parent", "--count"]);
-    git.args(rev_range);
-    if !paths.is_empty() {
-        git.arg("--");
-        for p in paths {
-            git.arg(p);
-        }
-    }
+    git.args(vec!["rev-list", "--first-parent", "--count"])
+        .args(rev_range)
+        .arg("--")
+        .args(paths);
     let proc = git.output().expect("Failed to run rev-list");
 
     if proc.status.success() {
