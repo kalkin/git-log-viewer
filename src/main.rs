@@ -19,7 +19,7 @@
 //! expandable via plugins. The application can resolve the default merge titles
 //! done by using GitHub or Bitbucket to the actual pull request names.
 
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 use std::path::PathBuf;
 use std::sync::mpsc;
 use std::thread;
@@ -101,22 +101,78 @@ fn glv() -> Result<(), PosixError> {
 
     let repo = Repository::try_from(&args.git).map_err(PosixError::from)?;
 
-    let paths = normalize_paths(&repo, &args);
-    log::debug!(
-        "Initialising HistoryAdapter with revision {:?} & paths {:?})",
-        args.revision,
-        paths
-    );
-    let history_adapter = HistoryAdapter::new(repo.clone(), args.revision, paths.clone())?;
+    let (revisions, paths): (Vec<OsString>, Vec<PathBuf>) =
+        parse_rev_paths(&repo, args.revision, &args.paths)?;
+    log::info!("Revs  {:?}", revisions);
+    log::info!("Paths {:?}", paths);
+    let history_adapter = HistoryAdapter::new(repo.clone(), revisions, paths.clone())?;
     run_ui(history_adapter, repo, paths).map_err(Into::into)
 }
 
-fn normalize_paths(repo: &Repository, args: &Args) -> Vec<PathBuf> {
+#[allow(unused_qualifications)]
+#[allow(clippy::panic_in_result_fn)]
+fn parse_rev_paths<S: AsRef<OsStr> + std::fmt::Debug + std::convert::From<String>>(
+    repo: &Repository,
+    in_rev: Vec<S>,
+    in_paths: &[PathBuf],
+) -> Result<(Vec<S>, Vec<PathBuf>), PosixError>
+where
+    PathBuf: From<S>,
+{
+    assert!(
+        !in_rev.is_empty(),
+        "Revision vec should contain at least 'HEAD'"
+    );
+    let mut revisions = Vec::with_capacity(in_rev.len());
+    if in_paths.is_empty() {
+        // validate if there are revisions or paths
+        let mut paths: Vec<PathBuf> = vec![];
+        let mut parsing_revisions = true;
+        for rev in in_rev {
+            if parsing_revisions && is_valid_rev_spec(repo, &rev) {
+                revisions.push(rev);
+            } else if parsing_revisions {
+                parsing_revisions = false;
+                paths.push(rev.into());
+            } else {
+                paths.push(rev.into());
+            }
+        }
+        let normalized_paths = normalize_paths(repo, &paths);
+        if revisions.is_empty() {
+            revisions.push("HEAD".to_owned().into());
+        }
+        Ok((revisions, normalized_paths))
+    } else {
+        for rev in in_rev {
+            if is_valid_rev_spec(repo, &rev) {
+                revisions.push(rev);
+            } else {
+                return Err(PosixError::new(
+                    1,
+                    format!("Invalid revision spec '{:?}'", rev),
+                ));
+            }
+        }
+        let paths = normalize_paths(repo, in_paths);
+        Ok((revisions, paths))
+    }
+}
+
+fn is_valid_rev_spec<S: AsRef<OsStr>>(repo: &Repository, rev: &S) -> bool {
+    let mut git = repo.git();
+    git.args(&["rev-parse", "-q"]).arg(rev).arg("--");
+    let proc = git.output().expect("Failed to run rev-parse");
+
+    proc.status.success()
+}
+
+fn normalize_paths(repo: &Repository, paths: &[PathBuf]) -> Vec<PathBuf> {
     match (repo.work_tree(), env::current_dir()) {
         (Some(work_tree), Ok(cwd)) => {
             if let Ok(prefix) = cwd.strip_prefix(work_tree) {
                 // glv was executed inside the work_tree
-                args.paths
+                paths
                     .iter()
                     .map(|p| {
                         if let Ok(f) = p.strip_prefix("/") {
@@ -130,10 +186,10 @@ fn normalize_paths(repo: &Repository, args: &Args) -> Vec<PathBuf> {
                     .collect()
             } else {
                 // glv is executed outside the work tree
-                args.paths.clone()
+                paths.to_vec()
             }
         }
-        (_, _) => args.paths.clone(),
+        (_, _) => paths.to_vec(),
     }
 }
 
