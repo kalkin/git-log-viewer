@@ -45,7 +45,7 @@ pub struct HistoryAdapter {
     length: usize,
     paths: Vec<PathBuf>,
     remotes: Vec<Remote>,
-    range: String,
+    range: Vec<String>,
     repo: Repository,
     forge_url: Option<Url>,
     github_thread: GitHubThread,
@@ -168,7 +168,11 @@ impl HistoryAdapter {
     /// # Errors
     ///
     /// Will return an error if git `working_dir` does not exist or git executable is missing
-    pub fn new(repo: Repository, range: &str, paths: Vec<PathBuf>) -> Result<Self, PosixError> {
+    pub fn new(
+        repo: Repository,
+        range: Vec<String>,
+        paths: Vec<PathBuf>,
+    ) -> Result<Self, PosixError> {
         let remotes: Vec<Remote>;
         let forge_url: Option<Url>;
         if let Some(hash_map) = repo.remotes() {
@@ -183,7 +187,7 @@ impl HistoryAdapter {
         }
         log::debug!("Forge url {:?}", forge_url);
 
-        let length = history_length(&repo, range, &paths)?;
+        let length = history_length(&repo, &range, &paths)?;
         if length == 0 {
             return Err(PosixError::new(1, "No commits found".to_owned()));
         }
@@ -199,7 +203,7 @@ impl HistoryAdapter {
             remotes,
             forge_url,
             bb_server_thread,
-            range: range.to_owned(),
+            range,
             repo,
             github_thread: GitHubThread::new(),
             fork_point_thread,
@@ -271,10 +275,9 @@ impl HistoryAdapter {
     // TODO return nothing
     fn fill_up(&mut self, max: usize) -> bool {
         let skip = self.history.len();
-        let range = self.range.as_str();
         let tmp = commits_for_range(
             &self.repo,
-            range,
+            &self.range,
             self.paths.as_ref(),
             Some(skip),
             Some(max),
@@ -592,7 +595,7 @@ mod test {
     #[test]
     #[should_panic]
     fn not_loaded_default_action() {
-        let range = "6be11cb7f9e..df622aa0149";
+        let range = vec!["6be11cb7f9e..df622aa0149".to_owned()];
         let repo = Repository::default().unwrap();
         let mut adapter = HistoryAdapter::new(repo, range, vec![]).unwrap();
         assert_eq!(adapter.history.len(), 0);
@@ -601,7 +604,7 @@ mod test {
 
     #[test]
     fn folding() {
-        let range = "6be11cb7f9e..df622aa0149";
+        let range = vec!["6be11cb7f9e..df622aa0149".to_owned()];
         let repo = Repository::default().unwrap();
         let mut adapter = HistoryAdapter::new(repo, range, vec![]).unwrap();
         assert_eq!(adapter.length, 9);

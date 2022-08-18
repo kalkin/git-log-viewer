@@ -238,11 +238,12 @@ impl Commit {
 /// Returns a [`PosixError`] if `working_dir` does not exist or `rev_range` is invalid.
 pub fn history_length(
     repo: &Repository,
-    rev_range: &str,
+    rev_range: &Vec<String>,
     paths: &[PathBuf],
 ) -> Result<usize, PosixError> {
     let mut git = repo.git();
-    git.args(vec!["rev-list", "--first-parent", "--count", rev_range]);
+    git.args(vec!["rev-list", "--first-parent", "--count"]);
+    git.args(rev_range);
     if !paths.is_empty() {
         git.arg("--");
         for p in paths {
@@ -268,7 +269,7 @@ pub fn history_length(
 
 pub fn commits_for_range(
     repo: &Repository,
-    rev_range: &str,
+    rev_range: &Vec<String>,
     paths: &[PathBuf],
     skip: Option<usize>,
     max: Option<usize>,
@@ -289,7 +290,7 @@ pub fn commits_for_range(
         cmd.arg(&tmp2);
     }
 
-    cmd.arg(rev_range);
+    cmd.args(rev_range);
 
     if !paths.is_empty() {
         cmd.arg("--");
@@ -312,7 +313,7 @@ pub fn commits_for_range(
         return result;
     }
     log::error!(
-        "Failed to find commits for range({}), with skip({:?}) / max({:?}) & path({})",
+        "Failed to find commits for range({:?}), with skip({:?}) / max({:?}) & path({})",
         rev_range,
         skip,
         max,
@@ -339,7 +340,7 @@ pub fn child_history(repo: &Repository, commit: &Commit, paths: &[PathBuf]) -> V
     } else {
         revision = first_child.0.clone();
     }
-    let mut result = commits_for_range(repo, revision.as_str(), paths, None, None);
+    let mut result = commits_for_range(repo, &vec![revision], paths, None, None);
     if result.is_empty() {
         return result;
     }
@@ -414,7 +415,7 @@ mod test {
     fn initial_commit() {
         let repo = Repository::default().unwrap();
         let paths: &[PathBuf] = &[];
-        let result = commits_for_range(&repo, "a17989470af", paths, None, None);
+        let result = commits_for_range(&repo, &vec!["a17989470af".to_owned()], paths, None, None);
         assert_eq!(result.len(), 1);
         let commit = &result[0];
         assert_eq!(commit.children.len(), 0);

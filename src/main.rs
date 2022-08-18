@@ -102,11 +102,11 @@ fn glv() -> Result<(), PosixError> {
 
     let paths = normalize_paths(&repo, &args);
     log::debug!(
-        "Initialising HistoryAdapter with revision {} & paths {:?})",
+        "Initialising HistoryAdapter with revision {:?} & paths {:?})",
         args.revision,
         paths
     );
-    let history_adapter = HistoryAdapter::new(repo.clone(), &args.revision, paths.clone())?;
+    let history_adapter = HistoryAdapter::new(repo.clone(), args.revision, paths.clone())?;
     run_ui(history_adapter, repo, paths).map_err(Into::into)
 }
 
@@ -237,7 +237,7 @@ struct Args {
 
     /// Branch, tag or commit id
     #[clap(default_value = "HEAD")]
-    revision: String,
+    revision: Vec<String>,
 
     /// Show only commits touching the paths
     #[clap(last = true, value_hint=ValueHint::AnyPath)]
@@ -284,7 +284,7 @@ mod parse_args {
 
     #[test]
     fn no_delim_between_ref_and_path() {
-        let args: Result<Args, _> = Parser::try_parse_from(&["glv", "master", "foo/bar"]);
-        assert!(args.is_err(), "Should fail without delimiter '--'");
+        let _args: Args =
+            Parser::try_parse_from(&["glv", "master", "foo/bar"]).expect("Should accept it");
     }
 }
