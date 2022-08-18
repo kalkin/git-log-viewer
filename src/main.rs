@@ -19,6 +19,7 @@
 //! expandable via plugins. The application can resolve the default merge titles
 //! done by using GitHub or Bitbucket to the actual pull request names.
 
+use std::ffi::OsString;
 use std::path::PathBuf;
 use std::sync::mpsc;
 use std::thread;
@@ -237,7 +238,7 @@ struct Args {
 
     /// Branch, tag or commit id
     #[clap(default_value = "HEAD")]
-    revision: Vec<String>,
+    revision: Vec<OsString>,
 
     /// Show only commits touching the paths
     #[clap(last = true, value_hint=ValueHint::AnyPath)]

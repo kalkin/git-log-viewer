@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+use std::ffi::OsString;
 use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender};
 
@@ -45,7 +46,7 @@ pub struct HistoryAdapter {
     length: usize,
     paths: Vec<PathBuf>,
     remotes: Vec<Remote>,
-    range: Vec<String>,
+    range: Vec<OsString>,
     repo: Repository,
     forge_url: Option<Url>,
     github_thread: GitHubThread,
@@ -170,7 +171,7 @@ impl HistoryAdapter {
     /// Will return an error if git `working_dir` does not exist or git executable is missing
     pub fn new(
         repo: Repository,
-        range: Vec<String>,
+        range: Vec<OsString>,
         paths: Vec<PathBuf>,
     ) -> Result<Self, PosixError> {
         let remotes: Vec<Remote>;
@@ -589,13 +590,15 @@ impl HistoryAdapter {
 
 #[cfg(test)]
 mod test {
+    use std::ffi::OsString;
+
     use crate::history_adapter::HistoryAdapter;
     use git_wrapper::Repository;
 
     #[test]
     #[should_panic]
     fn not_loaded_default_action() {
-        let range = vec!["6be11cb7f9e..df622aa0149".to_owned()];
+        let range = vec![OsString::from("6be11cb7f9e..df622aa0149")];
         let repo = Repository::default().unwrap();
         let mut adapter = HistoryAdapter::new(repo, range, vec![]).unwrap();
         assert_eq!(adapter.history.len(), 0);
@@ -604,7 +607,7 @@ mod test {
 
     #[test]
     fn folding() {
-        let range = vec!["6be11cb7f9e..df622aa0149".to_owned()];
+        let range = vec![OsString::from("6be11cb7f9e..df622aa0149")];
         let repo = Repository::default().unwrap();
         let mut adapter = HistoryAdapter::new(repo, range, vec![]).unwrap();
         assert_eq!(adapter.length, 9);

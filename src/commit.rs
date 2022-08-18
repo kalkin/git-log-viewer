@@ -236,11 +236,14 @@ impl Commit {
 /// # Errors
 ///
 /// Returns a [`PosixError`] if `working_dir` does not exist or `rev_range` is invalid.
-pub fn history_length(
+pub fn history_length<S>(
     repo: &Repository,
-    rev_range: &Vec<String>,
+    rev_range: &Vec<S>,
     paths: &[PathBuf],
-) -> Result<usize, PosixError> {
+) -> Result<usize, PosixError>
+where
+    S: AsRef<OsStr>,
+{
     let mut git = repo.git();
     git.args(vec!["rev-list", "--first-parent", "--count"]);
     git.args(rev_range);
@@ -267,13 +270,17 @@ pub fn history_length(
     Err(err)
 }
 
-pub fn commits_for_range(
+#[allow(unused_qualifications)]
+pub fn commits_for_range<S>(
     repo: &Repository,
-    rev_range: &Vec<String>,
+    rev_range: &Vec<S>,
     paths: &[PathBuf],
     skip: Option<usize>,
     max: Option<usize>,
-) -> Vec<Commit> {
+) -> Vec<Commit>
+where
+    S: AsRef<OsStr> + std::fmt::Debug,
+{
     let mut cmd = repo.git();
     cmd.arg("rev-list")
         .args(vec!["--date=human", "--first-parent", REV_FORMAT]);
