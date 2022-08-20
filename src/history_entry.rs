@@ -42,7 +42,8 @@ lazy_static! {
 pub struct HistoryEntry {
     #[getset(get = "pub")]
     commit: Commit,
-    folded: bool,
+    #[getset(get = "pub", set = "pub")]
+    folded: usize,
     #[getset(get_copy = "pub")]
     level: u8,
     remotes: Vec<Remote>,
@@ -85,7 +86,7 @@ impl HistoryEntry {
 
         Self {
             commit,
-            folded: true,
+            folded: 0,
             level,
             remotes,
             subject_text,
@@ -471,13 +472,9 @@ impl HistoryEntry {
         }
     }
 
-    pub fn folded(&mut self, t: bool) {
-        self.folded = t;
-    }
-
     #[must_use]
     pub const fn is_folded(&self) -> bool {
-        self.folded
+        self.folded == 0
     }
 
     #[must_use]

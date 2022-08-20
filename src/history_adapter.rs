@@ -358,12 +358,15 @@ impl HistoryAdapter {
 
     fn toggle_folding(&mut self, i: usize) {
         let pos = i + 1;
-        let mut tmp: Vec<HistoryEntry> = vec![];
         let selected = &self.history[i];
         if selected.is_folded() {
+            let mut tmp: Vec<HistoryEntry> = vec![];
             let children: Vec<Commit> =
                 child_history(&self.repo, selected.commit(), self.paths.as_ref());
+
             let mut above_commit = Some(selected.commit());
+
+            log::debug!("Unfolding entry {}, with #{} children", i, children.len());
             for t in children {
                 if !self.subtree_modules.is_empty() {
                     self.subtree_thread.send(SubtreeChangesRequest {
@@ -405,27 +408,36 @@ impl HistoryAdapter {
                         }
                     }
                 }
+
                 tmp.push(entry);
                 above_commit = Some(tmp.last().expect("a commit").commit());
             }
-        } else {
-            let level = selected.level();
-            while let Some(e) = self.history.get(pos) {
-                if e.level() > level {
-                    self.history.remove(pos);
-                    self.length -= 1;
-                } else {
-                    break;
-                }
-            }
-        }
-        let unfolding = tmp.is_empty();
-        self.history[i].folded(unfolding);
-        if !unfolding {
+
+            self.history[i].set_folded(tmp.len());
             for (j, entry) in tmp.into_iter().enumerate() {
+                log::trace!(
+                    "Inserting index {}, entry {:?}",
+                    j,
+                    self.history[j].commit().subject()
+                );
                 self.history.insert(pos + j, entry);
                 self.length += 1;
             }
+        } else {
+            let f = selected.folded();
+            log::debug!("Folding entry {}, with #{} children", i, f);
+            for j in (pos..(pos + f)).rev() {
+                log::trace!(
+                    "Removing index {}: {:?}",
+                    j,
+                    self.history[j].commit().subject()
+                );
+                if !self.history[j].is_folded() {
+                    self.toggle_folding(j);
+                }
+                self.history.remove(j);
+            }
+            self.history[i].set_folded(0);
         }
     }
 
