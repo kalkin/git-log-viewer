@@ -78,8 +78,12 @@ fn same(a: &StyledArea<String>, b: &StyledArea<String>) -> bool {
 fn glv() -> Result<(), PosixError> {
     let args = Args::parse();
 
+    let mut debug = true;
     let log_level = match args.debug {
-        0 => log::Level::Warn,
+        0 => {
+            debug = false;
+            log::Level::Warn
+        }
         1 => log::Level::Info,
         2 => log::Level::Debug,
         _ => log::Level::Trace,
@@ -105,7 +109,7 @@ fn glv() -> Result<(), PosixError> {
         parse_rev_paths(&repo, args.revision, &args.paths)?;
     log::info!("Revs  {:?}", revisions);
     log::info!("Paths {:?}", paths);
-    let history_adapter = HistoryAdapter::new(repo.clone(), revisions, paths.clone())?;
+    let history_adapter = HistoryAdapter::new(repo.clone(), revisions, paths.clone(), debug)?;
     run_ui(history_adapter, repo, paths).map_err(Into::into)
 }
 

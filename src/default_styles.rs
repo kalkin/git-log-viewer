@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use crossterm::style::{Color, ContentStyle};
+use crossterm::style::{Attribute, Attributes, Color, ContentStyle};
 lazy_static::lazy_static! {
     pub static ref DEFAULT_STYLE: ContentStyle = ContentStyle::new();
     pub static ref ID_STYLE: ContentStyle = ContentStyle {
@@ -47,5 +47,12 @@ lazy_static::lazy_static! {
         background_color: DEFAULT_STYLE.background_color,
         underline_color: None,
         attributes: DEFAULT_STYLE.attributes
+    };
+
+    pub static ref DEBUG_STYLE: ContentStyle = ContentStyle {
+        foreground_color: Some(Color::DarkRed),
+        background_color: DEFAULT_STYLE.background_color,
+        underline_color: None,
+        attributes: Attributes::from(Attribute::Italic),
     };
 }

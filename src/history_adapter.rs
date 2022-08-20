@@ -55,6 +55,7 @@ pub struct HistoryAdapter {
     subtree_modules: Vec<SubtreeConfig>,
     subtree_thread: SubtreeThread,
     search_thread: Option<JoinHandle<()>>,
+    debug: bool,
 }
 
 #[derive(Clone)]
@@ -173,6 +174,7 @@ impl HistoryAdapter {
         repo: Repository,
         range: Vec<OsString>,
         paths: Vec<PathBuf>,
+        debug: bool,
     ) -> Result<Self, PosixError> {
         let remotes: Vec<Remote>;
         let forge_url: Option<Url>;
@@ -211,6 +213,7 @@ impl HistoryAdapter {
             subtree_modules,
             subtree_thread,
             search_thread: None,
+            debug,
         })
     }
 
@@ -301,8 +304,14 @@ impl HistoryAdapter {
             let fork_point = self
                 .fork_point_thread
                 .request_calculation(&commit, above_commit);
-            let mut entry =
-                HistoryEntry::new(commit, 0, self.forge_url.clone(), fork_point, &self.remotes);
+            let mut entry = HistoryEntry::new(
+                commit,
+                0,
+                self.forge_url.clone(),
+                fork_point,
+                &self.remotes,
+                self.debug,
+            );
             if let Some(url) = entry.url() {
                 if let Subject::PullRequest { id, .. } = entry.special() {
                     if GitHubThread::can_handle(&url) {
@@ -378,8 +387,14 @@ impl HistoryAdapter {
                 }
                 let fork_point_calc = self.fork_point_thread.request_calculation(&t, above_commit);
                 let level = selected.level() + 1;
-                let mut entry: HistoryEntry =
-                    HistoryEntry::new(t, level, selected.url(), fork_point_calc, &self.remotes);
+                let mut entry: HistoryEntry = HistoryEntry::new(
+                    t,
+                    level,
+                    selected.url(),
+                    fork_point_calc,
+                    &self.remotes,
+                    self.debug,
+                );
                 if let Some(url) = entry.url() {
                     if let Subject::PullRequest { id, .. } = entry.special() {
                         if GitHubThread::can_handle(&url) {
@@ -615,7 +630,7 @@ mod test {
     fn not_loaded_default_action() {
         let range = vec![OsString::from("6be11cb7f9e..df622aa0149")];
         let repo = Repository::default().unwrap();
-        let mut adapter = HistoryAdapter::new(repo, range, vec![]).unwrap();
+        let mut adapter = HistoryAdapter::new(repo, range, vec![], false).unwrap();
         assert_eq!(adapter.history.len(), 0);
         adapter.default_action(8);
     }
@@ -624,7 +639,7 @@ mod test {
     fn folding() {
         let range = vec![OsString::from("6be11cb7f9e..df622aa0149")];
         let repo = Repository::default().unwrap();
-        let mut adapter = HistoryAdapter::new(repo, range, vec![]).unwrap();
+        let mut adapter = HistoryAdapter::new(repo, range, vec![], false).unwrap();
         assert_eq!(adapter.length, 9);
         adapter.fill_up(50);
         assert_eq!(adapter.history.len(), 9);

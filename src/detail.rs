@@ -26,7 +26,7 @@ use git_wrapper::Repository;
 use crate::commit::Commit;
 use crate::commit::Oid;
 use crate::default_styles::{
-    DATE_STYLE, DEFAULT_STYLE, ID_STYLE, MOD_STYLE, NAME_STYLE, REF_STYLE,
+    DATE_STYLE, DEBUG_STYLE, DEFAULT_STYLE, ID_STYLE, MOD_STYLE, NAME_STYLE, REF_STYLE,
 };
 use crate::history_entry::HistoryEntry;
 use crate::raw;
@@ -115,6 +115,9 @@ impl DetailsWidget<HistoryEntry> for DiffView {
                 *REF_STYLE,
             ));
         }
+        if *content.debug() {
+            add_debug_content(&mut data, content);
+        }
 
         data.push(StyledLine::empty());
         for subject_line in content.original_subject().trim().lines() {
@@ -140,6 +143,56 @@ impl DetailsWidget<HistoryEntry> for DiffView {
         };
         self.0 = ListWidget::new(Box::new(adapter));
     }
+}
+
+fn add_debug_content(data: &mut Vec<StyledLine<String>>, content: &HistoryEntry) {
+    data.push(StyledLine {
+        content: vec![style("                                 DEBUG".to_owned())],
+    });
+    data.push(color_text(
+        "top_commit:      ",
+        &content.top_commit().to_string(),
+        *DEBUG_STYLE,
+    ));
+    data.push(color_text(
+        "fork_point:      ",
+        &format!("{:?}", content.fork_point()),
+        *DEBUG_STYLE,
+    ));
+    data.push(color_text(
+        "level:           ",
+        &content.level().to_string(),
+        *DEBUG_STYLE,
+    ));
+    data.push(color_text(
+        "commit_link:     ",
+        &content.is_commit_link().to_string(),
+        *DEBUG_STYLE,
+    ));
+    data.push(color_text(
+        "is_foldable:     ",
+        &content.is_foldable().to_string(),
+        *DEBUG_STYLE,
+    ));
+    if content.is_foldable() {
+        data.push(color_text(
+            "is_folded:       ",
+            &content.is_folded().to_string(),
+            *DEBUG_STYLE,
+        ));
+        if !content.is_folded() {
+            data.push(color_text(
+                "children:        ",
+                &content.visible_children().to_string(),
+                *DEBUG_STYLE,
+            ));
+        }
+    }
+    data.push(StyledLine {
+        content: vec![style(
+            "                                 ❦ ❦ ❦ ❦ ".to_owned(),
+        )],
+    });
 }
 
 fn git_diff(repo: &Repository, commit: &Commit, paths: &[PathBuf]) -> Vec<StyledLine<String>> {

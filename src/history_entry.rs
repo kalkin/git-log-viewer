@@ -53,9 +53,12 @@ pub struct HistoryEntry {
     subtrees: Vec<SubtreeConfig>,
     #[getset(get = "pub", set = "pub")]
     forge_url: Option<Url>,
+    #[getset(get = "pub")]
     fork_point: ForkPointCalculation,
     #[getset(get = "pub", set = "pub")]
     top_commit: bool,
+    #[getset(get = "pub")]
+    debug: bool,
 }
 
 impl HistoryEntry {
@@ -66,6 +69,7 @@ impl HistoryEntry {
         forge_url: Option<Url>,
         fork_point: ForkPointCalculation,
         repo_remotes: &[Remote],
+        debug: bool,
     ) -> Self {
         let subject_struct = Subject::from(commit.subject().as_str());
         let subject_text = subject_struct.description().to_owned();
@@ -97,6 +101,7 @@ impl HistoryEntry {
             forge_url,
             fork_point,
             top_commit: false,
+            debug,
         }
     }
 }
