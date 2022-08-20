@@ -416,7 +416,7 @@ impl HistoryAdapter {
                 above_commit = Some(tmp.last().expect("a commit").commit());
             }
 
-            self.history[i].set_folded(tmp.len());
+            self.history[i].set_visible_children(tmp.len());
             for (j, entry) in tmp.into_iter().enumerate() {
                 log::trace!(
                     "Inserting index {}, entry {:?}",
@@ -427,7 +427,7 @@ impl HistoryAdapter {
                 self.length += 1;
             }
         } else {
-            let f = selected.folded();
+            let f = selected.visible_children();
             log::debug!("Folding entry {}, with #{} children", i, f);
             for j in (pos..(pos + f)).rev() {
                 log::trace!(
@@ -440,7 +440,7 @@ impl HistoryAdapter {
                 }
                 self.history.remove(j);
             }
-            self.history[i].set_folded(0);
+            self.history[i].set_visible_children(0);
         }
     }
 

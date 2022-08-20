@@ -43,7 +43,7 @@ pub struct HistoryEntry {
     #[getset(get = "pub")]
     commit: Commit,
     #[getset(get = "pub", set = "pub")]
-    folded: usize,
+    visible_children: usize,
     #[getset(get_copy = "pub")]
     level: u8,
     remotes: Vec<Remote>,
@@ -88,7 +88,7 @@ impl HistoryEntry {
 
         Self {
             commit,
-            folded: 0,
+            visible_children: 0,
             level,
             remotes,
             subject_text,
@@ -479,7 +479,7 @@ impl HistoryEntry {
 
     #[must_use]
     pub const fn is_folded(&self) -> bool {
-        self.folded == 0
+        self.visible_children == 0
     }
 
     #[must_use]
