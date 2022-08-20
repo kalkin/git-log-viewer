@@ -130,7 +130,7 @@ impl HistoryEntry {
     fn render_graph(&self) -> StyledContent<String> {
         let mut text = "".to_owned();
         for _ in 0..self.level {
-            text.push_str("│ ");
+            text.push('│');
         }
 
         if self.commit.bellow().is_none() {
@@ -150,12 +150,12 @@ impl HistoryEntry {
                     text.push_str("⇤╮");
                 }
             } else if self.is_fork_point() {
-                text.push_str("─┤");
+                text.push('┤');
             } else {
-                text.push_str("─┐");
+                text.push('┐');
             }
         } else if self.is_fork_point() {
-            text.push_str("─┘");
+            text.push('┘');
         }
         style(text)
     }
