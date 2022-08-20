@@ -339,6 +339,9 @@ impl HistoryAdapter {
                     }
                 }
             }
+            if above_commit.is_none() {
+                entry.set_top_commit(true);
+            }
             tmp2.push(entry);
             above_commit = Some(tmp2.last().expect("a commit").commit());
         }

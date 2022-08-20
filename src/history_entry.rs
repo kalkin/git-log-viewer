@@ -54,6 +54,8 @@ pub struct HistoryEntry {
     #[getset(get = "pub", set = "pub")]
     forge_url: Option<Url>,
     fork_point: ForkPointCalculation,
+    #[getset(get = "pub", set = "pub")]
+    top_commit: bool,
 }
 
 impl HistoryEntry {
@@ -94,6 +96,7 @@ impl HistoryEntry {
             subtrees: vec![],
             forge_url,
             fork_point,
+            top_commit: false,
         }
     }
 }
@@ -133,7 +136,9 @@ impl HistoryEntry {
             text.push('│');
         }
 
-        if self.commit.bellow().is_none() {
+        if self.top_commit {
+            text.push('◒');
+        } else if self.commit.bellow().is_none() {
             text.push('◉');
         } else if self.is_commit_link() {
             text.push('⭞');
