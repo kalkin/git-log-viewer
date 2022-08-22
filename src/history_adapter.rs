@@ -28,11 +28,12 @@ use crate::actors::bitbucket::{BitbucketRequest, BitbucketThread};
 use crate::actors::fork_point::ForkPointThread;
 use crate::actors::github::{GitHubRequest, GitHubThread};
 use crate::actors::subtrees::{SubtreeChangesRequest, SubtreeThread};
-use crate::commit::{child_history, commits_for_range, history_length, parse_remote_url, Commit};
+use crate::commit::{child_history, commits_for_range, history_length, Commit};
 use crate::history_entry::HistoryEntry;
 use crate::ui::base::data::{DataAdapter, SearchProgress};
 use crate::ui::base::search::{Direction, Needle, SearchResult};
 use crate::ui::base::StyledLine;
+use crate::utils::find_forge_url;
 use git_wrapper::Remote;
 use git_wrapper::Repository;
 use std::collections::HashMap;
@@ -135,34 +136,6 @@ impl From<&HistoryAdapter> for AdapterState {
         result.push(range);
         Self(result)
     }
-}
-
-fn find_forge_url(hash_map: &HashMap<String, Remote>) -> Option<Url> {
-    if let Some(remote) = hash_map.get("origin") {
-        if let Some(s) = &remote.fetch {
-            if let Some(u) = parse_remote_url(s) {
-                return Some(u);
-            }
-        }
-        if let Some(s) = &remote.push {
-            if let Some(u) = parse_remote_url(s) {
-                return Some(u);
-            }
-        }
-    }
-    for r in hash_map.values() {
-        if let Some(s) = &r.fetch {
-            if let Some(u) = parse_remote_url(s) {
-                return Some(u);
-            }
-        }
-        if let Some(s) = &r.push {
-            if let Some(u) = parse_remote_url(s) {
-                return Some(u);
-            }
-        }
-    }
-    None
 }
 
 impl HistoryAdapter {
@@ -607,7 +580,8 @@ mod test {
         let range = vec![OsString::from("6be11cb7f9e..df622aa0149")];
         let repo = Repository::default().unwrap();
         let mut adapter = HistoryAdapter::new(repo, range, vec![], false).unwrap();
-        assert_eq!(adapter.length, 9);
+        eprintln!("{:?}", adapter,);
+        assert_eq!(adapter.length, 8);
         adapter.fill_up(50);
         assert_eq!(adapter.history.len(), 9);
         adapter.default_action(8);

@@ -1,6 +1,8 @@
-use crate::credentials;
+use crate::{commit::parse_remote_url, credentials};
 use curl::easy::Easy;
+use git_wrapper::Remote;
 use std::collections::HashMap;
+use url::Url;
 
 pub fn transfer(mut easy: Easy, domain: &str) -> Option<(u32, HashMap<String, String>, String)> {
     if let Some((username, maybe_pw)) = credentials::token(domain) {
@@ -55,4 +57,32 @@ pub fn transfer(mut easy: Easy, domain: &str) -> Option<(u32, HashMap<String, St
     }
     let response_code = easy.response_code().ok()?;
     Some((response_code, headers, body))
+}
+
+pub fn find_forge_url(hash_map: &HashMap<String, Remote>) -> Option<Url> {
+    if let Some(remote) = hash_map.get("origin") {
+        if let Some(s) = &remote.fetch {
+            if let Some(u) = parse_remote_url(s) {
+                return Some(u);
+            }
+        }
+        if let Some(s) = &remote.push {
+            if let Some(u) = parse_remote_url(s) {
+                return Some(u);
+            }
+        }
+    }
+    for r in hash_map.values() {
+        if let Some(s) = &r.fetch {
+            if let Some(u) = parse_remote_url(s) {
+                return Some(u);
+            }
+        }
+        if let Some(s) = &r.push {
+            if let Some(u) = parse_remote_url(s) {
+                return Some(u);
+            }
+        }
+    }
+    None
 }
