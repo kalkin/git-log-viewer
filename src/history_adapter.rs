@@ -289,73 +289,84 @@ impl HistoryAdapter {
         if tmp.is_empty() {
             return false;
         }
-        let mut above_commit = if self.history.is_empty() {
-            None
-        } else {
-            Some(self.history.last().expect("a commit").commit())
-        };
+        let mut above_entry = self.history.last();
         let mut tmp2 = Vec::with_capacity(tmp.len());
+        let level = 0;
         for commit in tmp {
-            if !self.subtree_modules.is_empty() {
-                self.subtree_thread.send(SubtreeChangesRequest {
-                    oid: commit.id().clone(),
-                });
-            }
-            let fork_point = self
-                .fork_point_thread
-                .request_calculation(&commit, above_commit);
-            let mut entry = HistoryEntry::new(
-                commit,
-                0,
-                self.forge_url.clone(),
-                fork_point,
-                &self.remotes,
-                self.debug,
-            );
-            if let Some(url) = entry.url() {
-                if let Subject::PullRequest { id, .. } = entry.special() {
-                    if GitHubThread::can_handle(&url) {
-                        if let Some(title) = GitHubThread::from_cache(&url, id) {
-                            log::debug!("PR #{} (CACHE) ⇒ «{}»", id, title);
-                            entry.set_subject(&title);
-                        } else {
-                            let req = GitHubRequest {
-                                oid: entry.id().clone(),
-                                url,
-                                pr_id: id.to_string(),
-                            };
-                            if let Err(err) = self.github_thread.send(req) {
-                                log::error!("{}", err);
-                            }
-                        }
-                    } else if BitbucketThread::can_handle(&url) {
-                        if let Some(title) = BitbucketThread::from_cache(&url, id) {
-                            log::debug!("PR #{} (CACHE) ⇒ «{}»", id, title);
-                            entry.set_subject(&title);
-                        } else {
-                            let req = BitbucketRequest {
-                                oid: entry.id().clone(),
-                                url,
-                                pr_id: id.to_string(),
-                            };
-
-                            if let Err(err) = self.bb_server_thread.send(req) {
-                                log::error!("{}", err);
-                            }
-                        }
-                    } else {
-                        log::info!("Unrecognized url {}", url);
-                    }
-                }
-            }
-            if above_commit.is_none() {
-                entry.set_top_commit(true);
-            }
+            let entry = self.to_entry(commit, above_entry, level);
             tmp2.push(entry);
-            above_commit = Some(tmp2.last().expect("a commit").commit());
+            above_entry = tmp2.last();
         }
         self.history.append(tmp2.as_mut());
         true
+    }
+
+    fn to_entry(
+        &self,
+        commit: Commit,
+        above_entry: Option<&HistoryEntry>,
+        level: u8,
+    ) -> HistoryEntry {
+        let above_commit = above_entry.map(HistoryEntry::commit);
+
+        if !self.subtree_modules.is_empty() {
+            self.subtree_thread.send(SubtreeChangesRequest {
+                oid: commit.id().clone(),
+            });
+        }
+        let fork_point = self
+            .fork_point_thread
+            .request_calculation(&commit, above_commit);
+
+        let mut entry = HistoryEntry::new(
+            commit,
+            level,
+            self.forge_url.clone(),
+            fork_point,
+            &self.remotes,
+            self.debug,
+        );
+        if above_commit.is_none() {
+            entry.set_top_commit(true);
+        }
+
+        if let Some(url) = entry.url() {
+            if let Subject::PullRequest { id, .. } = entry.special() {
+                if GitHubThread::can_handle(&url) {
+                    if let Some(title) = GitHubThread::from_cache(&url, id) {
+                        log::debug!("PR #{} (CACHE) ⇒ «{}»", id, title);
+                        entry.set_subject(&title);
+                    } else {
+                        let req = GitHubRequest {
+                            oid: entry.id().clone(),
+                            url,
+                            pr_id: id.to_string(),
+                        };
+                        if let Err(err) = self.github_thread.send(req) {
+                            log::error!("{}", err);
+                        }
+                    }
+                } else if BitbucketThread::can_handle(&url) {
+                    if let Some(title) = BitbucketThread::from_cache(&url, id) {
+                        log::debug!("PR #{} (CACHE) ⇒ «{}»", id, title);
+                        entry.set_subject(&title);
+                    } else {
+                        let req = BitbucketRequest {
+                            oid: entry.id().clone(),
+                            url,
+                            pr_id: id.to_string(),
+                        };
+
+                        if let Err(err) = self.bb_server_thread.send(req) {
+                            log::error!("{}", err);
+                        }
+                    }
+                } else {
+                    log::info!("Unrecognized url {}", url);
+                }
+            }
+        }
+        entry
     }
 
     fn is_fill_up_needed(&self, i: usize) -> bool {
@@ -376,59 +387,14 @@ impl HistoryAdapter {
             let children: Vec<Commit> =
                 child_history(&self.repo, selected.commit(), self.paths.as_ref());
 
-            let mut above_commit = Some(selected.commit());
+            let mut above_entry = Some(selected);
 
             log::debug!("Unfolding entry {}, with #{} children", i, children.len());
+            let level = selected.level() + 1;
             for t in children {
-                if !self.subtree_modules.is_empty() {
-                    self.subtree_thread.send(SubtreeChangesRequest {
-                        oid: t.id().clone(),
-                    });
-                }
-                let fork_point_calc = self.fork_point_thread.request_calculation(&t, above_commit);
-                let level = selected.level() + 1;
-                let mut entry: HistoryEntry = HistoryEntry::new(
-                    t,
-                    level,
-                    selected.url(),
-                    fork_point_calc,
-                    &self.remotes,
-                    self.debug,
-                );
-                if let Some(url) = entry.url() {
-                    if let Subject::PullRequest { id, .. } = entry.special() {
-                        if GitHubThread::can_handle(&url) {
-                            if let Some(title) = GitHubThread::from_cache(&url, id) {
-                                log::debug!("PR #{} (CACHE) ⇒ «{}»", id, title);
-                                entry.set_subject(&title);
-                            } else {
-                                let req = GitHubRequest {
-                                    oid: entry.id().clone(),
-                                    url,
-                                    pr_id: id.to_string(),
-                                };
-
-                                if let Err(err) = self.github_thread.send(req) {
-                                    log::error!("{}", err);
-                                }
-                            }
-                        } else if BitbucketThread::can_handle(&url) {
-                            let req = BitbucketRequest {
-                                oid: entry.id().clone(),
-                                url,
-                                pr_id: id.to_string(),
-                            };
-                            if let Err(err) = self.bb_server_thread.send(req) {
-                                log::error!("{}", err);
-                            }
-                        } else {
-                            log::info!("Unrecognized url {}", url);
-                        }
-                    }
-                }
-
+                let entry = self.to_entry(t, above_entry, level);
                 tmp.push(entry);
-                above_commit = Some(tmp.last().expect("a commit").commit());
+                above_entry = tmp.last();
             }
 
             self.history[i].set_visible_children(tmp.len());
