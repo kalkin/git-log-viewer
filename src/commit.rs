@@ -322,7 +322,7 @@ where
         max,
         paths.is_empty()
     );
-    return vec![];
+    vec![]
 }
 
 #[must_use]

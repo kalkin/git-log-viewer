@@ -7,7 +7,7 @@ fn head_path() -> String {
         .output()
         .expect("Got $GIT_DIR");
     let git_dir = String::from_utf8_lossy(&output.stdout);
-    return format!("{}/HEAD", git_dir);
+    format!("{}/HEAD", git_dir)
 }
 
 fn commits_since_release() -> String {
