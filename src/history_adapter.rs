@@ -36,7 +36,6 @@ use crate::ui::base::StyledLine;
 use crate::utils::find_forge_url;
 use git_wrapper::Remote;
 use git_wrapper::Repository;
-use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::sync::mpsc;
 use std::thread;
@@ -85,56 +84,53 @@ impl Debug for CommitRange {
     }
 }
 
-pub struct AdapterState(Vec<CommitRange>);
-
-impl Debug for AdapterState {
+impl Debug for HistoryAdapter {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_list().entries(&self.0).finish()
-    }
-}
-
-impl From<&HistoryAdapter> for AdapterState {
-    fn from(adapter: &HistoryAdapter) -> Self {
         let mut result: Vec<CommitRange> = vec![];
-        if !(adapter.history.is_empty()) {
-            return Self(result);
-        }
-        let mut start = RangePart {
-            i: 0,
-            id: adapter.history[0].short_id().clone(),
-        };
-        let mut level = 0;
-        for (i, e) in adapter.history.iter().enumerate() {
-            if level != e.level() {
-                let prev = &adapter.history[i - 1];
-                let end = RangePart {
-                    i: i - 1,
-                    id: prev.short_id().clone(),
-                };
-                let range = CommitRange {
-                    start: start.clone(),
-                    end,
-                    level: level.try_into().expect("usize"),
-                };
-                result.push(range);
-                start = RangePart {
-                    i,
-                    id: e.short_id().clone(),
-                };
-                level = e.level();
+        if !self.history.is_empty() {
+            let mut start = RangePart {
+                i: 0,
+                id: self.history[0].short_id().clone(),
+            };
+            let mut level = 0;
+            for (i, e) in self.history.iter().enumerate() {
+                if level != e.level() {
+                    let prev = &self.history[i - 1];
+                    let end = RangePart {
+                        i: i - 1,
+                        id: prev.short_id().clone(),
+                    };
+                    let range = CommitRange {
+                        start: start.clone(),
+                        end,
+                        level: level.try_into().expect("usize"),
+                    };
+                    result.push(range);
+                    start = RangePart {
+                        i,
+                        id: e.short_id().clone(),
+                    };
+                    level = e.level();
+                }
             }
+            let end = RangePart {
+                i: self.history.len() - 1,
+                id: self.history.last().expect("smth").short_id().clone(),
+            };
+            let range = CommitRange {
+                start,
+                end,
+                level: level.try_into().expect("usize"),
+            };
+            result.push(range);
         }
-        let end = RangePart {
-            i: adapter.history.len() - 1,
-            id: adapter.history.last().expect("smth").short_id().clone(),
-        };
-        let range = CommitRange {
-            start,
-            end,
-            level: level.try_into().expect("usize"),
-        };
-        result.push(range);
-        Self(result)
+        f.debug_struct("HistoryAdapter")
+            .field("range", &self.range)
+            .field("length", &self.length)
+            .field("loaded", &self.history.len())
+            .field("paths", &self.paths)
+            .field("history", &result)
+            .finish()
     }
 }
 
@@ -436,18 +432,6 @@ impl HistoryAdapter {
     }
 }
 
-impl Debug for HistoryAdapter {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("HistoryAdapter")
-            .field("range", &self.range)
-            .field("length", &self.length)
-            .field("loaded", &self.history.len())
-            .field("paths", &self.paths)
-            .field("history", &AdapterState::from(self))
-            .finish()
-    }
-}
-
 impl DataAdapter<HistoryEntry> for HistoryAdapter {
     fn get_line(&mut self, i: usize, selected: bool) -> StyledLine<String> {
         if self.is_fill_up_needed(i) {
@@ -580,8 +564,7 @@ mod test {
         let range = vec![OsString::from("6be11cb7f9e..df622aa0149")];
         let repo = Repository::default().unwrap();
         let mut adapter = HistoryAdapter::new(repo, range, vec![], false).unwrap();
-        eprintln!("{:?}", adapter,);
-        assert_eq!(adapter.length, 8);
+        assert_eq!(adapter.length, 9);
         adapter.fill_up(50);
         assert_eq!(adapter.history.len(), 9);
         adapter.default_action(8);
