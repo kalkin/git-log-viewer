@@ -413,6 +413,7 @@ pub fn parse_remote_url(input: &str) -> Option<Url> {
 
 #[cfg(test)]
 mod test {
+    use pretty_assertions::assert_eq;
     use std::path::PathBuf;
 
     use crate::commit::commits_for_range;

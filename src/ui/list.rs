@@ -120,6 +120,7 @@ impl<T> Drawable for ListWidget<T> {
 #[cfg(test)]
 mod test_list_widget {
     use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+    use pretty_assertions::assert_eq;
 
     use crate::ui::base::{Area, Drawable, HandleEvent, ListWidget};
     use crate::ui::list::example_content;

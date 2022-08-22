@@ -141,6 +141,7 @@ impl NeedleCapture {
 #[cfg(test)]
 mod test_needle_capture {
     use crate::ui::base::search::{Direction, Event, Needle, NeedleCapture, State};
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn hidden_state() {

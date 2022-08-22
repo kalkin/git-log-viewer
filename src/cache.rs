@@ -50,6 +50,7 @@ fn path_from_url(url: &Url) -> Result<PathBuf, Error> {
 
 #[test]
 fn test_path_from_url() {
+    use pretty_assertions::assert_eq;
     let url = Url::parse("https://github.com/kalkin/bar").unwrap();
     let result = path_from_url(&url).unwrap();
     let actual = result.to_str().unwrap();

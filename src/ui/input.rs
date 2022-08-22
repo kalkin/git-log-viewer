@@ -76,6 +76,7 @@ mod test_input_widget {
     use crate::ui::base::{Drawable, HandleEvent};
     use crate::ui::input::InputLine;
     use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn small_characters() {

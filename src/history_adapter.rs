@@ -624,6 +624,7 @@ mod test {
 
     use crate::history_adapter::HistoryAdapter;
     use git_wrapper::Repository;
+    use pretty_assertions::assert_eq;
 
     #[test]
     #[should_panic]

@@ -301,6 +301,7 @@ mod test_result_manager {
     use crate::ui::base::data::SearchProgress;
     use crate::ui::base::search::SearchResult;
     use crate::ui::search::ResultManager;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn empty() {

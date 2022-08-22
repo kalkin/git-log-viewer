@@ -206,6 +206,7 @@ mod test_paging {
     use crate::ui::base::paging::Paging;
     use crate::ui::base::HandleEvent;
     use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn next_page() {

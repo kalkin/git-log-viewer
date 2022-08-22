@@ -86,6 +86,7 @@ impl VecAdapter {
 #[cfg(test)]
 mod test_vec_adapter {
     use crossterm::style::Attribute;
+    use pretty_assertions::assert_eq;
 
     use crate::ui::base::data::DataAdapter;
     use crate::ui::base::data::VecAdapter;

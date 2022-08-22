@@ -117,6 +117,7 @@ pub fn search_line(line: &StyledLine<String>, state: &Needle) -> Vec<SearchResul
 #[cfg(test)]
 mod search_styled_content {
     use crossterm::style::{ContentStyle, StyledContent};
+    use pretty_assertions::assert_eq;
 
     use crate::{
         search::search_styled_content,
