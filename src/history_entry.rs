@@ -404,14 +404,8 @@ impl HistoryEntry {
 }
 
 fn is_hex(s: &str) -> bool {
-    for c in s.chars() {
-        if !c.is_ascii_digit()
-            && !&['a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F'].contains(&c)
-        {
-            return false;
-        }
-    }
-    true
+    s.chars()
+        .all(|c| ['a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F'].contains(&c))
 }
 
 // Public interface
