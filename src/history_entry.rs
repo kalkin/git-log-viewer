@@ -59,6 +59,8 @@ pub struct HistoryEntry {
     top_commit: bool,
     #[getset(get = "pub")]
     debug: bool,
+    #[getset(get = "pub")]
+    is_link: bool,
 }
 
 impl HistoryEntry {
@@ -69,6 +71,7 @@ impl HistoryEntry {
         forge_url: Option<Url>,
         fork_point: ForkPointCalculation,
         repo_remotes: &[Remote],
+        is_link: bool,
         debug: bool,
     ) -> Self {
         let subject_struct = Subject::from(commit.subject().as_str());
@@ -102,6 +105,7 @@ impl HistoryEntry {
             fork_point,
             top_commit: false,
             debug,
+            is_link,
         }
     }
 }
@@ -145,7 +149,7 @@ impl HistoryEntry {
             text.push('◒');
         } else if self.commit.bellow().is_none() {
             text.push('◉');
-        } else if self.is_commit_link() {
+        } else if self.is_link {
             text.push('⭞');
         } else {
             text.push('●');
@@ -489,11 +493,6 @@ impl HistoryEntry {
     #[must_use]
     pub fn has_children(&self) -> bool {
         self.commit.is_merge()
-    }
-
-    #[must_use]
-    pub fn is_commit_link(&self) -> bool {
-        *self.commit.is_commit_link()
     }
 
     /// Check if string is contained any where in commit data

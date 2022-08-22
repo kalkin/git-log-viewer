@@ -262,7 +262,7 @@ impl HistoryAdapter {
         let mut tmp2 = Vec::with_capacity(tmp.len());
         let level = 0;
         for commit in tmp {
-            let entry = self.to_entry(commit, above_entry, level);
+            let entry = self.to_entry(commit, above_entry, level, false);
             tmp2.push(entry);
             above_entry = tmp2.last();
         }
@@ -275,6 +275,7 @@ impl HistoryAdapter {
         commit: Commit,
         above_entry: Option<&HistoryEntry>,
         level: u8,
+        link: bool,
     ) -> HistoryEntry {
         let above_commit = above_entry.map(HistoryEntry::commit);
 
@@ -293,6 +294,7 @@ impl HistoryAdapter {
             self.forge_url.clone(),
             fork_point,
             &self.remotes,
+            link,
             self.debug,
         );
         if above_commit.is_none() {
@@ -352,18 +354,36 @@ impl HistoryAdapter {
         let pos = i + 1;
         let selected = &self.history[i];
         if selected.is_folded() {
-            let mut tmp: Vec<HistoryEntry> = vec![];
             let children: Vec<Commit> =
                 child_history(&self.repo, selected.commit(), self.paths.as_ref());
-
-            let mut above_entry = Some(selected);
-
             log::debug!("Unfolding entry {}, with #{} children", i, children.len());
-            let level = selected.level() + 1;
-            for t in children {
-                let entry = self.to_entry(t, above_entry, level);
-                tmp.push(entry);
-                above_entry = tmp.last();
+
+            // Check if we need to add a Link commit
+            let link_commit = if let (Some(Some(oid)), Some(bellow_selected)) = (
+                children.last().map(Commit::bellow),
+                selected.commit().bellow().as_ref(),
+            ) {
+                if oid == bellow_selected {
+                    None
+                } else {
+                    Commit::from_repo(&self.repo, oid)
+                }
+            } else {
+                None
+            };
+
+            let mut tmp: Vec<HistoryEntry> = vec![];
+            {
+                let level = selected.level() + 1;
+                let mut above_entry = Some(selected);
+                for t in children {
+                    let entry = self.to_entry(t, above_entry, level, false);
+                    tmp.push(entry);
+                    above_entry = tmp.last();
+                }
+                if let Some(link) = link_commit {
+                    tmp.push(self.to_entry(link, above_entry, level, true));
+                }
             }
 
             self.history[i].set_visible_children(tmp.len());

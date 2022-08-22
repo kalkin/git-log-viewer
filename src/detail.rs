@@ -166,7 +166,7 @@ fn add_debug_content(data: &mut Vec<StyledLine<String>>, content: &HistoryEntry)
     ));
     data.push(color_text(
         "commit_link:     ",
-        &content.is_commit_link().to_string(),
+        &content.is_link().to_string(),
         *DEBUG_STYLE,
     ));
     data.push(color_text(

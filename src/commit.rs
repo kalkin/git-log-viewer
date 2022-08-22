@@ -88,8 +88,6 @@ pub struct Commit {
     bellow: Option<Oid>,
     #[getset(get = "pub")]
     children: Vec<Oid>,
-    #[getset(get = "pub")]
-    is_commit_link: bool,
     #[allow(dead_code)]
     is_head: bool,
     #[allow(dead_code)]
@@ -140,7 +138,7 @@ const REV_FORMAT: &str =
 
 impl Commit {
     #[must_use]
-    pub fn new(data: &str, is_commit_link: bool) -> Self {
+    pub fn new(data: &str) -> Self {
         let mut split = data.split('\x1f');
         split.next(); // skip commit: XXXX line
         let id = Oid(next_string!(split));
@@ -221,7 +219,6 @@ impl Commit {
             body,
             bellow,
             children,
-            is_commit_link,
             is_head,
             is_merge,
             branches,
@@ -232,6 +229,10 @@ impl Commit {
 
     pub fn parents(&self) -> &Vec<Oid> {
         self.children()
+    }
+
+    pub fn from_repo(repo: &Repository, oid: &Oid) -> Option<Self> {
+        to_commit(repo, oid)
     }
 }
 
@@ -315,7 +316,7 @@ where
             if data.is_empty() || data == "\n" {
                 break;
             }
-            result.push(Commit::new(data, false));
+            result.push(Commit::new(data));
         }
         return result;
     }
@@ -347,40 +348,17 @@ pub fn child_history(repo: &Repository, commit: &Commit, paths: &[PathBuf]) -> V
     } else {
         revision = first_child.0.clone();
     }
-    let mut result = commits_for_range(repo, &vec![revision], paths, None, None);
-    if result.is_empty() {
-        return result;
-    }
-
-    let end_commit = result.last().expect("Non empty child history");
-
-    if end.is_some()
-        && end_commit.bellow.is_some()
-        && end_commit.bellow.as_ref().expect("Expected merge commit") != bellow
-    {
-        let oid = &end_commit.bellow.as_ref().expect("Expected merge commit");
-        #[allow(clippy::option_if_let_else)]
-        if let Some(link) = to_commit(repo, oid, true) {
-            result.push(link);
-        } else {
-            log::error!("Failed to find commit {}", oid);
-        }
-    }
-
-    result
+    commits_for_range(repo, &vec![revision], paths, None, None)
 }
 
-fn to_commit(repo: &Repository, oid: &Oid, is_commit_link: bool) -> Option<Commit> {
+fn to_commit(repo: &Repository, oid: &Oid) -> Option<Commit> {
     let mut cmd = repo.git();
     cmd.args(["rev-list", "--date=human", REV_FORMAT, "-1", &oid.0]);
     let proc = cmd.output().expect("Failed to run git-rev-list(1)");
     proc.status.success().then(|| {
         let tmp = String::from_utf8_lossy(&proc.stdout);
         let lines: Vec<&str> = tmp.lines().collect();
-        Commit::new(
-            lines.get(1).expect("No second data line for commit"),
-            is_commit_link,
-        )
+        Commit::new(lines.get(1).expect("No second data line for commit"))
     })
 }
 
