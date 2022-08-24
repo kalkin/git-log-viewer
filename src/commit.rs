@@ -229,6 +229,14 @@ impl Commit {
             tags,
         }
     }
+
+    pub fn from_repo(repo: &Repository, oid: &Oid) -> Option<Self> {
+        to_commit(repo, oid)
+    }
+
+    pub fn parents(&self) -> &Vec<Oid> {
+        self.children()
+    }
 }
 
 /// Return commit count with `--first-parent`

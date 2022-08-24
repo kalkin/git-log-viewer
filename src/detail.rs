@@ -60,6 +60,17 @@ impl DetailsWidget<HistoryEntry> for DiffView {
     fn set_content(&mut self, content: &HistoryEntry) {
         let mut data: StyledArea<String> = vec![
             color_text("Commit:          ", &content.id().0, *ID_STYLE),
+            color_text(
+                "Parents:         ",
+                &content
+                    .commit()
+                    .parents()
+                    .iter()
+                    .map(|p| format!("{:?}", p))
+                    .collect::<Vec<String>>()
+                    .join(" "),
+                *ID_STYLE,
+            ),
             color_text("Author:          ", content.author_name(), *NAME_STYLE),
             color_text("Author Date:     ", content.author_date(), *DATE_STYLE),
         ];
