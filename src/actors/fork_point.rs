@@ -57,13 +57,14 @@ impl Debug for ForkPointRequest {
 }
 
 pub struct ForkPointResponse {
-    pub oid: Oid,
+    pub first: Oid,
+    pub second: Oid,
     pub value: bool,
 }
 
 impl Debug for ForkPointResponse {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let mut oid = self.oid.0.clone();
+        let mut oid = self.first.0.clone();
         oid.truncate(8);
         f.debug_tuple("ForkPointResponse")
             .field(&oid)
@@ -112,7 +113,8 @@ impl ForkPointThread {
             while let Ok(v) = rx_2.recv() {
                 let value = repo.is_ancestor(&v.first.0, &v.second.0);
                 tx_1.send(ForkPointResponse {
-                    oid: v.first.clone(),
+                    first: v.first.clone(),
+                    second: v.second.clone(),
                     value,
                 })
                 .expect("Send ForkPointResponse");

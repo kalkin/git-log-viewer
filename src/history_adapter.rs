@@ -418,7 +418,7 @@ impl HistoryAdapter {
     pub fn update(&mut self) {
         while let Ok(v) = self.fork_point_thread.try_recv() {
             for e in &mut self.history {
-                if e.id() == &v.oid {
+                if e.id() == &v.first {
                     e.set_fork_point(v.value);
                     break;
                 }
