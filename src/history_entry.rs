@@ -47,8 +47,7 @@ pub struct HistoryEntry {
     #[getset(get_copy = "pub")]
     level: u8,
     remotes: Vec<Remote>,
-    subject_text: String,
-    subject_struct: Subject,
+    subject: Subject,
     #[getset(get = "pub", set = "pub")]
     subtrees: Vec<SubtreeConfig>,
     #[getset(get = "pub", set = "pub")]
@@ -75,7 +74,6 @@ impl HistoryEntry {
         debug: bool,
     ) -> Self {
         let subject_struct = Subject::from(commit.subject().as_str());
-        let subject_text = subject_struct.description().to_owned();
 
         // let special_subject = are_we_special(&commit);
         let remotes = if commit.references().is_empty() {
@@ -98,8 +96,7 @@ impl HistoryEntry {
             visible_children: 0,
             level,
             remotes,
-            subject_text,
-            subject_struct,
+            subject: subject_struct,
             subtrees: vec![],
             forge_url,
             fork_point,
@@ -136,7 +133,7 @@ impl HistoryEntry {
     }
 
     fn render_icon(&self) -> StyledContent<String> {
-        style(self.subject_struct.icon().to_owned())
+        style(self.subject.icon().to_owned())
     }
 
     fn render_graph(&self) -> StyledContent<String> {
@@ -291,7 +288,7 @@ impl HistoryEntry {
     fn render_subject(&self) -> Vec<StyledContent<String>> {
         let mut buf = vec![];
         let separator = style(" ".to_owned());
-        match &self.subject_struct {
+        match &self.subject {
             Subject::ConventionalCommit {
                 scope,
                 description,
@@ -336,7 +333,7 @@ impl HistoryEntry {
                 ContentStyle::default(),
                 description.clone(),
             )),
-            Subject::PullRequest { .. } => buf.push(style(self.subject_text.clone())),
+            Subject::PullRequest { .. } => buf.push(style(self.subject.description().to_owned())),
             Subject::SubtreeCommit { operation, .. } => {
                 let mut bold_style = ContentStyle::default();
                 bold_style.attributes.set(Attribute::Bold);
@@ -388,7 +385,7 @@ impl HistoryEntry {
     }
     const fn is_subtree_import(&self) -> bool {
         matches!(
-            &self.subject_struct,
+            &self.subject,
             Subject::SubtreeCommit {
                 operation: SubtreeOperation::Import { .. },
                 ..
@@ -398,7 +395,7 @@ impl HistoryEntry {
 
     const fn is_subtree_update(&self) -> bool {
         matches!(
-            &self.subject_struct,
+            &self.subject,
             Subject::SubtreeCommit {
                 operation: SubtreeOperation::Update { .. },
                 ..
@@ -415,8 +412,7 @@ fn is_hex(s: &str) -> bool {
 // Public interface
 impl HistoryEntry {
     pub fn set_subject(&mut self, subject: &str) {
-        self.subject_struct = Subject::from(subject);
-        self.subject_text = self.subject_struct.description().to_owned();
+        self.subject = Subject::from(subject);
     }
 
     pub fn set_fork_point(&mut self, t: bool) {
@@ -425,7 +421,7 @@ impl HistoryEntry {
 
     #[must_use]
     pub const fn special(&self) -> &Subject {
-        &self.subject_struct
+        &self.subject
     }
 
     #[must_use]
@@ -499,6 +495,7 @@ impl HistoryEntry {
     #[must_use]
     #[allow(dead_code)]
     pub fn search_matches(&self, needle: &str, ignore_case: bool) -> bool {
+        let subject = self.subject.description().to_owned();
         let mut candidates = vec![
             self.commit.author_name(),
             self.commit.short_id(),
@@ -507,7 +504,7 @@ impl HistoryEntry {
             self.commit.author_email(),
             self.commit.committer_name(),
             self.commit.committer_email(),
-            &self.subject_text,
+            &subject,
         ];
 
         let x: Vec<String> = self.subtrees.iter().map(|e| e.id().clone()).collect();
