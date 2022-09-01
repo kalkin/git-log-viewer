@@ -349,7 +349,7 @@ impl HistoryEntry {
         buf
     }
 
-    pub fn render(&mut self, selected: bool) -> StyledLine<String> {
+    pub fn render(&self, selected: bool) -> StyledLine<String> {
         let separator = style(" ".to_owned());
         let mut result: StyledLine<String> = StyledLine {
             content: vec![
