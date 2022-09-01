@@ -291,10 +291,6 @@ impl HistoryEntry {
     fn render_subject(&self) -> Vec<StyledContent<String>> {
         let mut buf = vec![];
         let separator = style(" ".to_owned());
-        if let Some(modules) = self.render_modules(32) {
-            buf.push(modules);
-            buf.push(separator.clone());
-        }
         match &self.subject_struct {
             Subject::ConventionalCommit {
                 scope,
@@ -376,7 +372,11 @@ impl HistoryEntry {
         if !references.is_empty() {
             result.content.extend(references);
         }
-        result.content.push(separator);
+        result.content.push(separator.clone());
+        if let Some(modules) = self.render_modules(32) {
+            result.content.push(modules);
+            result.content.push(separator.clone());
+        }
         result.content.extend(self.render_subject());
 
         if selected {
