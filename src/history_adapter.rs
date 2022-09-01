@@ -30,7 +30,7 @@ use crate::actors::github::{GitHubRequest, GitHubThread};
 use crate::actors::subtrees::{SubtreeChangesRequest, SubtreeThread};
 use crate::commit::{child_history, commits_for_range, history_length, Commit};
 use crate::history_entry::HistoryEntry;
-use crate::ui::base::data::{DataAdapter, SearchProgress};
+use crate::ui::base::data::SearchProgress;
 use crate::ui::base::search::{Direction, Needle, SearchResult};
 use crate::ui::base::StyledLine;
 use crate::utils::find_forge_url;
@@ -450,17 +450,14 @@ impl HistoryAdapter {
             }
         }
     }
-}
-
-impl DataAdapter<HistoryEntry> for HistoryAdapter {
-    fn get_line(&mut self, i: usize, selected: bool) -> StyledLine<String> {
+    pub fn get_line(&mut self, i: usize, selected: bool) -> StyledLine<String> {
         if self.is_fill_up_needed(i) {
             assert!(self.fill_up(i + 50));
         }
         self.history[i].render(selected)
     }
 
-    fn get_data(&mut self, i: usize) -> &HistoryEntry {
+    pub fn get_data(&mut self, i: usize) -> &HistoryEntry {
         debug_assert!(i < self.length);
         if self.is_fill_up_needed(i) {
             assert!(self.fill_up(self.history.len() - i + 50));
@@ -468,15 +465,11 @@ impl DataAdapter<HistoryEntry> for HistoryAdapter {
         &self.history[i]
     }
 
-    fn is_empty(&self) -> bool {
-        self.length == 0
-    }
-
-    fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.length
     }
 
-    fn search(&mut self, needle: Needle, start: usize) -> Receiver<SearchProgress> {
+    pub fn search(&mut self, needle: Needle, start: usize) -> Receiver<SearchProgress> {
         let range = self.range.clone();
         let paths = self.paths.clone();
         let repo = self.repo.clone();

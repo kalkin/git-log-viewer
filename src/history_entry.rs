@@ -375,7 +375,7 @@ impl HistoryEntry {
         result.content.push(separator.clone());
         if let Some(modules) = self.render_modules(32) {
             result.content.push(modules);
-            result.content.push(separator.clone());
+            result.content.push(separator);
         }
         result.content.extend(self.render_subject());
 

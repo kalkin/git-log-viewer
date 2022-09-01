@@ -26,7 +26,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::history_adapter::HistoryAdapter;
 use crate::history_entry::HistoryEntry;
 use crate::search::highlight_search_line;
-use crate::ui::base::data::{DataAdapter, SearchProgress};
+use crate::ui::base::data::SearchProgress;
 use crate::ui::base::paging::Paging;
 use crate::ui::base::{
     shorten_line, Area, Drawable, HandleEvent, Selectable, StyledArea, StyledLine,
