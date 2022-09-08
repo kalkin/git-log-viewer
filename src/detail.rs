@@ -58,12 +58,12 @@ impl Drawable for DiffView {
 
 impl DetailsWidget<HistoryEntry> for DiffView {
     fn set_content(&mut self, content: &HistoryEntry) {
+        let commit = content.commit();
         let mut data: StyledArea<String> = vec![
-            color_text("Commit:          ", &content.id().0, *ID_STYLE),
+            color_text("Commit:          ", &commit.id().0, *ID_STYLE),
             color_text(
                 "Parents:         ",
-                &content
-                    .commit()
+                &commit
                     .parents()
                     .iter()
                     .map(|p| format!("{:?}", p))
@@ -71,22 +71,22 @@ impl DetailsWidget<HistoryEntry> for DiffView {
                     .join(" "),
                 *ID_STYLE,
             ),
-            color_text("Author:          ", content.author_name(), *NAME_STYLE),
-            color_text("Author Date:     ", content.author_date(), *DATE_STYLE),
+            color_text("Author:          ", commit.author_name(), *NAME_STYLE),
+            color_text("Author Date:     ", commit.author_date(), *DATE_STYLE),
         ];
         // Committer lines {
-        if content.author_name() != content.committer_name() {
+        if commit.author_name() != commit.committer_name() {
             data.push(color_text(
                 "Committer:       ",
-                content.committer_name(),
+                commit.committer_name(),
                 *NAME_STYLE,
             ));
         }
 
-        if content.author_date() != content.committer_date() {
+        if commit.author_date() != commit.committer_date() {
             data.push(color_text(
                 "Committer Date:  ",
-                content.committer_date(),
+                commit.committer_date(),
                 *DATE_STYLE,
             ));
         }
@@ -103,7 +103,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
             ));
         }
 
-        if !content.commit().references().is_empty() {
+        if !commit.references().is_empty() {
             let references: Vec<&str> = content
                 .filtered_references()
                 .iter()
@@ -120,11 +120,11 @@ impl DetailsWidget<HistoryEntry> for DiffView {
         }
 
         data.push(StyledLine::empty());
-        for subject_line in content.original_subject().trim().lines() {
+        for subject_line in commit.subject().trim().lines() {
             data.push(color_text(" ", subject_line, *DEFAULT_STYLE));
         }
         data.push(StyledLine::empty());
-        for body_line in content.body().trim().lines() {
+        for body_line in commit.body().trim().lines() {
             data.push(color_text(" ", body_line, *DEFAULT_STYLE));
         }
         data.push(StyledLine::empty());
@@ -134,7 +134,7 @@ impl DetailsWidget<HistoryEntry> for DiffView {
             )],
         });
         data.push(StyledLine::empty());
-        for line in git_diff(&self.2, content.commit(), self.1.as_ref()) {
+        for line in git_diff(&self.2, commit, self.1.as_ref()) {
             data.push(line);
         }
         let adapter = StyledAreaAdapter {

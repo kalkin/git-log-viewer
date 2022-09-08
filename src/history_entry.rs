@@ -425,15 +425,6 @@ impl HistoryEntry {
     }
 
     #[must_use]
-    pub fn body(&self) -> &String {
-        self.commit.body()
-    }
-    #[must_use]
-    pub fn original_subject(&self) -> &String {
-        self.commit.subject()
-    }
-
-    #[must_use]
     pub fn id(&self) -> &Oid {
         self.commit.id()
     }
@@ -446,26 +437,6 @@ impl HistoryEntry {
     #[must_use]
     pub fn author_rel_date(&self) -> &String {
         self.commit.author_rel_date()
-    }
-
-    #[must_use]
-    pub fn author_date(&self) -> &String {
-        self.commit.author_date()
-    }
-
-    #[must_use]
-    pub fn committer_date(&self) -> &String {
-        self.commit.committer_date()
-    }
-
-    #[must_use]
-    pub fn author_name(&self) -> &String {
-        self.commit.author_name()
-    }
-
-    #[must_use]
-    pub fn committer_name(&self) -> &String {
-        self.commit.committer_name()
     }
 
     #[must_use]
