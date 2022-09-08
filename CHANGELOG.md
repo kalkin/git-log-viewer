@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.0.3] - 2022-09-08
+
+### Added
+
+- Display `HistoryEntry` debug data in the detail view
+- show parents in detail view
+- Indicate top of a branch/tag with half full circle
+- Command line handle paths args without '--'
+- Support multiple rev specs simmilar to git log
+
+### Changed
+
+- Make graph narrower
+
 ## [3.0.2] - 2022-08-18
 
 ### Changed
