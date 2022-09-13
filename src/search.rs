@@ -19,7 +19,7 @@
 
 use crossterm::style::{Attribute, Color, ContentStyle, StyledContent};
 
-use crate::ui::base::search::{Needle, SearchResult};
+use crate::ui::base::search::Needle;
 use crate::ui::base::StyledLine;
 
 struct TextMatch {
@@ -97,21 +97,14 @@ fn search_styled_content(sc: &StyledContent<String>, state: &Needle) -> Vec<Text
 }
 
 #[allow(clippy::ptr_arg)]
-pub fn search_line(line: &StyledLine<String>, state: &Needle) -> Vec<SearchResult> {
-    let parts = line
-        .content
-        .iter()
-        .map(|sc| sc.content().clone())
-        .collect::<Vec<_>>();
-
-    let mut result = vec![];
-    let haystack = parts.join("");
-    let needle = state.text();
-    let indices = haystack.match_indices(needle);
-    for (i, s) in indices {
-        result.push(SearchResult(vec![i, i + s.len()]));
+// Used for searching e.g. in details view
+pub fn line_matches(line: &StyledLine<String>, state: &Needle) -> bool {
+    for part in &line.content {
+        if part.content().matches(state.text()).count() > 0 {
+            return true;
+        }
     }
-    result
+    false
 }
 
 #[cfg(test)]

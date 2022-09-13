@@ -17,7 +17,7 @@
 
 use crossterm::style::{style, Attribute};
 
-use crate::search::search_line;
+use crate::search::line_matches;
 use crate::ui::base::search::{Direction, Needle, SearchResult};
 use crate::ui::base::{Pos, StyledArea, StyledLine};
 use std::sync::mpsc;
@@ -149,15 +149,17 @@ impl DataAdapter<String> for StyledAreaAdapter {
             }
             for i in range {
                 let line = &cloned[i];
-                for m in search_line(line, &needle) {
-                    let mut f = m.0.clone();
-                    f.insert(0, i);
-                    if rx.send(SearchProgress::Found(SearchResult(f))).is_err() {
+                if line_matches(line, &needle) {
+                    if rx
+                        .send(SearchProgress::Found(SearchResult(vec![i])))
+                        .is_err()
+                    {
                         return;
                     }
-                }
-                if rx.send(SearchProgress::Searched(1)).is_err() {
-                    return;
+                } else {
+                    if rx.send(SearchProgress::Searched(1)).is_err() {
+                        return;
+                    }
                 }
             }
 
