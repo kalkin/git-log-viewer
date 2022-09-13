@@ -29,7 +29,7 @@ use crate::actors::fork_point::ForkPointThread;
 use crate::actors::github::{GitHubRequest, GitHubThread};
 use crate::actors::subtrees::{SubtreeChangesRequest, SubtreeThread};
 use crate::commit::{child_history, commits_for_range, history_length, Commit};
-use crate::history_entry::HistoryEntry;
+use crate::history_entry::{EntryKind, HistoryEntry};
 use crate::ui::base::data::SearchProgress;
 use crate::ui::base::search::{Direction, Needle, SearchResult};
 use crate::ui::base::StyledLine;
@@ -278,6 +278,7 @@ impl HistoryAdapter {
         link: bool,
     ) -> HistoryEntry {
         let above_commit = above_entry.map(HistoryEntry::commit);
+        let kind = EntryKind::new(&commit, above_commit.is_some(), link);
 
         if !self.subtree_modules.is_empty() {
             self.subtree_thread.send(SubtreeChangesRequest {
@@ -294,12 +295,9 @@ impl HistoryAdapter {
             self.forge_url.clone(),
             fork_point,
             &self.remotes,
-            link,
+            kind,
             self.debug,
         );
-        if above_commit.is_none() {
-            entry.set_top_commit(true);
-        }
 
         if let Some(url) = entry.url() {
             if let Subject::PullRequest { id, .. } = entry.special() {

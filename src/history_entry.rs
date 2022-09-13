@@ -38,6 +38,40 @@ lazy_static! {
         regex::Regex::new(r#".+{8,} \d\d:\d\d$"#).expect("Valid RegEx");
 }
 
+// Tracks which kind of commit an `HistoryEntry` is.
+pub enum EntryKind {
+    IncomingOnly,
+    IncomingAndOutgoing,
+    Link,
+    Orphan,
+    OutgoingOnly,
+}
+
+impl EntryKind {
+    pub fn new(c: &Commit, has_above: bool, is_link: bool) -> Self {
+        if is_link {
+            Self::Link
+        } else {
+            match (has_above, c.parents().is_empty()) {
+                (true, true) => Self::IncomingOnly,
+                (true, false) => Self::IncomingAndOutgoing,
+                (false, true) => Self::Orphan,
+                (false, false) => Self::OutgoingOnly,
+            }
+        }
+    }
+
+    const fn to_char(&self) -> char {
+        match self {
+            Self::IncomingOnly => '◉',
+            Self::IncomingAndOutgoing => '●',
+            Self::Link => '⭞',
+            Self::Orphan => '○',
+            Self::OutgoingOnly => '◒',
+        }
+    }
+}
+
 #[derive(CopyGetters, Getters, Setters)]
 pub struct HistoryEntry {
     #[getset(get = "pub")]
@@ -46,6 +80,7 @@ pub struct HistoryEntry {
     visible_children: usize,
     #[getset(get_copy = "pub")]
     level: u8,
+    kind: EntryKind,
     remotes: Vec<Remote>,
     subject: Subject,
     #[getset(get = "pub", set = "pub")]
@@ -54,12 +89,8 @@ pub struct HistoryEntry {
     forge_url: Option<Url>,
     #[getset(get = "pub")]
     fork_point: ForkPointCalculation,
-    #[getset(get = "pub", set = "pub")]
-    top_commit: bool,
     #[getset(get = "pub")]
     debug: bool,
-    #[getset(get = "pub")]
-    is_link: bool,
 }
 
 impl HistoryEntry {
@@ -70,7 +101,7 @@ impl HistoryEntry {
         forge_url: Option<Url>,
         fork_point: ForkPointCalculation,
         repo_remotes: &[Remote],
-        is_link: bool,
+        kind: EntryKind,
         debug: bool,
     ) -> Self {
         let subject_struct = Subject::from(commit.subject().as_str());
@@ -94,16 +125,19 @@ impl HistoryEntry {
         Self {
             commit,
             visible_children: 0,
+            kind,
             level,
             remotes,
             subject: subject_struct,
             subtrees: vec![],
             forge_url,
             fork_point,
-            top_commit: false,
             debug,
-            is_link,
         }
+    }
+
+    pub const fn is_link(&self) -> bool {
+        matches!(self.kind, EntryKind::Link)
     }
 }
 // Rendering operations
@@ -141,16 +175,7 @@ impl HistoryEntry {
         for _ in 0..self.level {
             text.push('│');
         }
-
-        if self.top_commit {
-            text.push('◒');
-        } else if self.commit.parents().first().is_none() {
-            text.push('◉');
-        } else if self.is_link {
-            text.push('⭞');
-        } else {
-            text.push('●');
-        }
+        text.push(self.kind.to_char());
 
         #[allow(clippy::else_if_without_else)]
         if self.has_children() {

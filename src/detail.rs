@@ -150,11 +150,6 @@ fn add_debug_content(data: &mut Vec<StyledLine<String>>, content: &HistoryEntry)
         content: vec![style("                                 DEBUG".to_owned())],
     });
     data.push(color_text(
-        "top_commit:      ",
-        &content.top_commit().to_string(),
-        *DEBUG_STYLE,
-    ));
-    data.push(color_text(
         "fork_point:      ",
         &format!("{:?}", content.fork_point()),
         *DEBUG_STYLE,
