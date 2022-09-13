@@ -360,8 +360,8 @@ impl HistoryAdapter {
 
             // Check if we need to add a Link commit
             let link_commit = if let (Some(Some(oid)), Some(bellow_selected)) = (
-                children.last().map(Commit::bellow),
-                selected.commit().bellow().as_ref(),
+                children.last().map(|c| c.parents().first()),
+                selected.commit().parents().first(),
             ) {
                 if oid == bellow_selected {
                     None

@@ -92,11 +92,11 @@ impl ForkPointThread {
     ) -> ForkPointCalculation {
         let mut fork_point_calc = ForkPointCalculation::Done(false);
         if let Some(c) = above_commit {
-            fork_point_calc = if c.is_merge() && c.children()[0] != *t.id() {
-                let first = t.id().clone();
-                let second = c.children().first().expect("oid").clone();
-                let request = ForkPointRequest { first, second };
-                self.send(request);
+            fork_point_calc = if c.is_merge() && c.parents()[1] != *t.id() {
+                self.send(ForkPointRequest {
+                    first: t.id().clone(),
+                    second: c.parents()[1].clone(),
+                });
                 ForkPointCalculation::InProgress
             } else {
                 ForkPointCalculation::Done(false)

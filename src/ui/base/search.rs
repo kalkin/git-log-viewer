@@ -199,7 +199,6 @@ impl ResultManager {
     }
 }
 
-
 #[cfg(test)]
 mod test_needle_capture {
     use crate::ui::base::search::{Direction, Event, Needle, NeedleCapture, State};
@@ -307,7 +306,10 @@ mod test_needle_capture {
 mod test_result_manager {
     use pretty_assertions::assert_eq;
 
-    use crate::ui::base::{search::{ResultManager, SearchResult}, data::SearchProgress};
+    use crate::ui::base::{
+        data::SearchProgress,
+        search::{ResultManager, SearchResult},
+    };
 
     #[test]
     fn empty() {

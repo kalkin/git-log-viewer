@@ -85,9 +85,7 @@ pub struct Commit {
     body: String,
 
     #[getset(get = "pub")]
-    bellow: Option<Oid>,
-    #[getset(get = "pub")]
-    children: Vec<Oid>,
+    parents: Vec<Oid>,
     #[allow(dead_code)]
     is_head: bool,
     #[allow(dead_code)]
@@ -103,7 +101,7 @@ pub struct Commit {
 impl Commit {
     #[must_use]
     pub fn is_merge(&self) -> bool {
-        self.bellow.is_some() && !self.children.is_empty()
+        self.parents.len() >= 2
     }
 
     pub fn matches(&self, needle: &Needle) -> bool {
@@ -193,16 +191,10 @@ impl Commit {
 
         let is_merge = parents_record.len() >= 2;
 
-        let bellow = if parents_record.is_empty() {
-            None
-        } else {
-            Some(Oid(parents_record.remove(0).to_owned()))
-        };
-
-        let mut children = Vec::new();
-        for c in parents_record {
-            children.push(Oid(c.to_owned()));
-        }
+        let parents = parents_record
+            .into_iter()
+            .map(|c| Oid(c.to_owned()))
+            .collect();
 
         Self {
             id,
@@ -217,18 +209,13 @@ impl Commit {
             committer_rel_date,
             subject,
             body,
-            bellow,
-            children,
+            parents,
             is_head,
             is_merge,
             branches,
             references,
             tags,
         }
-    }
-
-    pub fn parents(&self) -> &Vec<Oid> {
-        self.children()
     }
 
     pub fn from_repo(repo: &Repository, oid: &Oid) -> Option<Self> {
@@ -332,8 +319,8 @@ where
 
 #[must_use]
 pub fn child_history(repo: &Repository, commit: &Commit, paths: &[PathBuf]) -> Vec<Commit> {
-    let bellow = commit.bellow.as_ref().expect("Expected merge commit");
-    let first_child = commit.children.get(0).expect("Expected merge commit");
+    let bellow = commit.parents.first().expect("Expected merge commit");
+    let first_child = commit.parents.get(1).expect("Expected merge commit");
     let end = repo
         .merge_base(&[&bellow.0, &first_child.0])
         .expect("merge base shouldn't fail");
@@ -404,8 +391,7 @@ mod test {
         let result = commits_for_range(&repo, &vec!["a17989470af".to_owned()], paths, None, None);
         assert_eq!(result.len(), 1);
         let commit = &result[0];
-        assert_eq!(commit.children.len(), 0);
-        assert_eq!(commit.bellow, None);
+        assert_eq!(commit.parents.len(), 0);
         assert!(!commit.is_merge);
     }
 }

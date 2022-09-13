@@ -197,7 +197,7 @@ fn add_debug_content(data: &mut Vec<StyledLine<String>>, content: &HistoryEntry)
 
 fn git_diff(repo: &Repository, commit: &Commit, paths: &[PathBuf]) -> Vec<StyledLine<String>> {
     let empty_tree = Oid("4b825dc642cb6eb9a060e54bf8d69288fbee4904".to_owned());
-    let bellow = commit.bellow().as_ref().unwrap_or(&empty_tree);
+    let bellow = commit.parents().first().unwrap_or(&empty_tree);
     let rev = format!("{}..{}", bellow.0, commit.id().0);
     let mut cmd = repo.git();
     cmd.args(&[

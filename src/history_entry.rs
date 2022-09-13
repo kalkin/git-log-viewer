@@ -144,7 +144,7 @@ impl HistoryEntry {
 
         if self.top_commit {
             text.push('◒');
-        } else if self.commit.bellow().is_none() {
+        } else if self.commit.parents().first().is_none() {
             text.push('◉');
         } else if self.is_link {
             text.push('⭞');
