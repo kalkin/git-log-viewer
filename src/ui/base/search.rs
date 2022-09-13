@@ -19,6 +19,8 @@ use std::fmt::{Debug, Display, Formatter};
 
 use getset::Getters;
 
+use super::data::SearchProgress;
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Direction {
     Forward,
@@ -138,6 +140,66 @@ impl NeedleCapture {
     }
 }
 
+#[derive(Default, Getters)]
+pub struct ResultManager {
+    finished: bool,
+    selected: Option<usize>,
+    #[getset(get = "pub")]
+    results: Vec<SearchResult>,
+    #[getset(get = "pub")]
+    seen: usize,
+}
+
+impl ResultManager {
+    pub fn consume(&mut self, event: SearchProgress) {
+        match event {
+            SearchProgress::Searched(n) => self.seen += n,
+            SearchProgress::Found(result) => {
+                if self.selected.is_none() {
+                    self.selected = Some(0);
+                }
+                self.results.push(result);
+            }
+            SearchProgress::Finished => self.finished = true,
+        }
+    }
+
+    pub fn next(&mut self) {
+        if let Some(i) = self.selected {
+            if i + 1 < self.results.len() {
+                self.selected = Some(i + 1);
+            } else {
+                self.selected = Some(0);
+            }
+        } else if self.results.is_empty() {
+            log::info!("No search results");
+        } else {
+            self.selected = Some(0);
+        }
+    }
+
+    pub fn prev(&mut self) {
+        if let Some(i) = self.selected {
+            if 0 < i {
+                self.selected = Some(i - 1);
+            } else if !self.results.is_empty() {
+                self.selected = Some(self.results.len() - 1);
+            } else {
+                log::info!("No search results");
+            }
+        } else if self.results.is_empty() {
+            log::info!("No previous search results");
+        } else {
+            self.selected = Some(self.results.len());
+        }
+    }
+
+    pub fn selected(&mut self) -> Option<SearchResult> {
+        self.selected.and_then(|i| self.results.get(i).cloned())
+    }
+}
+
+
 #[cfg(test)]
 mod test_needle_capture {
     use crate::ui::base::search::{Direction, Event, Needle, NeedleCapture, State};
@@ -238,5 +300,51 @@ mod test_needle_capture {
             State::Hidden,
             "Cancel event moves us to hidden state"
         );
+    }
+}
+
+#[cfg(test)]
+mod test_result_manager {
+    use pretty_assertions::assert_eq;
+
+    use crate::ui::base::{search::{ResultManager, SearchResult}, data::SearchProgress};
+
+    #[test]
+    fn empty() {
+        let mut results = ResultManager::default();
+        assert!(results.selected.is_none(), "Starts out empty");
+        results.next();
+        assert!(results.selected.is_none(), "No selected on empty");
+        results.prev();
+        assert!(results.selected.is_none(), "No selected on empty");
+        results.consume(SearchProgress::Searched(23));
+        assert!(results.selected.is_none(), "Still empty");
+        results.consume(SearchProgress::Finished);
+        assert!(results.selected.is_none(), "Still empty");
+    }
+    #[test]
+    fn selecting_results() {
+        let mut results = ResultManager::default();
+        assert!(results.selected.is_none(), "Starts out empty");
+        results.consume(SearchProgress::Found(SearchResult(vec![0])));
+        assert!(results.selected.is_some(), "We have a selected");
+        results.consume(SearchProgress::Found(SearchResult(vec![1])));
+        results.consume(SearchProgress::Found(SearchResult(vec![2])));
+        results.next();
+        assert_eq!(results.selected().unwrap(), SearchResult(vec![1]));
+        results.next();
+        assert_eq!(results.selected().unwrap(), SearchResult(vec![2]));
+        results.next();
+        assert_eq!(
+            results.selected().unwrap(),
+            SearchResult(vec![0]),
+            "Loop over the results"
+        );
+        results.prev();
+        assert_eq!(results.selected().unwrap(), SearchResult(vec![2]));
+        results.prev();
+        assert_eq!(results.selected().unwrap(), SearchResult(vec![1]));
+        results.prev();
+        assert_eq!(results.selected().unwrap(), SearchResult(vec![0]));
     }
 }
