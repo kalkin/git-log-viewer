@@ -43,6 +43,7 @@ pub struct ForkPointRequest {
     pub second: Oid,
 }
 
+#[cfg(not(tarpaulin_include))]
 impl Debug for ForkPointRequest {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut first = self.first.0.clone();
@@ -62,6 +63,7 @@ pub struct ForkPointResponse {
     pub value: bool,
 }
 
+#[cfg(not(tarpaulin_include))]
 impl Debug for ForkPointResponse {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut oid = self.first.0.clone();

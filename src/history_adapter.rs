@@ -69,6 +69,7 @@ struct CommitRange {
     end: RangePart,
     level: usize,
 }
+#[cfg(not(tarpaulin_include))]
 impl Debug for CommitRange {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut indent = "".to_owned();
@@ -84,6 +85,7 @@ impl Debug for CommitRange {
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 impl Debug for HistoryAdapter {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut result: Vec<CommitRange> = vec![];

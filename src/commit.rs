@@ -34,12 +34,14 @@ macro_rules! next_string {
 #[derive(Clone, Eq, PartialEq)]
 pub struct Oid(pub String);
 
+#[cfg(not(tarpaulin_include))]
 impl Display for Oid {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0)
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 impl Debug for Oid {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut text = self.0.clone();
@@ -51,6 +53,7 @@ impl Debug for Oid {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct GitRef(pub String);
 
+#[cfg(not(tarpaulin_include))]
 impl Display for GitRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0)

@@ -24,6 +24,7 @@ pub struct Area {
     height: usize,
 }
 
+#[cfg(not(tarpaulin_include))]
 impl Debug for Area {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut text = self.width.to_string();

@@ -74,6 +74,7 @@ impl Display for Needle {
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 impl Debug for Needle {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(&format!("Needle({})", self))
