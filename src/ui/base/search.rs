@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::Debug;
 
 use getset::Getters;
 
@@ -27,7 +27,7 @@ pub enum Direction {
     Backward,
 }
 
-#[derive(Clone, Eq, Getters, PartialEq)]
+#[derive(Clone, Debug, Eq, Getters, PartialEq)]
 pub struct Needle {
     #[getset(get = "pub")]
     text: String,
@@ -54,30 +54,6 @@ impl Needle {
             direction: dir,
             ignore_case: text.chars().all(char::is_lowercase),
         }
-    }
-}
-
-impl Display for Needle {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let mut text = "".to_owned();
-        match self.direction {
-            Direction::Forward => text.push('/'),
-            Direction::Backward => text.push('?'),
-        }
-        text.push_str(&self.text);
-
-        if *self.ignore_case() {
-            text.push_str(", i");
-        }
-
-        f.write_str(&text)
-    }
-}
-
-#[cfg(not(tarpaulin_include))]
-impl Debug for Needle {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&format!("Needle({})", self))
     }
 }
 
