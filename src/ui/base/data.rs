@@ -149,23 +149,19 @@ impl DataAdapter<String> for StyledAreaAdapter {
             }
             for i in range {
                 let line = &cloned[i];
-                if line_matches(line, &needle) {
-                    if rx
-                        .send(SearchProgress::Found(SearchResult(vec![i])))
-                        .is_err()
-                    {
-                        return;
-                    }
+                let t = if line_matches(line, &needle) {
+                    SearchProgress::Found(SearchResult(vec![i]))
                 } else {
-                    if rx.send(SearchProgress::Searched(1)).is_err() {
-                        return;
-                    }
+                    SearchProgress::Searched(1)
+                };
+                if let Err(err) = rx.send(t) {
+                    log::error!("Failed to send search progress\n{}", err);
+                    return;
                 }
             }
 
-            #[allow(unused_must_use)]
-            {
-                rx.send(SearchProgress::Finished);
+            if let Err(err) = rx.send(SearchProgress::Finished) {
+                log::error!("Failed to send SearchProgress::Finished\n{}", err);
             }
         });
         self.thread = Some(thread);
