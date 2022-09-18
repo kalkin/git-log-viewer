@@ -42,8 +42,7 @@ use crate::ui::layouts::SplitLayout;
 use crossterm::ErrorKind;
 use posix_errors::PosixError;
 use std::process::exit;
-use std::sync::mpsc::TryRecvError;
-use std::time;
+use std::time::{Duration, Instant};
 
 mod actors;
 #[macro_use]
@@ -233,9 +232,15 @@ fn run_ui(
 
     setup_screen("glv")?;
     render(&last_rendered, &area)?;
+    // We start with 10ms timeout and bump it up everytime we timeout and rendering doesn't show
+    // any updates. The idea is that every time we render and see no changes we bump the timer up
+    // to 1 second in 100 ms steps.
+    let mut timeout = Duration::from_millis(10);
     loop {
-        match rx.try_recv() {
+        match rx.recv_timeout(timeout) {
             Ok(event) => {
+                let start = Instant::now();
+                log::debug!("UI-LOOP: Received Event {:?}", event);
                 if drawable.on_event(&event) == HandleEvent::Ignored {
                     match event {
                         Event::Resize(cols, rows) => {
@@ -251,36 +256,57 @@ fn run_ui(
                         }) => {
                             break;
                         }
-                        _ => {}
+                        _ => {
+                            log::info!("Unexpected event: {:?}", event);
+                        }
                     }
                 }
                 if area.height() >= 4 && area.width() >= 10 {
                     let new = drawable.render(&area);
-                    if !same(&new, &last_rendered) {
+                    if same(&new, &last_rendered) {
+                        log::debug!("UI-LOOP: Skipping useless rendering calculation");
+                    } else {
                         last_rendered = new;
                         render(&last_rendered, &area)?;
                     }
+                } else {
+                    log::warn!("UI-LOOP: area too small");
+                }
+
+                let duration = start.elapsed();
+                if duration.as_millis() > 50 {
+                    log::warn!("UI-LOOP: Runtime {:?} !", duration);
                 }
             }
-            Err(err) => match err {
-                TryRecvError::Empty => {
-                    if area.height() >= 4 && area.width() >= 10 {
-                        let new = drawable.render(&area);
-                        if !same(&new, &last_rendered) {
-                            last_rendered = new;
-                            render(&last_rendered, &area)?;
-                        }
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                let start = Instant::now();
+                let new = drawable.render(&area);
+                #[allow(clippy::else_if_without_else)]
+                if area.height() >= 4 && area.width() >= 10 {
+                    if !same(&new, &last_rendered) {
+                        last_rendered = new;
+                        render(&last_rendered, &area)?;
+                        timeout = Duration::from_millis(10);
+                        log::trace!("UI-LOOP: Set recv timeout to {:?}", timeout);
+                    } else if Duration::from_millis(1000) > timeout {
+                        timeout = timeout.saturating_add(Duration::from_millis(100));
+                        log::trace!(target:"main:ui_loop","set recv timeout to {:?}", timeout);
                     }
-                    let hundred_millis = time::Duration::from_millis(100);
-                    thread::sleep(hundred_millis);
+                } else {
+                    log::warn!(target:"main:ui_loop","target area too small");
                 }
-                TryRecvError::Disconnected => {
-                    return Err(io::Error::new(
-                        io::ErrorKind::ConnectionAborted,
-                        format!("Event loop disconnected:\n{:?}", err),
-                    ))
+
+                let duration = start.elapsed();
+                if duration.as_millis() > 50 {
+                    log::warn!("UI-LOOP: Runtime {:?} !", duration);
                 }
-            },
+            }
+            Err(err) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::ConnectionAborted,
+                    format!("Event loop disconnected:\n{:?}", err),
+                ))
+            }
         }
     }
 
