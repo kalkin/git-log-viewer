@@ -17,7 +17,6 @@
 
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, SendError, Sender, TryRecvError};
-use std::thread::JoinHandle;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use curl::easy::Easy;
@@ -27,6 +26,8 @@ use crate::commit::Oid;
 use std::thread;
 use tinyjson::JsonValue;
 use url::Url;
+
+use super::ActorThread;
 
 pub struct GitHubRequest {
     pub oid: Oid,
@@ -39,18 +40,14 @@ pub struct GitHubResponse {
     pub subject: String,
 }
 
-pub struct GitHubThread {
-    _thread: JoinHandle<()>,
-    receiver: Receiver<GitHubResponse>,
-    sender: Sender<GitHubRequest>,
-}
+pub struct GitHubThread(ActorThread<GitHubRequest, GitHubResponse>);
 
 impl GitHubThread {
     #[allow(clippy::too_many_lines)]
     pub(crate) fn new() -> Self {
-        let (tx_1, rx_1): (Sender<GitHubResponse>, Receiver<GitHubResponse>) = mpsc::channel();
-        let (tx_2, rx_2): (Sender<GitHubRequest>, Receiver<GitHubRequest>) = mpsc::channel();
-        let child = thread::spawn(move || {
+        let (tx_1, receiver): (Sender<GitHubResponse>, Receiver<GitHubResponse>) = mpsc::channel();
+        let (sender, rx_2): (Sender<GitHubRequest>, Receiver<GitHubRequest>) = mpsc::channel();
+        let thread = thread::spawn(move || {
             let mut rate_limit_remaining = 60;
             let mut rate_limit_reset = u64::MAX;
             while let Ok(v) = rx_2.recv() {
@@ -161,19 +158,15 @@ impl GitHubThread {
             }
         });
 
-        Self {
-            _thread: child,
-            receiver: rx_1,
-            sender: tx_2,
-        }
+        Self(ActorThread::new(thread, receiver, sender))
     }
 
     pub(crate) fn send(&self, req: GitHubRequest) -> Result<(), SendError<GitHubRequest>> {
-        self.sender.send(req)
+        self.0.send(req)
     }
 
     pub(crate) fn try_recv(&self) -> Result<GitHubResponse, TryRecvError> {
-        self.receiver.try_recv()
+        self.0.try_recv()
     }
 
     pub(crate) fn can_handle(url: &Url) -> bool {

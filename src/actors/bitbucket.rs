@@ -18,7 +18,6 @@
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, SendError, Sender, TryRecvError};
 use std::thread;
-use std::thread::JoinHandle;
 
 use curl::easy::Easy;
 use tinyjson::JsonValue;
@@ -26,6 +25,8 @@ use url::Url;
 
 use crate::cache;
 use crate::commit::Oid;
+
+use super::ActorThread;
 
 #[allow(clippy::module_name_repetitions)]
 pub struct BitbucketRequest {
@@ -41,11 +42,7 @@ pub struct BitbucketResponse {
 }
 
 #[allow(clippy::module_name_repetitions)]
-pub struct BitbucketThread {
-    _thread: JoinHandle<()>,
-    receiver: Receiver<BitbucketResponse>,
-    sender: Sender<BitbucketRequest>,
-}
+pub struct BitbucketThread(ActorThread<BitbucketRequest, BitbucketResponse>);
 
 fn api_url(v: &BitbucketRequest) -> Option<Url> {
     let domain = v
@@ -67,10 +64,11 @@ fn api_url(v: &BitbucketRequest) -> Option<Url> {
 
 impl BitbucketThread {
     pub(crate) fn new() -> Self {
-        let (tx_1, rx_1): (Sender<BitbucketResponse>, Receiver<BitbucketResponse>) =
+        let (tx_1, receiver): (Sender<BitbucketResponse>, Receiver<BitbucketResponse>) =
             mpsc::channel();
-        let (tx_2, rx_2): (Sender<BitbucketRequest>, Receiver<BitbucketRequest>) = mpsc::channel();
-        let child = thread::spawn(move || {
+        let (sender, rx_2): (Sender<BitbucketRequest>, Receiver<BitbucketRequest>) =
+            mpsc::channel();
+        let thread = thread::spawn(move || {
             let mut stopped = false;
             while let Ok(v) = rx_2.recv() {
                 if stopped {
@@ -146,19 +144,15 @@ impl BitbucketThread {
             }
         });
 
-        Self {
-            _thread: child,
-            receiver: rx_1,
-            sender: tx_2,
-        }
+        Self(ActorThread::new(thread, receiver, sender))
     }
 
     pub(crate) fn send(&self, req: BitbucketRequest) -> Result<(), SendError<BitbucketRequest>> {
-        self.sender.send(req)
+        self.0.send(req)
     }
 
     pub(crate) fn try_recv(&self) -> Result<BitbucketResponse, TryRecvError> {
-        self.receiver.try_recv()
+        self.0.try_recv()
     }
 
     pub(crate) fn can_handle(url: &Url) -> bool {

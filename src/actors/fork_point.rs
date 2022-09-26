@@ -17,7 +17,6 @@
 
 #![allow(clippy::module_name_repetitions)]
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
-use std::thread::JoinHandle;
 
 use crate::commit::{Commit, Oid};
 use std::fmt::{Debug, Formatter};
@@ -26,17 +25,15 @@ use std::thread;
 
 use git_wrapper::Repository;
 
+use super::ActorThread;
+
 #[derive(Debug)]
 pub enum ForkPointCalculation {
     Done(bool),
     InProgress,
 }
 
-pub struct ForkPointThread {
-    _thread: JoinHandle<()>,
-    receiver: Receiver<ForkPointResponse>,
-    sender: Sender<ForkPointRequest>,
-}
+pub struct ForkPointThread(ActorThread<ForkPointRequest, ForkPointResponse>);
 
 pub struct ForkPointRequest {
     pub first: Oid,
@@ -76,15 +73,9 @@ impl Debug for ForkPointResponse {
 }
 
 impl ForkPointThread {
-    pub fn send(&self, req: ForkPointRequest) {
-        if let Err(e) = self.sender.send(req) {
-            log::error!("Error {:?}", e);
-        }
-    }
-
     #[allow(clippy::missing_errors_doc)]
     pub fn try_recv(&self) -> Result<ForkPointResponse, TryRecvError> {
-        self.receiver.try_recv()
+        self.0.try_recv()
     }
 
     pub fn request_calculation(
@@ -95,10 +86,12 @@ impl ForkPointThread {
         let mut fork_point_calc = ForkPointCalculation::Done(false);
         if let Some(c) = above_commit {
             fork_point_calc = if c.is_merge() && c.parents()[1] != *t.id() {
-                self.send(ForkPointRequest {
-                    first: t.id().clone(),
-                    second: c.parents()[1].clone(),
-                });
+                self.0
+                    .send(ForkPointRequest {
+                        first: t.id().clone(),
+                        second: c.parents()[1].clone(),
+                    })
+                    .unwrap();
                 ForkPointCalculation::InProgress
             } else {
                 ForkPointCalculation::Done(false)
@@ -108,10 +101,11 @@ impl ForkPointThread {
     }
 
     pub fn new(repo: Repository) -> Self {
-        let (tx_1, rx_1): (Sender<ForkPointResponse>, Receiver<ForkPointResponse>) =
+        let (tx_1, receiver): (Sender<ForkPointResponse>, Receiver<ForkPointResponse>) =
             mpsc::channel();
-        let (tx_2, rx_2): (Sender<ForkPointRequest>, Receiver<ForkPointRequest>) = mpsc::channel();
-        let child = thread::spawn(move || {
+        let (sender, rx_2): (Sender<ForkPointRequest>, Receiver<ForkPointRequest>) =
+            mpsc::channel();
+        let thread = thread::spawn(move || {
             while let Ok(v) = rx_2.recv() {
                 let value = repo.is_ancestor(&v.first.0, &v.second.0);
                 tx_1.send(ForkPointResponse {
@@ -122,10 +116,6 @@ impl ForkPointThread {
                 .expect("Send ForkPointResponse");
             }
         });
-        Self {
-            _thread: child,
-            receiver: rx_1,
-            sender: tx_2,
-        }
+        Self(ActorThread::new(thread, receiver, sender))
     }
 }

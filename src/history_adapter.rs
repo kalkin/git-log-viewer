@@ -283,9 +283,11 @@ impl HistoryAdapter {
         let kind = EntryKind::new(&commit, above_commit.is_some(), link);
 
         if !self.subtree_modules.is_empty() {
-            self.subtree_thread.send(SubtreeChangesRequest {
-                oid: commit.id().clone(),
-            });
+            self.subtree_thread
+                .send(SubtreeChangesRequest {
+                    oid: commit.id().clone(),
+                })
+                .unwrap();
         }
         let fork_point = self
             .fork_point_thread
