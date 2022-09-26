@@ -32,11 +32,13 @@ use git_wrapper::Repository;
 
 use history_adapter::HistoryAdapter;
 use history_entry::HistoryEntry;
+use memory_logger::blocking::MemoryLogger;
+use ui::base::Drawable;
 
 use crate::detail::DiffView;
 use crate::history_table::TableWidget;
 use crate::ui::base::{
-    new_area, render, setup_screen, shutdown_screen, Area, Drawable, HandleEvent, StyledArea,
+    new_area, render, setup_screen, shutdown_screen, Area, HandleEvent, StyledArea,
 };
 use crate::ui::layouts::SplitLayout;
 use crossterm::ErrorKind;
@@ -86,7 +88,7 @@ fn glv() -> Result<(), PosixError> {
         2 => log::Level::Debug,
         _ => log::Level::Trace,
     };
-    simple_logger::init_with_level(log_level)
+    let logger = memory_logger::blocking::MemoryLogger::setup(log_level)
         .map_err(|e| PosixError::new(128, format!("{}", e)))?;
 
     log::info!("Log Level is set to {}", log::max_level());
@@ -109,7 +111,8 @@ fn glv() -> Result<(), PosixError> {
     log::info!("Revs  {:?}", revisions);
     log::info!("Paths {:?}", paths);
     let history_adapter = HistoryAdapter::new(repo.clone(), revisions, paths.clone(), debug)?;
-    run_ui(history_adapter, repo, paths).map_err(Into::into)
+
+    run_ui(history_adapter, repo, paths, logger).map_err(Into::into)
 }
 
 #[allow(unused_qualifications)]
@@ -214,8 +217,22 @@ fn run_ui(
     history_adapter: HistoryAdapter,
     repo: Repository,
     paths: Vec<PathBuf>,
+    logger: &MemoryLogger,
 ) -> Result<(), ErrorKind> {
-    let mut area = new_area();
+    let root = build_drawable(repo, history_adapter, paths);
+    let result = ui_loop(root);
+
+    let contents = logger.read().to_string();
+    #[allow(clippy::print_stderr)]
+    for line in contents.lines() {
+        eprintln!("{}", line);
+    }
+    result
+}
+
+fn ui_loop(
+    mut drawable: SplitLayout<TableWidget, DiffView, HistoryEntry>,
+) -> Result<(), io::Error> {
     let (tx, rx) = mpsc::channel::<Event>();
     {
         thread::spawn(move || {
@@ -226,10 +243,8 @@ fn run_ui(
             }
         });
     }
-
-    let mut drawable = build_drawable(repo, history_adapter, paths);
+    let mut area = new_area();
     let mut last_rendered = drawable.render(&area);
-
     setup_screen("glv")?;
     render(&last_rendered, &area)?;
     // We start with 10ms timeout and bump it up everytime we timeout and rendering doesn't show
@@ -240,7 +255,7 @@ fn run_ui(
         match rx.recv_timeout(timeout) {
             Ok(event) => {
                 let start = Instant::now();
-                log::debug!("UI-LOOP: Received Event {:?}", event);
+                log::debug!(target:"main:ui_loop", "Received Event {:?}", event);
                 if drawable.on_event(&event) == HandleEvent::Ignored {
                     match event {
                         Event::Resize(cols, rows) => {
@@ -257,25 +272,26 @@ fn run_ui(
                             break;
                         }
                         _ => {
-                            log::info!("Unexpected event: {:?}", event);
+                            log::info!(target:"main:ui_loop", "Unexpected event: {:?}", event);
                         }
                     }
                 }
                 if area.height() >= 4 && area.width() >= 10 {
                     let new = drawable.render(&area);
+                    log::trace!(target:"main:ui_loop", "Set recv timeout to {:?}", timeout);
                     if same(&new, &last_rendered) {
-                        log::debug!("UI-LOOP: Skipping useless rendering calculation");
+                        log::debug!(target:"main:ui_loop", "Skipping useless rendering calculation");
                     } else {
                         last_rendered = new;
                         render(&last_rendered, &area)?;
                     }
                 } else {
-                    log::warn!("UI-LOOP: area too small");
+                    log::warn!(target:"main:ui_loop", "target area too small");
                 }
 
                 let duration = start.elapsed();
                 if duration.as_millis() > 50 {
-                    log::warn!("UI-LOOP: Runtime {:?} !", duration);
+                    log::warn!(target:"main:ui_loop", "Runtime {:?} !", duration);
                 }
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {
@@ -286,8 +302,6 @@ fn run_ui(
                     if !same(&new, &last_rendered) {
                         last_rendered = new;
                         render(&last_rendered, &area)?;
-                        timeout = Duration::from_millis(10);
-                        log::trace!("UI-LOOP: Set recv timeout to {:?}", timeout);
                     } else if Duration::from_millis(1000) > timeout {
                         timeout = timeout.saturating_add(Duration::from_millis(100));
                         log::trace!(target:"main:ui_loop","set recv timeout to {:?}", timeout);
@@ -298,7 +312,7 @@ fn run_ui(
 
                 let duration = start.elapsed();
                 if duration.as_millis() > 50 {
-                    log::warn!("UI-LOOP: Runtime {:?} !", duration);
+                    log::warn!(target:"main:ui_loop", "Runtime {:?} !", duration);
                 }
             }
             Err(err) => {
@@ -309,7 +323,6 @@ fn run_ui(
             }
         }
     }
-
     shutdown_screen()?;
     Ok(())
 }
