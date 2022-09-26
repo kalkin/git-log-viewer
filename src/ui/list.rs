@@ -26,13 +26,6 @@ use std::sync::mpsc::Receiver;
 
 use super::base::StyledLine;
 
-#[derive(Eq, PartialEq)]
-#[allow(dead_code)]
-pub enum SpecialSubject {
-    PrMerge(String),
-    None,
-}
-
 #[allow(clippy::module_name_repetitions)]
 pub struct ListWidget<T> {
     adapter: Box<dyn DataAdapter<T>>,
