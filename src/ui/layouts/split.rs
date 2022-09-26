@@ -25,6 +25,7 @@ pub trait DetailsWidget<T>: Drawable {
     fn set_content(&mut self, content: &T);
 }
 
+#[allow(clippy::module_name_repetitions)]
 pub struct SplitLayout<Main, Aside, T>
 where
     Main: Drawable + Selectable<T>,
