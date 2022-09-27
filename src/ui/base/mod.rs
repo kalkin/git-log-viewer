@@ -143,9 +143,7 @@ pub fn setup_screen(title: &str) -> Result<()> {
     execute!(stdout, Hide)?;
     execute!(stdout, EnterAlternateScreen)?;
     execute!(stdout, SetTitle(title))?;
-    if let Err(e) = stdout.flush() {
-        return Err(e);
-    }
+    stdout.flush()?;
     Ok(())
 }
 
@@ -160,9 +158,7 @@ pub fn shutdown_screen() -> Result<()> {
     execute!(stdout, SetTitle(""))?;
     execute!(stdout, LeaveAlternateScreen)?;
     disable_raw_mode()?;
-    if let Err(e) = stdout.flush() {
-        return Err(e);
-    }
+    stdout.flush()?;
     Ok(())
 }
 
