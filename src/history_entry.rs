@@ -151,11 +151,15 @@ impl HistoryEntry {
         let date = self.author_rel_date();
         let mut end = date.len();
         // Find and remove the timezone
+        // arithmetic: if checks for `end` being large enough.
+        #[allow(clippy::arithmetic)]
         if end - 6 > 0 && (&date[end - 6..end - 4] == " +" || &date[end - 6..end - 4] == " -") {
             end -= 6;
         }
 
+        #[allow(clippy::arithmetic)]
         if TIME_SPLIT_REGEX.is_match(date) {
+            // arithmetic: regex assure there are 5 chars at the end
             end -= 5;
         }
         StyledContent::new(*DATE_STYLE, date[0..end].to_owned())
@@ -326,10 +330,12 @@ impl HistoryEntry {
                 }
                 if *category == subject_classifier::Type::Deps {
                     if let Some(word) = description.split_whitespace().last() {
+                        #[allow(clippy::arithmetic)]
                         if word.starts_with('v')
                             || word.starts_with('V')
                             || word.chars().next().unwrap().is_numeric()
                         {
+                            // arithmetic: world.len() is always shorter then description.len()
                             let l = description.len() - word.len();
                             buf.push(style(description[..l].to_owned()));
                             let mut bold_style = ContentStyle::default();

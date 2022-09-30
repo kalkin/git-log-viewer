@@ -232,6 +232,8 @@ impl HistoryAdapter {
         assert_eq!(self_level, level);
         let mut result: usize = 0;
         let mut stop: usize = 0;
+        #[allow(clippy::arithmetic)]
+        // arithmetic: `stop` is always <= `i` <= `usize::MAX`
         for i in start_index..self.length {
             let entry = self.get_data(i);
             let cur_level: usize = entry.level().try_into().expect("usize");
@@ -522,7 +524,11 @@ impl HistoryAdapter {
         };
         for i in range {
             let c = &commits[i];
-            seen += 1;
+            #[allow(clippy::arithmetic)]
+            {
+                // arithmetic: `seen` can never exceed `usize::MAX`, because `seen <= range.len()`
+                seen += 1;
+            }
             let mut r = search_path.to_vec();
             r.push(i);
             if c.matches(needle)
@@ -539,6 +545,8 @@ impl HistoryAdapter {
                     return result;
                 }
             }
+            // std::ops::Rem is safe
+            #[allow(clippy::arithmetic)]
             if seen % 100 == 0 {
                 // This should be fixed in the next clippy version (0.1.59?).
                 // https://github.com/rust-lang/rust-clippy/issues/8269

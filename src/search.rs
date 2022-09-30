@@ -86,7 +86,9 @@ fn search_styled_content(sc: &StyledContent<String>, state: &Needle) -> Vec<Text
     };
     let mut result = Vec::new();
     let indices = haystack.match_indices(&needle);
+    #[allow(clippy::arithmetic)]
     for (i, s) in indices {
+        // arithmetic: We know that i + s.len() < i32_MAX, because we iterate over indices!
         result.push(TextMatch {
             start: i,
             end: i + s.len(),

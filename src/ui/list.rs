@@ -65,6 +65,8 @@ impl<T> Selectable<T> for ListWidget<T> {
 impl<T> Drawable for ListWidget<T> {
     fn render(&mut self, area: &Area) -> StyledArea<String> {
         let mut result: StyledArea<String> = vec![];
+        #[allow(clippy::arithmetic)]
+        // arithmetic: we assume that `height >= 4`.
         let page_height = if self.search_input.is_visible() {
             area.height() - 1
         } else {

@@ -62,6 +62,8 @@ where
             let main_size;
 
             let horizontal_split = area.width() < 160;
+            #[allow(clippy::arithmetic)]
+            // arithmetic: division by 2 is safe
             if horizontal_split {
                 aside_size = Area::new(area.width(), area.height() / 2);
                 main_size = Area::new(area.width(), area.height() - area.height() / 2);

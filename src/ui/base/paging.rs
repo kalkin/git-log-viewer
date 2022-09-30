@@ -32,6 +32,8 @@ pub struct Paging {
 impl Paging {
     #[cfg(test)]
     #[cfg(not(tarpaulin_include))]
+    #[allow(clippy::arithmetic)]
+    /// arithmetic: this is only used during testing
     pub const fn new(page_height: Height, total_length: usize) -> Self {
         let bottom = page_height - 1;
         Self {
@@ -149,6 +151,8 @@ impl Paging {
 
     /// Move selection to prev data index
     fn select_prev(&mut self) -> bool {
+        #[allow(clippy::arithmetic)]
+        // arithmetic: guarded by the if conditionals
         if self.selected > 0 {
             self.selected -= 1;
             if self.selected < self.top {

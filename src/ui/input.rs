@@ -53,6 +53,8 @@ impl Drawable for InputLine {
                 ..
             }) => {
                 let cur = UnicodeWidthStr::width(self.0.as_str());
+                #[allow(clippy::arithmetic)]
+                // arithmetic: if condition guards it
                 if cur > 0 {
                     let string = self.0.clone();
                     let (tmp, _) = string.unicode_truncate(cur - 1);

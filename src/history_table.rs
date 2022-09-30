@@ -88,6 +88,8 @@ impl TableWidget {
 impl Drawable for TableWidget {
     fn render(&mut self, area: &Area) -> StyledArea<String> {
         let mut tmp: StyledArea<String> = vec![];
+        #[allow(clippy::arithmetic)]
+        // arithmetic: height is >= 4
         let page_height = if self.search_input.is_visible() {
             area.height() - 1
         } else {
@@ -207,6 +209,8 @@ impl Selectable<HistoryEntry> for TableWidget {
 }
 
 // I'm not proud of this code. Ohh Omnissiah be merciful on my soul‼
+// arithmetic: This code is not reviewed, but it will be removed soon
+#[allow(clippy::arithmetic)]
 fn adjust_string(text: &str, expected: usize) -> String {
     debug_assert!(expected > 0, "Minimal length should be 1");
     let length = unicode_width::UnicodeWidthStr::width(text);
