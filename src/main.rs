@@ -25,7 +25,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::{env, io};
 
-use clap::{Parser, ValueHint};
+use clap::{ArgAction, Parser, ValueHint};
 use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyModifiers};
 
 use git_wrapper::Repository;
@@ -337,7 +337,7 @@ fn ui_loop(
 )]
 struct Args {
     /// Run as if was started in <path>
-    #[clap(short = 'C', takes_value = true, value_hint=ValueHint::DirPath)]
+    #[clap(short = 'C', num_args = 1, value_hint=ValueHint::DirPath)]
     pub change_dir: Option<String>,
 
     /// Branch, tag or commit id
@@ -349,8 +349,8 @@ struct Args {
     paths: Vec<PathBuf>,
 
     /// Log level up to -ddd
-    #[clap(short, long, parse(from_occurrences))]
-    debug: i8,
+    #[clap(short, long, action=ArgAction::Count)]
+    debug: u8,
 }
 
 fn build_drawable(
