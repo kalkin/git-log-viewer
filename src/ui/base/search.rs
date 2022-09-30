@@ -130,7 +130,9 @@ pub struct ResultManager {
 impl ResultManager {
     pub fn consume(&mut self, event: SearchProgress) {
         match event {
-            SearchProgress::Searched(n) => self.seen += n,
+            SearchProgress::Searched(n) => {
+                self.seen = self.seen.saturating_add(n);
+            }
             SearchProgress::Found(result) => {
                 if self.selected.is_none() {
                     self.selected = Some(0);
@@ -142,32 +144,31 @@ impl ResultManager {
     }
 
     pub fn next(&mut self) {
-        if let Some(i) = self.selected {
-            if i + 1 < self.results.len() {
-                self.selected = Some(i + 1);
-            } else {
-                self.selected = Some(0);
-            }
-        } else if self.results.is_empty() {
+        if self.results.is_empty() {
             log::info!("No search results");
         } else {
-            self.selected = Some(0);
+            let new_selected = self
+                .selected
+                .and_then(|i| i.checked_add(1))
+                .filter(|i| *i < self.results.len())
+                .unwrap_or_default();
+            self.selected = Some(new_selected);
         }
     }
 
     pub fn prev(&mut self) {
-        if let Some(i) = self.selected {
-            if 0 < i {
-                self.selected = Some(i - 1);
-            } else if !self.results.is_empty() {
-                self.selected = Some(self.results.len() - 1);
-            } else {
-                log::info!("No search results");
-            }
-        } else if self.results.is_empty() {
-            log::info!("No previous search results");
+        if self.results.is_empty() {
+            log::info!("No search results");
         } else {
-            self.selected = Some(self.results.len());
+            let new_selected = self
+                .selected
+                .map(|i| {
+                    i.checked_sub(1)
+                        .unwrap_or_else(|| self.results.len().saturating_sub(1))
+                })
+                .filter(|i| *i < self.results.len())
+                .unwrap_or_else(|| self.results.len().saturating_sub(1));
+            self.selected = Some(new_selected);
         }
     }
 
