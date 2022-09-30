@@ -254,18 +254,22 @@ fn run_ui(
                         _ => {}
                     }
                 }
-                let new = drawable.render(&area);
-                if !same(&new, &last_rendered) {
-                    last_rendered = new;
-                    render(&last_rendered, &area)?;
-                }
-            }
-            Err(err) => match err {
-                TryRecvError::Empty => {
+                if area.height() >= 4 && area.width() >= 10 {
                     let new = drawable.render(&area);
                     if !same(&new, &last_rendered) {
                         last_rendered = new;
                         render(&last_rendered, &area)?;
+                    }
+                }
+            }
+            Err(err) => match err {
+                TryRecvError::Empty => {
+                    if area.height() >= 4 && area.width() >= 10 {
+                        let new = drawable.render(&area);
+                        if !same(&new, &last_rendered) {
+                            last_rendered = new;
+                            render(&last_rendered, &area)?;
+                        }
                     }
                     let hundred_millis = time::Duration::from_millis(100);
                     thread::sleep(hundred_millis);
