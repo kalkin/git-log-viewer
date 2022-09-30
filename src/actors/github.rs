@@ -63,11 +63,10 @@ impl GitHubThread {
                         .unwrap()
                         .as_secs();
                     if now < rate_limit_reset {
-                        let delta = rate_limit_reset - now;
                         log::info!(
-                            "Skipping lookup #{} Rate limited for {} seconds",
+                            "Skipping lookup #{} Rate limited for {:?} seconds",
                             pr_id,
-                            delta
+                            rate_limit_reset.checked_sub(now)
                         );
                         continue;
                     }
@@ -109,7 +108,10 @@ impl GitHubThread {
                                     .duration_since(UNIX_EPOCH)
                                     .unwrap()
                                     .as_secs();
-                                log::trace!("RateLimit-Reset in {} seconds", since_epoch - now);
+                                log::trace!(
+                                    "RateLimit-Reset in {:?} seconds",
+                                    since_epoch.checked_sub(now)
+                                );
                                 rate_limit_reset = since_epoch;
                             }
                         }
