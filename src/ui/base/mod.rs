@@ -181,9 +181,9 @@ pub fn content_length(styled_content: &StyledContent<String>) -> usize {
 #[must_use]
 pub fn shorten_line(line: StyledLine<String>, width: usize) -> StyledLine<String> {
     let mut result: StyledLine<String> = StyledLine { content: vec![] };
-    let mut i = 0;
+    let mut i: usize = 0;
     for styled_content in line.content {
-        let length = i + content_length(&styled_content);
+        let length = i.saturating_add(content_length(&styled_content));
         match length.cmp(&width) {
             Ordering::Less => {
                 result.content.push(styled_content.clone());
@@ -195,7 +195,7 @@ pub fn shorten_line(line: StyledLine<String>, width: usize) -> StyledLine<String
             }
             Ordering::Greater => {
                 use unicode_truncate::UnicodeTruncateStr;
-                let size = width - i - 1;
+                let size = width.saturating_sub(i).saturating_sub(1);
                 let (text, _) = styled_content.content().unicode_truncate(size);
                 let style = *styled_content.style();
                 let content = StyledContent::new(style, text.to_owned());

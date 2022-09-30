@@ -210,7 +210,10 @@ impl HistoryEntry {
             if text.width() > max_len {
                 match subtree_modules.len() {
                     1 => {
-                        text = text.unicode_truncate(max_len - 1).0.to_owned();
+                        text = text
+                            .unicode_truncate(max_len.saturating_sub(1))
+                            .0
+                            .to_owned();
                         text.push('…');
                     }
                     x => text = format!("({} strees)", x),
@@ -245,7 +248,7 @@ impl HistoryEntry {
                         if remote_branches.len() == 1 {
                             result.push(remote_branches[0].to_string());
                         } else {
-                            let prefix_len = remote.name.len() + 1;
+                            let prefix_len = remote.name.len().saturating_add(1);
                             let mut text = remote.name.clone();
                             text.push('/');
                             text.push('{');
