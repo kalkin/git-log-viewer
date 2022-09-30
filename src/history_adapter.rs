@@ -356,66 +356,75 @@ impl HistoryAdapter {
     }
 
     fn toggle_folding(&mut self, i: usize) {
-        let pos = i + 1;
-        let selected = &self.history[i];
-        if selected.is_folded() {
-            let children: Vec<Commit> =
-                child_history(&self.repo, selected.commit(), self.paths.as_ref());
-            log::debug!("Unfolding entry {}, with #{} children", i, children.len());
+        if let Some(pos) = i.checked_add(1) {
+            let selected = &self.history[i];
+            if selected.is_folded() {
+                let children: Vec<Commit> =
+                    child_history(&self.repo, selected.commit(), self.paths.as_ref());
+                log::debug!("Unfolding entry {}, with #{} children", i, children.len());
 
-            // Check if we need to add a Link commit
-            let link_commit = if let (Some(Some(oid)), Some(bellow_selected)) = (
-                children.last().map(|c| c.parents().first()),
-                selected.commit().parents().first(),
-            ) {
-                if oid == bellow_selected {
-                    None
+                // Check if we need to add a Link commit
+                let link_commit = if let (Some(Some(oid)), Some(bellow_selected)) = (
+                    children.last().map(|c| c.parents().first()),
+                    selected.commit().parents().first(),
+                ) {
+                    if oid == bellow_selected {
+                        None
+                    } else {
+                        Commit::from_repo(&self.repo, oid)
+                    }
                 } else {
-                    Commit::from_repo(&self.repo, oid)
+                    None
+                };
+
+                let mut tmp: Vec<HistoryEntry> = vec![];
+                if let Some(level) = selected.level().checked_add(1) {
+                    let mut above_entry = Some(selected);
+                    for t in children {
+                        let entry = self.to_entry(t, above_entry, level, false);
+                        tmp.push(entry);
+                        above_entry = tmp.last();
+                    }
+                    if let Some(link) = link_commit {
+                        tmp.push(self.to_entry(link, above_entry, level, true));
+                    }
+                } else {
+                    log::error!("Level > {}", u8::MAX);
+                    return;
                 }
+
+                self.history[i].set_visible_children(tmp.len());
+                for (j, entry) in tmp.into_iter().enumerate() {
+                    log::trace!(
+                        "Inserting index {}, entry {:?}",
+                        j,
+                        self.history[j].commit().subject()
+                    );
+                    if let Some(index) = pos.checked_add(j) {
+                        self.history.insert(index, entry);
+                    } else {
+                        log::error!("History length > {}", usize::MAX);
+                        break;
+                    }
+                }
+
+                self.length = NonZeroUsize::new(self.history.len()).expect("History len >= 1");
             } else {
-                None
-            };
-
-            let mut tmp: Vec<HistoryEntry> = vec![];
-            {
-                let level = selected.level() + 1;
-                let mut above_entry = Some(selected);
-                for t in children {
-                    let entry = self.to_entry(t, above_entry, level, false);
-                    tmp.push(entry);
-                    above_entry = tmp.last();
+                let f = selected.visible_children();
+                log::debug!("Folding entry {}, with #{} children", i, f);
+                for j in (pos..(pos.saturating_add(*f))).rev() {
+                    log::trace!(
+                        "Removing index {}: {:?}",
+                        j,
+                        self.history[j].commit().subject()
+                    );
+                    if !self.history[j].is_folded() {
+                        self.toggle_folding(j);
+                    }
+                    self.history.remove(j);
                 }
-                if let Some(link) = link_commit {
-                    tmp.push(self.to_entry(link, above_entry, level, true));
-                }
+                self.history[i].set_visible_children(0);
             }
-
-            self.history[i].set_visible_children(tmp.len());
-            for (j, entry) in tmp.into_iter().enumerate() {
-                log::trace!(
-                    "Inserting index {}, entry {:?}",
-                    j,
-                    self.history[j].commit().subject()
-                );
-                self.history.insert(pos + j, entry);
-                self.length = self.length.saturating_add(1);
-            }
-        } else {
-            let f = selected.visible_children();
-            log::debug!("Folding entry {}, with #{} children", i, f);
-            for j in (pos..(pos + f)).rev() {
-                log::trace!(
-                    "Removing index {}: {:?}",
-                    j,
-                    self.history[j].commit().subject()
-                );
-                if !self.history[j].is_folded() {
-                    self.toggle_folding(j);
-                }
-                self.history.remove(j);
-            }
-            self.history[i].set_visible_children(0);
         }
     }
 
@@ -455,9 +464,10 @@ impl HistoryAdapter {
             }
         }
     }
+
     pub fn get_line(&mut self, i: usize, selected: bool) -> StyledLine<String> {
         if self.is_fill_up_needed(i) {
-            assert!(self.fill_up(i + 50));
+            assert!(self.fill_up(i.saturating_add(50)));
         }
         self.history[i].render(selected)
     }
@@ -465,7 +475,7 @@ impl HistoryAdapter {
     pub fn get_data(&mut self, i: usize) -> &HistoryEntry {
         debug_assert!(i < self.length.get());
         if self.is_fill_up_needed(i) {
-            assert!(self.fill_up(self.history.len() - i + 50));
+            assert!(self.fill_up(self.history.len().saturating_sub(i).saturating_add(50)));
         }
         &self.history[i]
     }
