@@ -18,6 +18,7 @@
 use std::cmp::Ordering;
 use std::io;
 use std::io::Write;
+use std::num::NonZeroUsize;
 
 use crossterm::cursor::{Hide, MoveDown, MoveTo, MoveToColumn, Show};
 use crossterm::event::Event;
@@ -44,7 +45,7 @@ pub mod search;
 #[cfg(not(tarpaulin_include))]
 pub mod test_helpers;
 
-pub type Height = usize;
+pub type Height = NonZeroUsize;
 pub type Pos = usize;
 
 #[derive(Eq, PartialEq, Debug)]

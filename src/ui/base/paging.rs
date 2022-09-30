@@ -16,17 +16,28 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::ui::base::{HandleEvent, Height, Pos};
-use core::default::Default;
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+use std::num::NonZeroUsize;
 
 /// This structs helps to display only a `page_height` of data
-#[derive(Default)]
 pub struct Paging {
     top: usize,
     bottom: usize,
     page_height: Height,
-    total_length: usize,
+    total_length: NonZeroUsize,
     selected: Pos,
+}
+
+impl Default for Paging {
+    fn default() -> Self {
+        Self {
+            top: 0,
+            bottom: 0,
+            page_height: NonZeroUsize::new(1).unwrap(),
+            total_length: NonZeroUsize::new(1).unwrap(),
+            selected: 0,
+        }
+    }
 }
 
 impl Paging {
@@ -34,8 +45,8 @@ impl Paging {
     #[cfg(not(tarpaulin_include))]
     #[allow(clippy::arithmetic)]
     /// arithmetic: this is only used during testing
-    pub const fn new(page_height: Height, total_length: usize) -> Self {
-        let bottom = page_height - 1;
+    pub const fn new(page_height: Height, total_length: NonZeroUsize) -> Self {
+        let bottom = page_height.get() - 1;
         Self {
             top: 0,
             bottom,
@@ -56,46 +67,46 @@ impl Paging {
 
     /// Scroll to next page and adjust the selected line accordingly
     fn next_page(&mut self) {
-        if self.top + self.page_height >= self.total_length {
+        if self.top + self.page_height.get() >= self.total_length.get() {
             self.selected = self.bottom;
         } else {
-            self.top += self.page_height;
-            self.bottom = self.top + self.page_height - 1;
-            if self.bottom >= self.total_length {
-                self.bottom = self.total_length - 1;
+            self.top += self.page_height.get();
+            self.bottom = self.top + self.page_height.get() - 1;
+            if self.bottom >= self.total_length.get() {
+                self.bottom = self.total_length.get() - 1;
             }
             if self.selected < self.top {
-                self.selected += self.page_height;
+                self.selected += self.page_height.get();
             }
-            if self.selected >= self.total_length {
-                self.selected = self.total_length - 1;
+            if self.selected >= self.total_length.get() {
+                self.selected = self.total_length.get() - 1;
             }
         }
     }
 
     /// Scroll to prev page and adjust the selected line accordingly
     fn prev_page(&mut self) {
-        if self.top < self.page_height {
+        if self.top < self.page_height.get() {
             self.top = 0;
-            self.bottom = self.top + self.page_height - 1;
+            self.bottom = self.top + self.page_height.get() - 1;
             self.selected = 0;
         } else {
-            self.top -= self.page_height;
-            self.bottom = self.top + self.page_height - 1;
+            self.top -= self.page_height.get();
+            self.bottom = self.top + self.page_height.get() - 1;
             if self.selected > self.bottom {
-                self.selected -= self.page_height;
+                self.selected -= self.page_height.get();
             }
         }
     }
 
     /// Set current page height
-    pub fn page_height(&mut self, height: Height, total_length: usize) {
+    pub fn page_height(&mut self, height: Height, total_length: NonZeroUsize) {
         self.page_height = height;
         self.total_length = total_length;
-        if self.top + self.page_height - 1 < self.total_length {
-            self.bottom = self.top + self.page_height - 1;
+        if self.top + self.page_height.get() - 1 < self.total_length.get() {
+            self.bottom = self.top + self.page_height.get() - 1;
         } else {
-            self.bottom = self.total_length - 1;
+            self.bottom = self.total_length.get() - 1;
         }
     }
 
@@ -106,7 +117,7 @@ impl Paging {
 
     /// Set the selected data entry index
     pub fn set_selected(&mut self, i: usize) {
-        if self.total_length <= i {
+        if self.total_length.get() <= i {
             log::error!(
                 "Expected selected({}) < total_length({})",
                 i,
@@ -129,19 +140,13 @@ impl Paging {
         self.selected = i;
     }
 
-    #[allow(dead_code)]
-    /// Set total length of the data
-    pub fn set_total_length(&mut self, length: usize) {
-        self.total_length = length;
-    }
-
     /// Move selection to next data index
     fn select_next(&mut self) -> bool {
-        if self.selected < self.total_length - 1 {
+        if self.selected < self.total_length.get() - 1 {
             self.selected += 1;
             if self.selected > self.bottom {
                 self.bottom = self.selected;
-                self.top = self.bottom - self.page_height + 1;
+                self.top = self.bottom - self.page_height.get() + 1;
             }
             true
         } else {
@@ -157,7 +162,7 @@ impl Paging {
             self.selected -= 1;
             if self.selected < self.top {
                 self.top = self.selected;
-                self.bottom = self.top + self.page_height - 1;
+                self.bottom = self.top + self.page_height.get() - 1;
             }
             true
         } else {
@@ -203,10 +208,16 @@ impl Paging {
             _ => HandleEvent::Ignored,
         }
     }
+
+    pub fn set_total_length(&mut self, len: NonZeroUsize) {
+        self.total_length = len;
+    }
 }
 
 #[cfg(test)]
 mod test_paging {
+    use std::num::NonZeroUsize;
+
     use crate::ui::base::paging::Paging;
     use crate::ui::base::HandleEvent;
     use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
@@ -214,7 +225,10 @@ mod test_paging {
 
     #[test]
     fn next_page() {
-        let pager = &mut Paging::new(25, 30);
+        let pager = &mut Paging::new(
+            NonZeroUsize::new(25).unwrap(),
+            NonZeroUsize::new(30).unwrap(),
+        );
         assert_eq!(pager.top(), 0);
         assert_eq!(pager.selected(), 0);
         assert_eq!(pager.bottom(), 24);
@@ -230,7 +244,10 @@ mod test_paging {
 
     #[test]
     fn prev_page() {
-        let pager = &mut Paging::new(25, 30);
+        let pager = &mut Paging::new(
+            NonZeroUsize::new(25).unwrap(),
+            NonZeroUsize::new(30).unwrap(),
+        );
         assert_eq!(pager.top(), 0);
         assert_eq!(pager.selected(), 0, "First visible row is selected");
         handle_event(pager, KeyCode::PageUp);
@@ -243,7 +260,10 @@ mod test_paging {
 
     #[test]
     fn selected() {
-        let pager = &mut Paging::new(25, 30);
+        let pager = &mut Paging::new(
+            NonZeroUsize::new(25).unwrap(),
+            NonZeroUsize::new(30).unwrap(),
+        );
         assert_eq!(pager.selected(), 0, "Start with selection at position 0");
         handle_event(pager, KeyCode::Down);
         assert_eq!(pager.selected(), 1, "Next pos should be 1");
@@ -300,11 +320,17 @@ mod test_paging {
 
     #[test]
     fn page_height() {
-        let pager = &mut Paging::new(25, 30);
+        let pager = &mut Paging::new(
+            NonZeroUsize::new(25).unwrap(),
+            NonZeroUsize::new(30).unwrap(),
+        );
         assert_eq!(pager.top(), 0);
         assert_eq!(pager.selected(), 0, "First visible row is selected");
         assert_eq!(pager.bottom(), 24);
-        pager.page_height(6, 30);
+        pager.page_height(
+            NonZeroUsize::new(6).unwrap(),
+            NonZeroUsize::new(30).unwrap(),
+        );
         assert_eq!(pager.top(), 0, "Top did not change");
         assert_eq!(pager.selected(), 0, "First visible row is still selected");
         assert_eq!(pager.bottom(), 5, "Bottom shrinked");
@@ -312,7 +338,10 @@ mod test_paging {
 
     #[test]
     fn move_selection_to_top() {
-        let pager = &mut Paging::new(10, 20);
+        let pager = &mut Paging::new(
+            NonZeroUsize::new(10).unwrap(),
+            NonZeroUsize::new(20).unwrap(),
+        );
         assert_eq!(pager.selected(), 0, "Start with selection at position 0");
         assert_eq!(pager.top, 0);
         assert_eq!(pager.bottom, 9);

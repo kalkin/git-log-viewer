@@ -20,6 +20,7 @@ use crossterm::style::{style, Attribute};
 use crate::search::line_matches;
 use crate::ui::base::search::{Direction, Needle, SearchResult};
 use crate::ui::base::{Pos, StyledArea, StyledLine};
+use std::num::NonZeroUsize;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::thread;
@@ -31,7 +32,7 @@ pub trait DataAdapter<T> {
     fn get_data(&mut self, i: Pos) -> &T;
 
     fn is_empty(&self) -> bool;
-    fn len(&self) -> usize;
+    fn len(&self) -> NonZeroUsize;
     fn search(&mut self, needle: Needle, start: usize) -> Receiver<SearchProgress>;
 }
 
@@ -55,8 +56,8 @@ impl DataAdapter<String> for VecAdapter {
         self.content.is_empty()
     }
 
-    fn len(&self) -> usize {
-        self.content.len()
+    fn len(&self) -> NonZeroUsize {
+        NonZeroUsize::new(self.content.len()).expect("content length >= 1")
     }
 
     fn search(&mut self, _needle: Needle, _start: usize) -> Receiver<SearchProgress> {
@@ -95,7 +96,7 @@ mod test_vec_adapter {
     #[test]
     fn foo() {
         let adapter = &mut VecAdapter::new(lore_ipsum_lines(30));
-        assert_eq!(adapter.len(), 30);
+        assert_eq!(adapter.len().get(), 30);
         assert!(!adapter.is_empty());
         let line = adapter.get_line(0, false);
         for sc in line.content {
@@ -133,8 +134,8 @@ impl DataAdapter<String> for StyledAreaAdapter {
         self.content.is_empty()
     }
 
-    fn len(&self) -> usize {
-        self.content.len()
+    fn len(&self) -> NonZeroUsize {
+        NonZeroUsize::new(self.content.len()).unwrap()
     }
 
     fn search(&mut self, needle: Needle, start: usize) -> Receiver<SearchProgress> {

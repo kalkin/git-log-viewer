@@ -16,6 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::ffi::OsString;
+use std::num::NonZeroUsize;
 use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender};
 
@@ -43,7 +44,7 @@ use std::thread::JoinHandle;
 
 pub struct HistoryAdapter {
     history: Vec<HistoryEntry>,
-    length: usize,
+    length: NonZeroUsize,
     paths: Vec<PathBuf>,
     remotes: Vec<Remote>,
     range: Vec<OsString>,
@@ -172,7 +173,7 @@ impl HistoryAdapter {
         let fork_point_thread = ForkPointThread::new(repo.clone());
         Ok(Self {
             history: vec![],
-            length,
+            length: NonZeroUsize::new(length).expect("Length should be >=1"),
             paths,
             remotes,
             forge_url,
@@ -234,7 +235,7 @@ impl HistoryAdapter {
         let mut stop: usize = 0;
         #[allow(clippy::arithmetic)]
         // arithmetic: `stop` is always <= `i` <= `usize::MAX`
-        for i in start_index..self.length {
+        for i in start_index..self.length.get() {
             let entry = self.get_data(i);
             let cur_level: usize = entry.level().try_into().expect("usize");
             if cur_level == level {
@@ -398,7 +399,7 @@ impl HistoryAdapter {
                     self.history[j].commit().subject()
                 );
                 self.history.insert(pos + j, entry);
-                self.length += 1;
+                self.length = self.length.saturating_add(1);
             }
         } else {
             let f = selected.visible_children();
@@ -462,14 +463,14 @@ impl HistoryAdapter {
     }
 
     pub fn get_data(&mut self, i: usize) -> &HistoryEntry {
-        debug_assert!(i < self.length);
+        debug_assert!(i < self.length.get());
         if self.is_fill_up_needed(i) {
             assert!(self.fill_up(self.history.len() - i + 50));
         }
         &self.history[i]
     }
 
-    pub const fn len(&self) -> usize {
+    pub const fn len(&self) -> NonZeroUsize {
         self.length
     }
 
@@ -587,7 +588,7 @@ mod test {
         let range = vec![OsString::from("6be11cb7f9e..df622aa0149")];
         let repo = Repository::default().unwrap();
         let mut adapter = HistoryAdapter::new(repo, range, vec![], false).unwrap();
-        assert_eq!(adapter.length, 9);
+        assert_eq!(adapter.length.get(), 9);
         adapter.fill_up(50);
         assert_eq!(adapter.history.len(), 9);
         adapter.default_action(8);

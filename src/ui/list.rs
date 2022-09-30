@@ -22,6 +22,7 @@ use crate::ui::base::data::{DataAdapter, SearchProgress};
 use crate::ui::base::paging::Paging;
 use crate::ui::base::{shorten_line, Area, Drawable, HandleEvent, Selectable, StyledArea};
 use crate::ui::search::SearchWidget;
+use std::num::NonZeroUsize;
 use std::sync::mpsc::Receiver;
 
 use super::base::StyledLine;
@@ -67,10 +68,10 @@ impl<T> Drawable for ListWidget<T> {
         let mut result: StyledArea<String> = vec![];
         #[allow(clippy::arithmetic)]
         // arithmetic: we assume that `height >= 4`.
-        let page_height = if self.search_input.is_visible() {
-            area.height() - 1
+        let page_height: NonZeroUsize = if self.search_input.is_visible() {
+            NonZeroUsize::new(area.height() - 1).expect("area hight >= 1")
         } else {
-            area.height()
+            NonZeroUsize::new(area.height()).expect("area hight >= 1")
         };
         if let Some(needle) = self.search_input.search_value() {
             let tx = self.adapter.search(needle, self.paging.selected());
@@ -91,8 +92,8 @@ impl<T> Drawable for ListWidget<T> {
             result.push(shorten_line(line, area.width()));
         }
 
-        if result.len() < page_height {
-            for _ in result.len()..page_height {
+        if result.len() < page_height.into() {
+            for _ in result.len()..page_height.into() {
                 result.push(StyledLine::empty());
             }
         }
@@ -189,7 +190,10 @@ fn example_content() -> ListWidget<String> {
     use crate::ui::base::test_helpers::lore_ipsum_lines;
     let adapter = crate::ui::base::VecAdapter::new(lore_ipsum_lines(30));
     let search_input = SearchWidget::default();
-    let paging = Paging::new(25, 30);
+    let paging = Paging::new(
+        NonZeroUsize::new(25).unwrap(),
+        NonZeroUsize::new(30).unwrap(),
+    );
     ListWidget {
         adapter: Box::new(adapter),
         paging,

@@ -17,6 +17,7 @@
 
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::num::NonZeroUsize;
 
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::style::StyledContent;
@@ -91,9 +92,9 @@ impl Drawable for TableWidget {
         #[allow(clippy::arithmetic)]
         // arithmetic: height is >= 4
         let page_height = if self.search_input.is_visible() {
-            area.height() - 1
+            NonZeroUsize::new(area.height() - 1).unwrap()
         } else {
-            area.height()
+            NonZeroUsize::new(area.height()).unwrap()
         };
         if let Some(needle) = self.search_input.search_value() {
             if !needle.text().is_empty() {
@@ -120,8 +121,8 @@ impl Drawable for TableWidget {
             tmp.push(line);
         }
 
-        if tmp.len() < page_height {
-            for _ in tmp.len()..page_height {
+        if tmp.len() < page_height.get() {
+            for _ in tmp.len()..page_height.get() {
                 tmp.push(StyledLine::empty());
             }
         }
