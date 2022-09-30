@@ -67,45 +67,48 @@ impl Paging {
 
     /// Scroll to next page and adjust the selected line accordingly
     fn next_page(&mut self) {
-        if self.top + self.page_height.get() >= self.total_length.get() {
-            self.selected = self.bottom;
+        if let Some(top) = self.top.checked_add(self.page_height.get()) {
+            if top >= self.total_length.get() {
+                self.selected = self.bottom;
+            } else {
+                self.top = top;
+                self.bottom = self.top.saturating_add(self.page_height.get());
+                self.selected = self.selected.saturating_add(self.page_height.get());
+                #[allow(clippy::arithmetic)]
+                // arithmetic: total_length is always >= 1, because it's a NonZeroUsize
+                if self.bottom >= self.total_length.get() {
+                    self.bottom = self.total_length.get() - 1;
+                }
+                #[allow(clippy::arithmetic)]
+                // arithmetic: total_length is always >= 1, because it's a NonZeroUsize
+                if self.selected >= self.total_length.get() {
+                    self.selected = self.total_length.get() - 1;
+                }
+            }
         } else {
-            self.top += self.page_height.get();
-            self.bottom = self.top + self.page_height.get() - 1;
-            if self.bottom >= self.total_length.get() {
-                self.bottom = self.total_length.get() - 1;
-            }
-            if self.selected < self.top {
-                self.selected += self.page_height.get();
-            }
-            if self.selected >= self.total_length.get() {
-                self.selected = self.total_length.get() - 1;
-            }
+            self.selected = self.bottom;
         }
     }
 
     /// Scroll to prev page and adjust the selected line accordingly
     fn prev_page(&mut self) {
-        if self.top < self.page_height.get() {
-            self.top = 0;
-            self.bottom = self.top + self.page_height.get() - 1;
-            self.selected = 0;
-        } else {
-            self.top -= self.page_height.get();
-            self.bottom = self.top + self.page_height.get() - 1;
-            if self.selected > self.bottom {
-                self.selected -= self.page_height.get();
-            }
-        }
+        self.top = self.top.saturating_sub(self.page_height.get());
+        self.bottom = self
+            .top
+            .saturating_add(self.page_height.get().saturating_sub(1));
+        self.selected = self.selected.saturating_sub(self.page_height.get());
     }
 
     /// Set current page height
     pub fn page_height(&mut self, height: Height, total_length: NonZeroUsize) {
         self.page_height = height;
         self.total_length = total_length;
-        if self.top + self.page_height.get() - 1 < self.total_length.get() {
-            self.bottom = self.top + self.page_height.get() - 1;
-        } else {
+        self.bottom = self
+            .top
+            .saturating_add(self.page_height.get().saturating_sub(1));
+        #[allow(clippy::arithmetic)]
+        // arithmetic: total_length is always >= 1, because it's a NonZeroUsize
+        if self.bottom >= self.total_length.get() {
             self.bottom = self.total_length.get() - 1;
         }
     }
@@ -141,32 +144,32 @@ impl Paging {
     }
 
     /// Move selection to next data index
-    fn select_next(&mut self) -> bool {
-        if self.selected < self.total_length.get() - 1 {
-            self.selected += 1;
-            if self.selected > self.bottom {
-                self.bottom = self.selected;
-                self.top = self.bottom - self.page_height.get() + 1;
-            }
-            true
-        } else {
-            false
+    fn select_next(&mut self) {
+        self.selected = self.selected.saturating_add(1);
+
+        #[allow(clippy::arithmetic)]
+        // arithmetic: total_length is always >= 1, because it's a NonZeroUsize
+        if self.selected >= self.total_length.get() {
+            self.selected = self.total_length.get() - 1;
+        }
+        if self.bottom < self.selected {
+            self.bottom = self.selected;
+            self.top = self
+                .bottom
+                .saturating_sub(self.page_height.get())
+                .saturating_add(1);
         }
     }
 
     /// Move selection to prev data index
-    fn select_prev(&mut self) -> bool {
-        #[allow(clippy::arithmetic)]
-        // arithmetic: guarded by the if conditionals
-        if self.selected > 0 {
-            self.selected -= 1;
-            if self.selected < self.top {
-                self.top = self.selected;
-                self.bottom = self.top + self.page_height.get() - 1;
-            }
-            true
-        } else {
-            false
+    fn select_prev(&mut self) {
+        self.selected = self.selected.saturating_sub(1);
+        if self.selected < self.top {
+            self.top = self.selected;
+            self.bottom = self
+                .top
+                .saturating_add(self.page_height.get())
+                .saturating_sub(1);
         }
     }
 
