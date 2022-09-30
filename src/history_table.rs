@@ -211,7 +211,7 @@ impl Selectable<HistoryEntry> for TableWidget {
 
 // I'm not proud of this code. Ohh Omnissiah be merciful on my soul‼
 // arithmetic: This code is not reviewed, but it will be removed soon
-#[allow(clippy::arithmetic)]
+#[warn(clippy::arithmetic)]
 fn adjust_string(text: &str, expected: usize) -> String {
     debug_assert!(expected > 0, "Minimal length should be 1");
     let length = unicode_width::UnicodeWidthStr::width(text);

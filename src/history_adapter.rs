@@ -86,6 +86,8 @@ impl Debug for CommitRange {
     }
 }
 
+#[warn(clippy::arithmetic)]
+// arithmetic: Debug code which i may rip out in future
 #[cfg(not(tarpaulin_include))]
 impl Debug for HistoryAdapter {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -189,6 +191,8 @@ impl HistoryAdapter {
         })
     }
 
+    #[warn(clippy::arithmetic)]
+    // arithmetic: Level code will be ripped out in future
     pub fn unfold_up_to(&mut self, sr: &SearchResult) -> usize {
         debug_assert!(!sr.0.is_empty(), "Unexpected empty SearchResult vector");
         let addresses = &sr.0;
