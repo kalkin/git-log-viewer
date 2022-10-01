@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [v3.0.4] - 2022-10-01
+
+### Added
+
+### Changed
+
+- Do not render needlessly the ui
+- print log output after exit
+- Mostly use safe arithmetics
+- Only render if area is at least 10x4 big
+- Replace git path/dir arguments with -C
+
 ## [3.0.3] - 2022-09-08
 
 ### Added
