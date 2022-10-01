@@ -598,16 +598,21 @@ mod test {
     }
 
     #[test]
+    #[allow(clippy::print_stderr)]
     fn folding() {
         let range = vec![OsString::from("6be11cb7f9e..df622aa0149")];
         let repo = Repository::default().unwrap();
-        let mut adapter = HistoryAdapter::new(repo, range, vec![], false).unwrap();
-        assert_eq!(adapter.length.get(), 9);
-        adapter.fill_up(50);
-        assert_eq!(adapter.history.len(), 9);
-        adapter.default_action(8);
-        assert_eq!(adapter.history.len(), 15);
-        adapter.default_action(8);
-        assert_eq!(adapter.history.len(), 9);
+        if repo.is_shallow() {
+            eprintln!("Skipped test history_adapter::test::folding, because of shallow repo");
+        } else {
+            let mut adapter = HistoryAdapter::new(repo, range, vec![], false).unwrap();
+            assert_eq!(adapter.length.get(), 9);
+            adapter.fill_up(50);
+            assert_eq!(adapter.history.len(), 9);
+            adapter.default_action(8);
+            assert_eq!(adapter.history.len(), 15);
+            adapter.default_action(8);
+            assert_eq!(adapter.history.len(), 9);
+        };
     }
 }

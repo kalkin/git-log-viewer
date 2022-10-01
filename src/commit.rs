@@ -390,70 +390,88 @@ mod test {
     use super::history_length;
 
     #[test]
+    #[allow(clippy::print_stderr)]
     fn initial_commit() {
         let repo = Repository::default().unwrap();
-        let paths: &[PathBuf] = &[];
-        let result = commits_for_range(&repo, &vec!["a17989470af".to_owned()], paths, None, None);
-        assert_eq!(result.len(), 1);
-        let commit = &result[0];
-        assert_eq!(commit.parents.len(), 0);
-        assert!(!commit.is_merge);
+        if repo.is_shallow() {
+            eprintln!("Skipped test commit::test::initial_commit, because of shallow repo");
+        } else {
+            let paths: &[PathBuf] = &[];
+            let result =
+                commits_for_range(&repo, &vec!["a17989470af".to_owned()], paths, None, None);
+            assert_eq!(result.len(), 1);
+            let commit = &result[0];
+            assert_eq!(commit.parents.len(), 0);
+            assert!(!commit.is_merge);
+        }
     }
 
     #[test]
+    #[allow(clippy::print_stderr)]
     fn history_length_calc() {
         let repo = Repository::default().unwrap();
-        let paths: &[PathBuf] = &[];
-        // Kind::IncludeReachable
-        {
-            let spec = &vec!["33f91157b4"];
-            let actual = history_length(&repo, spec, paths).unwrap();
-            assert_eq!(actual, 4488, "Length of {:?}", spec);
-        }
+        if repo.is_shallow() {
+            eprintln!("Skipped test commit::test::history_length_calc, because of shallow repo");
+        } else {
+            let paths: &[PathBuf] = &[];
+            // Kind::IncludeReachable
+            {
+                let spec = &vec!["33f91157b4"];
+                let actual = history_length(&repo, spec, paths).unwrap();
+                assert_eq!(actual, 4488, "Length of {:?}", spec);
+            }
 
-        // Kind::ExcludeReachable
-        {
-            let spec = &vec!["^33f91157b4"];
-            let actual = history_length(&repo, spec, paths).unwrap();
-            assert_eq!(actual, 0, "Length of {:?}", spec);
-        }
+            // Kind::ExcludeReachable
+            {
+                let spec = &vec!["^33f91157b4"];
+                let actual = history_length(&repo, spec, paths).unwrap();
+                assert_eq!(actual, 0, "Length of {:?}", spec);
+            }
 
-        // Kind::Range
-        {
-            let spec = &vec!["HEAD~20..HEAD"];
-            let actual = history_length(&repo, spec, paths).unwrap();
-            assert_eq!(actual, 20, "Length of {:?}", spec);
-        }
+            // Kind::Range
+            {
+                let spec = &vec!["HEAD~20..HEAD"];
+                let actual = history_length(&repo, spec, paths).unwrap();
+                assert_eq!(actual, 20, "Length of {:?}", spec);
+            }
 
-        // Kind::Merge
-        {
-            let spec = &vec!["HEAD~20...HEAD"];
-            let actual = history_length(&repo, spec, paths).unwrap();
-            assert_eq!(actual, 20, "Length of {:?}", spec);
-        }
-        // Kind::IncludeOnlyParents
-        {
-            let spec = &vec!["33f91157b4^@"];
-            let actual = history_length(&repo, spec, paths).unwrap();
-            assert_eq!(actual, 4487, "Length of {:?}", spec);
-        }
-        // Kind::ExcludeParents
-        {
-            let spec = &vec!["33f91157b4^!"];
-            let actual = history_length(&repo, spec, paths).unwrap();
-            assert_eq!(actual, 1, "Length of {:?}", spec);
+            // Kind::Merge
+            {
+                let spec = &vec!["HEAD~20...HEAD"];
+                let actual = history_length(&repo, spec, paths).unwrap();
+                assert_eq!(actual, 20, "Length of {:?}", spec);
+            }
+            // Kind::IncludeOnlyParents
+            {
+                let spec = &vec!["33f91157b4^@"];
+                let actual = history_length(&repo, spec, paths).unwrap();
+                assert_eq!(actual, 4487, "Length of {:?}", spec);
+            }
+            // Kind::ExcludeParents
+            {
+                let spec = &vec!["33f91157b4^!"];
+                let actual = history_length(&repo, spec, paths).unwrap();
+                assert_eq!(actual, 1, "Length of {:?}", spec);
+            }
         }
     }
 
     #[test]
+    #[allow(clippy::print_stderr)]
     fn history_length_calc_path() {
         let repo = Repository::default().unwrap();
-        let paths: &[PathBuf] = &[PathBuf::from("file-expert/CHANGELOG.md")];
-        // Kind::IncludeReachable
-        {
-            let spec = &vec!["33f91157b4"];
-            let actual = history_length(&repo, spec, paths).unwrap();
-            assert_eq!(actual, 13, "Length of {:?}", spec);
+        if repo.is_shallow() {
+            eprintln!(
+                "Skipped test commit::test::history_length_calc_path, because of shallow repo"
+            );
+        } else {
+            let paths: &[PathBuf] = &[PathBuf::from("file-expert/CHANGELOG.md")];
+            // Kind::IncludeReachable
+            {
+                let spec = &vec!["33f91157b4"];
+                let actual = history_length(&repo, spec, paths).unwrap();
+                assert_eq!(actual, 13, "Length of {:?}", spec);
+            }
         }
     }
 }
