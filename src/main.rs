@@ -282,12 +282,13 @@ fn ui_loop(
                 }
                 if area.height() >= 4 && area.width() >= 10 {
                     let new = drawable.render(&area);
-                    log::trace!(target:"main:ui_loop", "Set recv timeout to {:?}", timeout);
                     if same(&new, &last_rendered) {
                         log::debug!(target:"main:ui_loop", "Skipping useless rendering calculation");
                     } else {
                         last_rendered = new;
                         render(&last_rendered, &area)?;
+                        timeout = Duration::from_millis(10);
+                        log::trace!(target:"main:ui_loop", "Set recv timeout to {:?}", timeout);
                     }
                 } else {
                     log::warn!(target:"main:ui_loop", "target area too small");
@@ -306,6 +307,8 @@ fn ui_loop(
                     if !same(&new, &last_rendered) {
                         last_rendered = new;
                         render(&last_rendered, &area)?;
+                        timeout = Duration::from_millis(10);
+                        log::trace!(target:"main:ui_loop", "Set recv timeout to {:?}", timeout);
                     } else if Duration::from_millis(1000) > timeout {
                         timeout = timeout.saturating_add(Duration::from_millis(100));
                         log::trace!(target:"main:ui_loop","set recv timeout to {:?}", timeout);
