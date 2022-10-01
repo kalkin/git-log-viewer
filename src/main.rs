@@ -75,22 +75,8 @@ fn same(a: &StyledArea<String>, b: &StyledArea<String>) -> bool {
     true
 }
 
-fn glv() -> Result<(), PosixError> {
-    let args = Args::parse();
-
-    let mut debug = true;
-    let log_level = match args.debug {
-        0 => {
-            debug = false;
-            log::Level::Warn
-        }
-        1 => log::Level::Info,
-        2 => log::Level::Debug,
-        _ => log::Level::Trace,
-    };
-    let logger = memory_logger::blocking::MemoryLogger::setup(log_level)
-        .map_err(|e| PosixError::new(128, format!("{}", e)))?;
-
+fn glv(args: Args) -> Result<(), PosixError> {
+    let debug = args.debug != 0;
     log::info!("Log Level is set to {}", log::max_level());
 
     #[cfg(feature = "update-informer")]
@@ -112,7 +98,7 @@ fn glv() -> Result<(), PosixError> {
     log::info!("Paths {:?}", paths);
     let history_adapter = HistoryAdapter::new(repo.clone(), revisions, paths.clone(), debug)?;
 
-    run_ui(history_adapter, repo, paths, logger).map_err(Into::into)
+    run_ui(history_adapter, repo, paths).map_err(Into::into)
 }
 
 #[allow(unused_qualifications)]
@@ -199,35 +185,53 @@ fn normalize_paths(repo: &Repository, paths: &[PathBuf]) -> Vec<PathBuf> {
     }
 }
 
-#[allow(clippy::exit)]
+#[allow(clippy::exit, clippy::print_stderr)]
 fn main() {
-    std::panic::set_hook(Box::new(|p| {
-        shutdown_screen().expect("Shutdown screen");
-        log::error!("Panic {}", p);
-        exit(1);
-    }));
+    let args = Args::parse();
 
-    if let Err(e) = glv() {
-        log::error!("{}", e);
-        exit(e.code());
+    let log_level = match args.debug {
+        0 => log::Level::Warn,
+        1 => log::Level::Info,
+        2 => log::Level::Debug,
+        _ => log::Level::Trace,
+    };
+    let mut code = 0;
+    match MemoryLogger::setup(log_level) {
+        Ok(logger) => {
+            std::panic::set_hook(Box::new(|p| {
+                shutdown_screen().expect("Shutdown screen");
+                log::error!("Panic {}", p);
+                #[allow(clippy::significant_drop_in_scrutinee)]
+                for line in logger.read().to_string().lines() {
+                    eprintln!("{}", line);
+                }
+                exit(1);
+            }));
+
+            if let Err(e) = glv(args) {
+                log::error!("{}", e);
+                code = e.code();
+            }
+            #[allow(clippy::significant_drop_in_scrutinee)]
+            for line in logger.read().to_string().lines() {
+                eprintln!("{}", line);
+            }
+        }
+        Err(e) => {
+            eprintln!("{}", e);
+            code = 1;
+        }
     }
+    exit(code);
 }
 
 fn run_ui(
     history_adapter: HistoryAdapter,
     repo: Repository,
     paths: Vec<PathBuf>,
-    logger: &MemoryLogger,
 ) -> Result<(), ErrorKind> {
     let root = build_drawable(repo, history_adapter, paths);
-    let result = ui_loop(root);
-
-    let contents = logger.read().to_string();
-    #[allow(clippy::print_stderr)]
-    for line in contents.lines() {
-        eprintln!("{}", line);
-    }
-    result
+    ui_loop(root)
 }
 
 fn ui_loop(
