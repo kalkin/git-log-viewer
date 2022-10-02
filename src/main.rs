@@ -212,6 +212,7 @@ fn main() {
                 log::error!("{}", e);
                 code = e.code();
             }
+            shutdown_screen().expect("Shutdown screen");
             #[allow(clippy::significant_drop_in_scrutinee)]
             for line in logger.read().to_string().lines() {
                 eprintln!("{}", line);
@@ -330,7 +331,6 @@ fn ui_loop(
             }
         }
     }
-    shutdown_screen()?;
     Ok(())
 }
 
