@@ -7,7 +7,7 @@ edition = '2021'
 keywords = ['git', 'tui']
 license = 'AGPL-3.0-or-later'
 repository = 'https://github.com/kalkin/git-log-viewer'
-version = '3.0.4'
+version = '3.0.5'
 
 [dependencies]
 crossterm = '^0.25.0'
