@@ -35,7 +35,7 @@ which = '4'
 [dependencies.clap]
 version = '^4.0.7'
 default-features = false
-features = ['cargo', 'derive', 'std']
+features = ['cargo', 'derive', 'std', 'help', 'usage', 'error-context']
 
 [dependencies.update-informer]
 version = '^0.5.0'
