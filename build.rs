@@ -40,11 +40,12 @@ fn main() {
     {
         let commits_since_release = commits_since_release();
         let changed_since_release = commits_since_release != "0";
+        let changed_files = status.success();
 
         let cargo_version = env!("CARGO_PKG_VERSION");
-        let version = match (changed_since_release, status.success()) {
-            (false, false) => cargo_version.to_owned(),
-            (false, true) => format!("{}+dirty", cargo_version),
+        let version = match (changed_since_release, changed_files) {
+            (false, true) => cargo_version.to_owned(),
+            (false, false) => format!("{}+dirty", cargo_version),
             (true, clean) => {
                 let id_out = Command::new("git")
                     .args(&["rev-parse", "--short", "HEAD"])
